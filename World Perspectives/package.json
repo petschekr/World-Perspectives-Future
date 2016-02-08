@@ -1,0 +1,28 @@
+{
+  "name": "World-Perspectives",
+  "version": "3.1.0-alpha",
+  "description": "Web app for World Perspectives Symposium day at GFA",
+  "main": "app.js",
+  "author": {
+    "name": "Ryan Petschek",
+    "email": "petschekr@gmail.com"
+  },
+  "license": "Copyright (C) 2015 Ryan Petschek",
+  "private": true,
+  "dependencies": {
+    "body-parser": "^1.14.2",
+    "compression": "^1.6.1",
+    "cookie-parser": "^1.4.1",
+    "csv": "^0.4.6",
+    "express": "^4.13.4",
+    "hsts": "^0.1.3",
+    "kew": "^0.5.0",
+    "moment": "^2.11.2",
+    "orchestrate": "^0.4.7",
+    "pushbullet": "^1.4.3",
+    "response-time": "^2.3.1",
+    "sendgrid": "^2.0.0",
+    "serve-static": "^1.10.2",
+    "socket.io": "^1.4.5"
+  }
+}
