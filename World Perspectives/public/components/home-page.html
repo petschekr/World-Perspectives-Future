@@ -20,6 +20,7 @@
 			}
 			paper-toolbar span.title {
 				font-size: 125%;
+				text-align: center;
 				-webkit-user-select: none;
 				-moz-user-select: none;
 				-ms-user-select: none;
@@ -35,22 +36,39 @@
 				text-align: center;
 			}
 
+			paper-button a {
+				color: rgb(153, 153, 153);
+				text-decoration: none;
+			}
+
+			paper-menu paper-item {
+				padding-left: 24px;
+			}
+			paper-menu paper-item iron-icon {
+				padding-right: 8px;
+			}
+
 			:host {
 				height: 100%;
 			}
 
 			#sidepanel {
-				height: calc(100% - 64px);
+				height: 100%;
 				background-color: white;
 				width: 256px;
 				transition: margin-left 0.5s;
 				position: fixed;
+				top: 0px;
 				box-shadow: 0 0 6px rgba(0,0,0,0.3);
-				z-index: 100;
+				z-index: 200;
 			}
 
 				#sidepanel.hidden {
 					margin-left: -256px;
+				}
+				#sidepanel paper-icon-button {
+					top: 12px;
+					left: 15px;
 				}
 
 			section.minor {
@@ -71,7 +89,7 @@
 					width: calc(100% - 20px);
 				}
 
-				section.minor paper-button:hover {
+				section.minor paper-button a:hover {
 					color: black;
 				}
 
@@ -161,28 +179,36 @@
 
 		<paper-toolbar>
 			<!--<icon-transition shape="{{icon}}" color="white" on-tap="toggleMenu"></icon-transition>-->
-			<paper-icon-button icon="menu"></paper-icon-button>
+			<paper-icon-button icon="menu" on-tap="toggleMenu"></paper-icon-button>
 			<span class="title longtitle">GFA World Perspectives Symposium</span>
 			<!--<span flex class="shorttitle">GFA WPP Symposium</span>-->
 			<paper-icon-button icon="print" on-tap="print"></paper-icon-button>
 		</paper-toolbar>
 		<section id="sidepanel" class="hidden">
-			<a id="adminLink" href="/admin" style="display: none;"></a>
+			<paper-icon-button icon="arrow-back" on-tap="toggleMenu"></paper-icon-button>
 			<paper-menu selected="0">
-				<paper-item icon="event" label="Schedule"></paper-item>
+				<paper-item>
+					<iron-icon icon="event"></iron-icon>
+					<span>Schedule</span>
+				</paper-item>
 				<template if="{{user.admin}}">
-					<paper-item icon="settings" label="Admin Panel" on-tap="admin"></paper-item>
+					<paper-item on-tap="admin">
+						<iron-icon icon="settings"></iron-icon>
+						<span>Admin Panel</span>
+					</paper-item>
 				</template>
 			</paper-menu>
 			<section class="minor">
 				<ul>
 					<li id="about">
-						<paper-button noink on-tap="about">About</paper-button>
-						<a id="aboutLink" href="/about" style="display: none;"></a>
+						<paper-button noink>
+							<a href="/about">About</a>
+						</paper-button>
 					</li>
 					<li id="contact">
-						<paper-button noink on-tap="contact">Contact</paper-button>
-						<a id="contactLink" href="mailto:petschekr@gfacademy.org" style="display: none;"></a>
+						<paper-button noink>
+							<a href="mailto:petschekr@gfacademy.org">Contact</a>
+						</paper-button>
 					</li>
 				</ul>
 			</section>
@@ -253,14 +279,8 @@
 					this.$.sidepanel.classList.add("hidden");
 				}
 			},
-			about: function() {
-				this.$.aboutLink.click();
-			},
-			contact: function() {
-				this.$.contactLink.click();
-			},
 			admin: function() {
-				this.$.adminLink.click();
+				window.location = "/admin";
 			},
 			userResponse: function() {
 				this.user = this.$["info-ajax"].response;
