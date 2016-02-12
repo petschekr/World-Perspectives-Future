@@ -1,0 +1,292 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/core-toolbar/core-toolbar.html" />
+<link rel="import" href="/bower_components/core-icons/core-icons.html" />
+<link rel="import" href="/bower_components/core-menu/core-menu.html" />
+<link rel="import" href="/bower_components/core-item/core-item.html" />
+<link rel="import" href="/bower_components/core-ajax/core-ajax.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/icon-transition/icon-transition.html" />
+<link rel="import" href="/components/content-section.html" />
+
+<polymer-element name="home-page">
+	<template>
+		<style>
+			core-toolbar {
+				background: #3ea346;
+				color: #f1f1f1;
+				fill: #f1f1f1;
+				z-index: 150;
+			}
+
+			paper-toast {
+				width: 100%;
+				bottom: 0;
+				left: 0;
+				border-radius: 0;
+				text-align: center;
+			}
+
+			:host {
+				height: 100%;
+			}
+
+			#sidepanel {
+				height: calc(100% - 64px);
+				background-color: white;
+				width: 256px;
+				transition: margin-left 0.5s;
+				position: fixed;
+				box-shadow: 0 0 6px rgba(0,0,0,0.3);
+				z-index: 100;
+			}
+
+				#sidepanel.hidden {
+					margin-left: -256px;
+				}
+
+			section.minor {
+				color: rgb(153, 153, 153);
+				position: absolute;
+				bottom: 0;
+				width: 100%;
+			}
+
+				section.minor ul {
+					list-style: none;
+					padding-left: 0;
+				}
+
+				section.minor paper-button {
+					margin-left: 10px;
+					margin-right: 10px;
+					width: calc(100% - 20px);
+				}
+
+				section.minor paper-button:hover {
+					color: black;
+				}
+
+			#schedule h2 {
+				margin-top: 0.4em;
+			}
+
+				#schedule h2.name {
+					float: left;
+				}
+
+				#schedule h2.time {
+					float: right;
+				}
+
+			#schedule div.clear {
+				clear: both;
+			}
+
+			#schedule table {
+				width: 100%;
+				border-spacing: 0;
+				border-collapse: collapse;
+			}
+
+				#schedule table th {
+					vertical-align: bottom;
+					border-bottom: 2px solid #ddd;
+					padding: 8px;
+					line-height: 1.42857143;
+				}
+
+				#schedule table td {
+					font-weight: lighter;
+					padding: 8px;
+					line-height: 1.42857143;
+					vertical-align: top;
+					border-top: 1px solid #ddd;
+				}
+
+					#schedule table td:first-child {
+						width: 152px;
+					}
+
+					#schedule table td:nth-child(2) {
+						font-weight: normal;
+					}
+
+					#schedule table td:last-child {
+						width: 118px;
+					}
+
+					#schedule table td.shorttime {
+						display: none;
+						white-space: pre;
+					}
+
+			core-toolbar span.shorttitle {
+				display: none;
+			}
+			/* Mobile styles */
+			@media screen and (max-width: 35.5em) {
+				#schedule table td:last-child {
+					width: auto;
+				}
+
+				#schedule table td.longtime {
+					display: none;
+				}
+
+				#schedule table td.shorttime {
+					display: table-cell;
+				}
+
+				core-toolbar span.longtitle {
+					display: none;
+				}
+
+				core-toolbar span.shorttitle {
+					display: inline;
+				}
+			}
+		</style>
+
+		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}" on-core-error="{{handleError}}"></core-ajax>
+		<core-ajax id="schedule-ajax" auto url="/schedule" handleAs="json" on-core-response="{{scheduleResponse}}" on-core-error="{{handleError}}"></core-ajax>
+
+		<core-toolbar>
+			<icon-transition shape="{{icon}}" color="white" on-tap="{{toggleMenu}}"></icon-transition>
+			<span flex class="longtitle">GFA World Perspectives Symposium</span>
+			<span flex class="shorttitle">GFA WPP Symposium</span>
+			<paper-icon-button icon="print" on-tap="{{print}}"></paper-icon-button>
+		</core-toolbar>
+		<section id="sidepanel" class="hidden">
+			<a id="adminLink" href="/admin" style="display: hidden;"></a>
+			<core-menu selected="0">
+				<core-item icon="event" label="Schedule"></core-item>
+				<template if="{{user.admin}}">
+					<core-item icon="settings" label="Admin Panel" on-tap="{{admin}}"></core-item>
+				</template>
+			</core-menu>
+			<section class="minor">
+				<ul>
+					<li id="about">
+						<paper-button noink on-tap="{{about}}">About</paper-button>
+						<a id="aboutLink" href="/about" style="display: hidden;"></a>
+					</li>
+					<li id="contact">
+						<paper-button noink on-tap="{{contact}}">Contact</paper-button>
+						<a id="contactLink" href="mailto:petschekr@gfacademy.org" style="display: hidden;"></a>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<content-section id="errorSection" style="display: none;">
+			<h2 style="margin: 0; font-style: italic; font-weight: lighter;">The schedule below is a general schedule. Please follow the link sent to your school email to log in and see your personalized schedule.</h2>
+		</content-section>
+		<content-section id="notRegistered" style="display: none;">
+			<h2 style="margin: 0; font-style: italic; font-weight: lighter;">You haven't finished registering yet. Please <a href="/register">register</a> to see your completed schedule.</h2>
+		</content-section>
+		<content-section id="schedule">
+			<h2 class="name">{{user.name}}</h2>
+			<h2 class="time">April 22nd, 2015</h2>
+			<div class="clear"></div>
+			<table>
+				<thead>
+					<tr>
+						<th>Time</th>
+						<th>Event</th>
+						<th>Location</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr template if="{{schedule.length === 0}}">
+						<td></td>
+						<td><strong>Loading...</strong></td>
+						<td></td>
+					</tr>
+					<tr template repeat="{{event in schedule}}">
+						<td class="longtime">{{event.time}}</td>
+						<td class="shorttime">{{event.shortTime}}</td>
+						<td>
+							<template if="{{!event.people}}">
+								{{event.title}}
+							</template>
+							<template if="{{event.people}}">
+								<b>{{event.title}}</b>
+								<br />
+								<i>{{event.people}}</i>
+							</template>
+						</td>
+						<td>{{event.location}}</td>
+					</tr>
+				</tbody>
+			</table>
+		</content-section>
+	</template>
+	<script>
+		Polymer({
+			icon: "menu",
+			menuOpened: false,
+			user: {
+				name: "Loading..."
+			},
+			schedule: [],
+			ready: function() {
+
+			},
+			toggleMenu: function() {
+				this.menuOpened = !this.menuOpened;
+				if (this.menuOpened) {
+					this.icon = "right-arrow";
+					this.$.sidepanel.classList.remove("hidden");
+				}
+				else {
+					this.icon = "menu";
+					this.$.sidepanel.classList.add("hidden");
+				}
+			},
+			about: function() {
+				this.$.aboutLink.click();
+			},
+			contact: function() {
+				this.$.contactLink.click();
+			},
+			admin: function() {
+				this.$.adminLink.click();
+			},
+			userResponse: function() {
+				this.user = this.$["info-ajax"].response;
+				window.user = this.user;
+			},
+			scheduleResponse: function() {
+				this.schedule = this.$["schedule-ajax"].response.data;
+				for (var i = 0; i < this.schedule.length; i++) {
+					if (!this.schedule[i].location) {
+						this.schedule[i].location = "";
+					}
+					this.schedule[i].shortTime = this.schedule[i].time.replace(/ (AM|PM)/g, "").replace(/ – /g, "\nto\n");
+				}
+				if (!this.$["schedule-ajax"].response.registered) {
+					this.$.notRegistered.style.display = "block";
+				}
+			},
+			handleError: function(e) {
+				var errorMessage = e.detail.response.response.error;
+				if (e.detail.xhr.status === 403) {
+					// User not logged in
+					this.$.errorSection.style.display = "block";
+					this.user.name = "Schedule"
+					if (e.detail.response.response.data) {
+						this.schedule = e.detail.response.response.data;
+						for (var i = 0; i < this.schedule.length; i++) {
+							if (!this.schedule[i].location) {
+								this.schedule[i].location = "";
+							}
+							this.schedule[i].shortTime = this.schedule[i].time.replace(/ (AM|PM)/g, "").replace(/ – /g, "\nto\n");
+						}
+					}
+				}
+			},
+			print: function() {
+				window.location = "/schedule/print";
+			}
+		});
+	</script>
+</polymer-element>

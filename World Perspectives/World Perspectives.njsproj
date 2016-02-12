@@ -12,7 +12,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>cfe269ab-481f-40d9-9542-df434440bcf8</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>app.ts</StartupFile>
+    <StartupFile>server.ts</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -33,30 +33,41 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="Scripts\typings\express\body-parser.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\express\compression.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\express\cookie-parser.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\express\response-time.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\express\serve-static.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\mime\mime.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\moment\moment.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\sendgrid\sendgrid.d.ts" />
+    <TypeScriptCompile Include="server.ts" />
     <TypeScriptCompile Include="routes\index.ts" />
     <TypeScriptCompile Include="routes\user.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\stylus\stylus.d.ts" />
+    <Content Include="bower.json" />
     <Content Include="package.json" />
-    <Content Include="public\stylesheets\style.styl" />
+    <Content Include="pages\index.html" />
+    <Content Include="public\components\content-section.html" />
+    <Content Include="public\components\home-page-original.html" />
+    <Content Include="public\components\home-page.html" />
     <Content Include="README.md" />
-    <Content Include="views\index.jade" />
-    <Content Include="views\layout.jade" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="pages\" />
     <Folder Include="public\" />
-    <Folder Include="public\images\" />
-    <Folder Include="public\javascripts\" />
-    <Folder Include="public\stylesheets\" />
+    <Folder Include="public\css\" />
+    <Folder Include="public\img\" />
+    <Folder Include="public\components\" />
     <Folder Include="routes\" />
     <Folder Include="Scripts\" />
     <Folder Include="Scripts\typings\" />
     <Folder Include="Scripts\typings\express\" />
+    <Folder Include="Scripts\typings\moment\" />
+    <Folder Include="Scripts\typings\mime\" />
+    <Folder Include="Scripts\typings\sendgrid\" />
     <Folder Include="Scripts\typings\node\" />
-    <Folder Include="Scripts\typings\stylus\" />
-    <Folder Include="views\" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />

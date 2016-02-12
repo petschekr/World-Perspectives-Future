@@ -1,0 +1,85 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+
+<dom-module id="content-section">
+	<template>
+		<style>
+			.container {
+				margin-right: auto;
+				margin-left: auto;
+				margin-top: 40px;
+				margin-bottom: 40px;
+				/*max-height: 580px;*/
+				max-width: 800px;
+				box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+				border-radius: 2px;
+				background-color: white;
+				box-sizing: border-box;
+				-moz-box-sizing: border-box;
+			}
+
+				.container > .content {
+					padding: 20px 16px;
+					text-align: center;
+				}
+			/* Style for elements passed to the <content> block */
+			polyfill-next-selector {
+				content: "h1";
+			}
+
+			::content h1 {
+				font-size: 1.7em;
+			}
+
+			polyfill-next-selector {
+				content: "h2";
+			}
+
+			::content h2 {
+				font-size: 1.2em;
+			}
+
+			polyfill-next-selector {
+				content: "p";
+			}
+
+			::content p {
+				font-size: 1.2em;
+			}
+
+			polyfill-next-selector {
+				content: "paper-button.custom:last-child > core-icon";
+			}
+
+			::content paper-button.custom:last-child > core-icon {
+				margin-left: 4px;
+			}
+
+			polyfill-next-selector {
+				content: "paper-button.custom:first-child > core-icon";
+			}
+
+			::content paper-button.custom:first-child > core-icon {
+				margin-right: 4px;
+			}
+			/* Mobile styles */
+			@media screen and (max-width: 35.5em) {
+				.container {
+					margin-top: 10px;
+					margin-bottom: 20px;
+				}
+			}
+		</style>
+		<div class="container">
+			<div class="content">
+				<content></content>
+			</div>
+		</div>
+	</template>
+	<script>
+		Polymer({ is: "content-section"});
+	</script>
+</dom-module>

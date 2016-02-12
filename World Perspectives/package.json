@@ -1,13 +1,13 @@
 {
-  "name": "World-Perspectives",
+  "name": "world-perspectives",
   "version": "3.1.0-alpha",
   "description": "Web app for World Perspectives Symposium day at GFA",
-  "main": "app.js",
+  "main": "server.js",
   "author": {
     "name": "Ryan Petschek",
     "email": "petschekr@gmail.com"
   },
-  "license": "Copyright (C) 2015 Ryan Petschek",
+  "license": "Copyright (C) 2016 Ryan Petschek",
   "private": true,
   "dependencies": {
     "body-parser": "^1.14.2",
