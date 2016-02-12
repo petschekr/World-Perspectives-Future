@@ -6,18 +6,27 @@
 <link rel="import" href="/bower_components/paper-item/paper-item.html" />
 <link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
 <link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
 <link rel="import" href="/components/content-section.html" />
 
 <dom-module id="home-page">
 	<template>
 		<style>
-			core-toolbar {
+			paper-toolbar {
 				background: #3ea346;
 				color: #f1f1f1;
 				fill: #f1f1f1;
 				z-index: 150;
 			}
-
+			paper-toolbar span.title {
+				font-size: 125%;
+				-webkit-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+				cursor: default;
+			}
+			
 			paper-toast {
 				width: 100%;
 				bottom: 0;
@@ -120,7 +129,7 @@
 						white-space: pre;
 					}
 
-			core-toolbar span.shorttitle {
+			paper-toolbar span.shorttitle {
 				display: none;
 			}
 			/* Mobile styles */
@@ -137,42 +146,43 @@
 					display: table-cell;
 				}
 
-				core-toolbar span.longtitle {
+				paper-toolbar span.longtitle {
 					display: none;
 				}
 
-				core-toolbar span.shorttitle {
+				paper-toolbar span.shorttitle {
 					display: inline;
 				}
 			}
 		</style>
 
-		<core-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="{{userResponse}}" on-core-error="{{handleError}}"></core-ajax>
-		<core-ajax id="schedule-ajax" auto url="/schedule" handleAs="json" on-core-response="{{scheduleResponse}}" on-core-error="{{handleError}}"></core-ajax>
+		<!--<iron-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="userResponse" on-core-error="handleError"></iron-ajax>-->
+		<!--<iron-ajax id="schedule-ajax" auto url="/schedule" handleAs="json" on-core-response="scheduleResponse" on-core-error="handleError"></iron-ajax>-->
 
-		<core-toolbar>
-			<!--<icon-transition shape="{{icon}}" color="white" on-tap="{{toggleMenu}}"></icon-transition>-->
-			<span flex class="longtitle">GFA World Perspectives Symposium</span>
-			<span flex class="shorttitle">GFA WPP Symposium</span>
-			<paper-icon-button icon="print" on-tap="{{print}}"></paper-icon-button>
-		</core-toolbar>
+		<paper-toolbar>
+			<!--<icon-transition shape="{{icon}}" color="white" on-tap="toggleMenu"></icon-transition>-->
+			<paper-icon-button icon="menu"></paper-icon-button>
+			<span class="title longtitle">GFA World Perspectives Symposium</span>
+			<!--<span flex class="shorttitle">GFA WPP Symposium</span>-->
+			<paper-icon-button icon="print" on-tap="print"></paper-icon-button>
+		</paper-toolbar>
 		<section id="sidepanel" class="hidden">
-			<a id="adminLink" href="/admin" style="display: hidden;"></a>
-			<core-menu selected="0">
-				<core-item icon="event" label="Schedule"></core-item>
+			<a id="adminLink" href="/admin" style="display: none;"></a>
+			<paper-menu selected="0">
+				<paper-item icon="event" label="Schedule"></paper-item>
 				<template if="{{user.admin}}">
-					<core-item icon="settings" label="Admin Panel" on-tap="{{admin}}"></core-item>
+					<paper-item icon="settings" label="Admin Panel" on-tap="admin"></paper-item>
 				</template>
-			</core-menu>
+			</paper-menu>
 			<section class="minor">
 				<ul>
 					<li id="about">
-						<paper-button noink on-tap="{{about}}">About</paper-button>
-						<a id="aboutLink" href="/about" style="display: hidden;"></a>
+						<paper-button noink on-tap="about">About</paper-button>
+						<a id="aboutLink" href="/about" style="display: none;"></a>
 					</li>
 					<li id="contact">
-						<paper-button noink on-tap="{{contact}}">Contact</paper-button>
-						<a id="contactLink" href="mailto:petschekr@gfacademy.org" style="display: hidden;"></a>
+						<paper-button noink on-tap="contact">Contact</paper-button>
+						<a id="contactLink" href="mailto:petschekr@gfacademy.org" style="display: none;"></a>
 					</li>
 				</ul>
 			</section>
