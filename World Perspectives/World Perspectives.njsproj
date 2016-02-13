@@ -40,6 +40,7 @@
     <TypeScriptCompile Include="Scripts\typings\express\serve-static.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\mime\mime.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\moment\moment.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\neo4j\neo4j.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\sendgrid\sendgrid.d.ts" />
     <TypeScriptCompile Include="server.ts" />
     <TypeScriptCompile Include="routes\index.ts" />
@@ -66,6 +67,7 @@
     <Folder Include="Scripts\typings\express\" />
     <Folder Include="Scripts\typings\moment\" />
     <Folder Include="Scripts\typings\mime\" />
+    <Folder Include="Scripts\typings\neo4j\" />
     <Folder Include="Scripts\typings\sendgrid\" />
     <Folder Include="Scripts\typings\node\" />
   </ItemGroup>
