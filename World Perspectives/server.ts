@@ -11,6 +11,7 @@ var keys: {
 	"neo4j": {
 		"username": string;
 		"password": string;
+		"server": string;
 	};
 	"pushbullet": string;
 	"sendgrid": {
@@ -26,7 +27,7 @@ pusher = new pusher(keys.pushbullet);
 import SendGrid = require("sendgrid");
 var sendgrid = SendGrid(keys.sendgrid.username, keys.sendgrid.password);
 import neo4j = require("neo4j");
-var db = new neo4j.GraphDatabase(`http://${keys.neo4j.username}:${keys.neo4j.password}@localhost:7474`);
+var db = new neo4j.GraphDatabase(`http://${keys.neo4j.username}:${keys.neo4j.password}@${keys.neo4j.server}:7474`);
 // Set up the Express server
 import express = require("express");
 import serveStatic = require("serve-static");
@@ -35,8 +36,7 @@ import compress = require("compression");
 import cookieParser = require("cookie-parser");
 import bodyParser = require("body-parser");
 // Routes
-import routes = require('./routes/index');
-import user = require('./routes/user');
+import dataRouter = require("./routes/data");
 
 var app = express();
 var postParser = bodyParser.urlencoded({ "extended": false });
@@ -74,6 +74,7 @@ app.route("/").get(function (request, response): void {
 		response.send(html);
 	});
 });
+app.use("/data", dataRouter);
 
 
 // 404 page

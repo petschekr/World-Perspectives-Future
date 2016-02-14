@@ -33,6 +33,9 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="routes\data.ts">
+      <Publish>False</Publish>
+    </TypeScriptCompile>
     <TypeScriptCompile Include="Scripts\typings\express\body-parser.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\compression.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\cookie-parser.d.ts" />
