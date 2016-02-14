@@ -43,8 +43,6 @@
     <TypeScriptCompile Include="Scripts\typings\neo4j\neo4j.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\sendgrid\sendgrid.d.ts" />
     <TypeScriptCompile Include="server.ts" />
-    <TypeScriptCompile Include="routes\index.ts" />
-    <TypeScriptCompile Include="routes\user.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <Content Include="bower.json" />
