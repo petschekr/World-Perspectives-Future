@@ -37,6 +37,8 @@
     <TypeScriptCompile Include="routes\data.ts">
       <Publish>False</Publish>
     </TypeScriptCompile>
+    <TypeScriptCompile Include="routes\user.ts" />
+    <TypeScriptCompile Include="Scripts\typings\bluebird\bluebird.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\body-parser.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\compression.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\cookie-parser.d.ts" />
@@ -71,6 +73,7 @@
     <Folder Include="Scripts\typings\moment\" />
     <Folder Include="Scripts\typings\mime\" />
     <Folder Include="Scripts\typings\neo4j\" />
+    <Folder Include="Scripts\typings\bluebird\" />
     <Folder Include="Scripts\typings\sendgrid\" />
     <Folder Include="Scripts\typings\node\" />
   </ItemGroup>

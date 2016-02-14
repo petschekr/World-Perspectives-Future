@@ -22,8 +22,6 @@ import responseTime = require("response-time");
 import compress = require("compression");
 import cookieParser = require("cookie-parser");
 import bodyParser = require("body-parser");
-// Routes
-import dataRouter = require("./routes/data");
 
 var app = express();
 var postParser = bodyParser.urlencoded({ "extended": false });
@@ -46,6 +44,12 @@ app.use("/components", serveStatic("public/components"));
 app.use("/css", serveStatic("public/css"));
 app.use("/img", serveStatic("public/img"));
 
+// Routes
+import dataRouter = require("./routes/data");
+import userRouter = require("./routes/user");
+app.use("/data", dataRouter);
+app.use("/user", userRouter);
+
 function CancelError(message) {
 	this.message = message;
 }
@@ -61,7 +65,6 @@ app.route("/").get(function (request, response): void {
 		response.send(html);
 	});
 });
-app.use("/data", dataRouter);
 
 
 // 404 page
