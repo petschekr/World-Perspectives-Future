@@ -54,6 +54,7 @@
     <Content Include="public\components\content-section.html" />
     <Content Include="public\components\home-page-original.html" />
     <Content Include="public\components\home-page.html" />
+    <Content Include="public\components\table-repeat.html" />
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
