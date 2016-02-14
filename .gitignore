@@ -218,3 +218,4 @@ bower_components/
 *.js.map
 World Perspectives/server.js
 World Perspectives/routes/*.js
+World Perspectives/common.js

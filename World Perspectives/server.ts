@@ -6,28 +6,15 @@ import https = require("https");
 import urllib = require("url");
 import path = require("path");
 // npm libraries
-var keys: {
-	"orchestrate": string;
-	"neo4j": {
-		"username": string;
-		"password": string;
-		"server": string;
-	};
-	"pushbullet": string;
-	"sendgrid": {
-		"username": string;
-		"password": string;
-	};
-	"cookieSecret": string;
-} = JSON.parse(fs.readFileSync("keys.json").toString("utf8"));
+import common = require("./common");
+var keys = common.keys;
+var db = common.db;
 import moment = require("moment");
 var csv = require("csv");
 var pusher = require("pushbullet");
 pusher = new pusher(keys.pushbullet);
 import SendGrid = require("sendgrid");
 var sendgrid = SendGrid(keys.sendgrid.username, keys.sendgrid.password);
-import neo4j = require("neo4j");
-var db = new neo4j.GraphDatabase(`http://${keys.neo4j.username}:${keys.neo4j.password}@${keys.neo4j.server}:7474`);
 // Set up the Express server
 import express = require("express");
 import serveStatic = require("serve-static");

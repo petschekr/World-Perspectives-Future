@@ -33,6 +33,7 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="common.ts" />
     <TypeScriptCompile Include="routes\data.ts">
       <Publish>False</Publish>
     </TypeScriptCompile>
