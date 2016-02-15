@@ -1,4 +1,5 @@
-﻿import fs = require("fs");
+﻿import Promise = require("bluebird");
+var fs = Promise.promisifyAll(require("fs"));
 import common = require("../common");
 var db = common.db;
 import express = require("express");
@@ -17,12 +18,11 @@ var adminCheck = function (request: express.Request, response: express.Response,
 };
 
 router.route("/").get(authenticateCheck, adminCheck, function (request, response) {
-    fs.readFile("pages/admin.html", "utf8", function (err: Error, html: string) {
-		if (err) {
-			return common.handleError(err);
-		}
-		response.send(html);
-	});
+    fs.readFileAsync("pages/admin.html", "utf8")
+		.then(function (html: string) {
+			response.send(html);
+		})
+		.catch(common.handleError.bind(response));
 });
 
 export = router;
