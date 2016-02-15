@@ -175,7 +175,7 @@
 			}
 		</style>
 
-		<!--<iron-ajax id="info-ajax" auto url="/info" handleAs="json" on-core-response="userResponse" on-core-error="handleError"></iron-ajax>-->
+		<iron-ajax id="user-ajax" auto url="/user" handleAs="json" on-response="userResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="schedule-ajax" auto url="/data/schedule" handle-as="json" on-response="scheduleResponse" on-error="handleError"></iron-ajax>
 
 		<paper-toolbar>
@@ -284,7 +284,8 @@
 						return {
 							name: "Loading..."
 						};
-					}
+					},
+					notify: true
 				}
 			},
 			toggleMenu: function() {
@@ -300,8 +301,11 @@
 				window.location = "/admin";
 			},
 			userResponse: function() {
-				this.user = this.$["info-ajax"].response;
+				this.user = this.$["user-ajax"].lastResponse;
 				window.user = this.user;
+				if (!this.user.registered) {
+					this.$.notRegistered.style.display = "block";
+				}
 			},
 			scheduleResponse: function () {
 				this.schedule = this.$["schedule-ajax"].lastResponse;
@@ -311,28 +315,16 @@
 					}
 					this.schedule[i].shortTime = this.schedule[i].time.replace(/ (AM|PM)/g, "").replace(/ – /g, "\nto\n");
 				}
-				/*
-				if (!this.$["schedule-ajax"].response.registered) {
-					this.$.notRegistered.style.display = "block";
-				}
-				*/
 				this.scheduleLoaded = true;
 			},
-			handleError: function(e) {
-				var errorMessage = e.detail.response.response.error;
-				if (e.detail.xhr.status === 403) {
+			handleError: function (e) {
+				var errorMessage = e.target.lastError.request.xhr.response;
+				if (e.target.lastError.request.xhr.status === 403) {
 					// User not logged in
 					this.$.errorSection.style.display = "block";
-					this.user.name = "Schedule"
-					if (e.detail.response.response.data) {
-						this.schedule = e.detail.response.response.data;
-						for (var i = 0; i < this.schedule.length; i++) {
-							if (!this.schedule[i].location) {
-								this.schedule[i].location = "";
-							}
-							this.schedule[i].shortTime = this.schedule[i].time.replace(/ (AM|PM)/g, "").replace(/ – /g, "\nto\n");
-						}
-					}
+					this.user = {
+						name: "Schedule"
+					};
 				}
 			},
 			print: function() {
