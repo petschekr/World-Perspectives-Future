@@ -1,0 +1,145 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/paper-toolbar/paper-toolbar.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-material/paper-material.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<dom-module id="content-panel">
+	<style>
+		paper-toolbar {
+			background: #3ea346;
+			color: #f1f1f1;
+			fill: #f1f1f1;
+		}
+		paper-toolbar span {
+			font-size: 110%;
+		}
+
+		.container {
+			margin-right: auto;
+			margin-left: auto;
+			margin-top: 40px;
+			margin-bottom: 40px;
+			/*max-height: 580px;*/
+			max-width: 530px;
+			box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+			border-radius: 2px;
+			background-color: white;
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+		}
+
+			.container > .content {
+				padding: 20px 16px;
+				text-align: center;
+			}
+		/* Style for elements passed to the <content> block */
+		polyfill-next-selector {
+			content: "h1";
+		}
+
+		::content h1 {
+			font-size: 1.7em;
+			margin-bottom: 0;
+		}
+
+		polyfill-next-selector {
+			content: "h2";
+		}
+
+		::content h2 {
+			margin-top: 5px;
+			font-size: 1.2em;
+		}
+
+		polyfill-next-selector {
+			content: "p";
+		}
+
+		::content p {
+			font-size: 1.2em;
+			margin-bottom: 0.5em;
+		}
+
+		polyfill-next-selector {
+			content: "p.no-margin";
+		}
+
+		::content p.no-margin {
+			margin-top: 0;
+		}
+
+		polyfill-next-selector {
+			content: "ul";
+		}
+
+		::content ul {
+			font-size: 1.2em;
+			text-align: left;
+		}
+
+		polyfill-next-selector {
+			content: "ul li";
+		}
+
+		::content ul li {
+			margin: 10px 0;
+		}
+
+		polyfill-next-selector {
+			content: "paper-button.custom:last-child > iron-icon";
+		}
+
+		::content paper-button.custom:last-child > iron-icon {
+			margin-left: 4px;
+		}
+
+		polyfill-next-selector {
+			content: "paper-button.custom:first-child > iron-icon";
+		}
+
+		::content paper-button.custom:first-child > iron-icon {
+			margin-right: 4px;
+		}
+		/* Mobile styles */
+		@media screen and (max-width: 35.5em) {
+			.container {
+				margin-top: 0px;
+				margin-bottom: 20px;
+				max-width: none;
+			}
+		}
+	</style>
+	<template>
+		<div class="container" flex vertical>
+			<paper-toolbar id="toolbar">
+				<span flex>{{headtitle}}</span>
+				<!-- <paper-icon-button icon="more-vert"></paper-icon-button> -->
+			</paper-toolbar>
+			<div class="content">
+				<content></content>
+			</div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: "content-panel",
+			properties: {
+				color: {
+					type: String,
+					value: "#3ea346",
+					notify: true
+				},
+				headtitle: {
+					type: String,
+					value: "Untitled",
+					notify: true
+				}
+			},
+			ready: function () {
+				this.set("$.toolbar.style.background", this.color);
+			}
+		});
+	</script>
+</dom-module>

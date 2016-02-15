@@ -17,6 +17,14 @@ export var keys: {
 	};
 	"cookieSecret": string;
 } = JSON.parse(fs.readFileSync("keys.json").toString("utf8"));
+export var cookieOptions = {
+	"path": "/",
+	"maxAge": 1000 * 60 * 60 * 24 * 30 * 6, // 6 months
+	"secure": false,
+	"httpOnly": true,
+	"signed": true
+};
+
 var dbRaw = new neo4j.GraphDatabase(`http://${keys.neo4j.username}:${keys.neo4j.password}@${keys.neo4j.server}:7474`);
 export var db = Promise.promisifyAll(dbRaw);
 export var authenticateMiddleware = function (request: express.Request, response: express.Response, next: express.NextFunction): void {

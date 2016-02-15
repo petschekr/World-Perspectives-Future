@@ -54,6 +54,8 @@
     <Content Include="bower.json" />
     <Content Include="package.json" />
     <Content Include="pages\index.html" />
+    <Content Include="pages\invalidcode.html" />
+    <Content Include="public\components\content-panel.html" />
     <Content Include="public\components\content-section.html" />
     <Content Include="public\components\home-page-original.html" />
     <Content Include="public\components\home-page.html" />

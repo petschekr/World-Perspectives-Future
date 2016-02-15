@@ -27,16 +27,9 @@ var app = express();
 var postParser = bodyParser.urlencoded({ "extended": false });
 app.use(compress());
 app.use(responseTime());
-var cookieOptions = {
-	"path": "/",
-	"maxAge": 1000 * 60 * 60 * 24 * 30 * 6, // 6 months
-	"secure": false,
-	"httpOnly": true,
-	"signed": true
-};
 app.use(cookieParser(
 	keys.cookieSecret, // Secret for signing cookies
-	cookieOptions
+	common.cookieOptions
 ));
 
 app.use("/bower_components", serveStatic("bower_components"));
