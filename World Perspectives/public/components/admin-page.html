@@ -6,12 +6,12 @@
 <link rel="import" href="/bower_components/paper-item/paper-item.html" />
 <link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
 <link rel="import" href="/bower_components/paper-button/paper-button.html" />
-<link rel="import" href="/bower_components/paper-input/paper-input.html" />
-<link rel="import" href="/bower_components/paper-input/paper-input-decorator.html" />
-<link rel="import" href="/bower_components/paper-input/paper-autogrow-textarea.html" />
 <link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
 <link rel="import" href="/components/content-section.html" />
 <link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html" />
+<link rel="import" href="/bower_components/neon-animation/neon-animated-pages.html" />
+<link rel="import" href="/bower_components/neon-animation/neon-animatable.html" />
+<link rel="import" href="/bower_components/neon-animation/neon-animations.html" />
 <dom-module id="admin-page">
 	<style>
 		/* TODO(polyup): For speed, consider reworking these styles with .classes
@@ -113,51 +113,6 @@
 					color: black;
 				}
 
-		.input-style /deep/ ::-webkit-input-placeholder {
-			color: #3ea346;
-		}
-
-		.input-style /deep/ ::-moz-placeholder {
-			color: #3ea346;
-		}
-
-		.input-style /deep/ :-ms-input-placeholder {
-			color: #3ea346;
-		}
-
-		.input-style /deep/ .floated-label .label-text, .input-style /deep/ .error {
-			color: #3ea346;
-		}
-
-		.input-style /deep/ .unfocused-underline {
-			background-color: #3ea346;
-		}
-
-		.input-style[focused] /deep/ .floated-label .label-text {
-			color: #3ea346;
-		}
-
-		.input-style /deep/ .focused-underline {
-			background-color: #3ea346;
-		}
-
-		.input-style.invalid /deep/ .floated-label .label-text, .input-style /deep/ .error {
-			color: #3ea346;
-		}
-
-		.input-style.invalid /deep/ .focused-underline {
-			background-color: #3ea346;
-		}
-
-		.input-style {
-			color: #3ea346;
-			text-align: left;
-		}
-
-			.input-style /deep/ textarea, .input-style /deep/ input {
-				color: black;
-			}
-
 		content-section:first-of-type h2, content-section:nth-of-type(2) h2 {
 			margin-bottom: 0;
 		}
@@ -170,6 +125,15 @@
 			color: rgb(153, 153, 153);
 			text-decoration: none;
 		}
+
+		neon-animated-pages {
+			@apply(--layout-flex);
+		}
+		neon-animatable {
+			@apply(--layout-horizontal);
+			@apply(--layout-center-center);
+		}
+
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
 
@@ -181,7 +145,7 @@
 			<paper-icon-button icon="menu" on-tap="toggleMenu"></paper-icon-button>
 			<span class="title">Admin Panel</span>
 			<div style="top: -4px;" class="middle fit">
-				<paper-tabs selected="0">
+				<paper-tabs id="tabs" selected="0" on-iron-select="tabSelection">
 					<paper-tab>Schedules</paper-tab>
 					<paper-tab>Panels</paper-tab>
 					<paper-tab>Sessions</paper-tab>
@@ -218,20 +182,56 @@
 				</ul>
 			</section>
 		</section>
-		<content-section>
-			<h2>Schedules</h2>
-			<paper-input id="schedulesearch" class="input-style" label="Name" always-float-label></paper-input>
-			<div horizontal layout>
-				<span flex></span>
-				<paper-button raised on-click="allSchedules">
-					<a style="text-decoration: none; color: white;" href="/admin/schedule/all" target="_blank">Get All</a>
-				</paper-button>
-				<paper-button raised on-click="searchSchedule">
-					Search
-				</paper-button>
-				<span flex></span>
-			</div>
-		</content-section>
+		<neon-animated-pages id="pages" selected="0" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
+			<neon-animatible>
+				<content-section>
+					<h2>Schedules 1</h2>
+					<paper-input id="schedulesearch" class="input-style" label="Name" always-float-label></paper-input>
+					<div horizontal layout>
+						<span flex></span>
+						<paper-button raised on-click="allSchedules">
+							<a style="text-decoration: none; color: white;" href="/admin/schedule/all" target="_blank">Get All</a>
+						</paper-button>
+						<paper-button raised on-click="searchSchedule">
+							Search
+						</paper-button>
+						<span flex></span>
+					</div>
+				</content-section>
+			</neon-animatible>
+			<neon-animatible>
+				<content-section>
+					<h2>Schedules 2</h2>
+					<paper-input id="schedulesearch" class="input-style" label="Name" always-float-label></paper-input>
+					<div horizontal layout>
+						<span flex></span>
+						<paper-button raised on-click="allSchedules">
+							<a style="text-decoration: none; color: white;" href="/admin/schedule/all" target="_blank">Get All</a>
+						</paper-button>
+						<paper-button raised on-click="searchSchedule">
+							Search
+						</paper-button>
+						<span flex></span>
+					</div>
+				</content-section>
+			</neon-animatible>
+			<neon-animatible>
+				<content-section>
+					<h2>Schedules 3</h2>
+					<paper-input id="schedulesearch" class="input-style" label="Name" always-float-label></paper-input>
+					<div horizontal layout>
+						<span flex></span>
+						<paper-button raised on-click="allSchedules">
+							<a style="text-decoration: none; color: white;" href="/admin/schedule/all" target="_blank">Get All</a>
+						</paper-button>
+						<paper-button raised on-click="searchSchedule">
+							Search
+						</paper-button>
+						<span flex></span>
+					</div>
+				</content-section>
+			</neon-animatible>
+		</neon-animated-pages>
 		<paper-toast id="loading" text="Loading..." duration="9999999" swipeDisabled autoCloseDisabled></paper-toast>
 		<paper-toast id="notifier" error text="Something happened" duration="5000"></paper-toast>
 	</template>
@@ -268,6 +268,10 @@
 					}
 				}
 			},
+			ready: function () {
+				// Ensure that the first selected page is always 0 and that the index is a number and not a string
+				this.$.pages.selected = 0;
+			},
 			toggleMenu: function () {
 				this.menuOpened = !this.menuOpened;
 				if (this.menuOpened) {
@@ -275,6 +279,22 @@
 				} else {
 					Polymer.dom(this.$.sidepanel).classList.add("hidden");
 				}
+			},
+			tabSelection: function () {
+				var selected = this.$.tabs.selected;
+				var currentlySelected = this.$.pages.selected;
+				this.$.pages.cancelAnimation();
+				if (selected > currentlySelected) {
+					// Forward animation
+					this.entryAnimation = "slide-from-right-animation";
+					this.exitAnimation = "slide-left-animation";
+				}
+				if (selected < currentlySelected) {
+					// Backward animation
+					this.entryAnimation = "slide-from-left-animation";
+					this.exitAnimation = "slide-right-animation";
+				}
+				this.$.pages.selected = selected;
 			},
 			userResponse: function () {
 				this.user = this.$["user-ajax"].lastResponse;
