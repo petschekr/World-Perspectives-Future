@@ -48,7 +48,6 @@ app.use("/admin", adminRouter);
 app.route("/").get(function (request, response) {
 	fs.readFileAsync("pages/index.html", "utf8")
 		.then(function (html: string) {
-			throw new Error("Something happened!");
 			response.send(html);
 		})
 		.catch(common.handleError.bind(response));
