@@ -39,6 +39,7 @@
     </TypeScriptCompile>
     <TypeScriptCompile Include="routes\user.ts" />
     <TypeScriptCompile Include="Scripts\typings\bluebird\bluebird.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\cheerio\cheerio.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\body-parser.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\compression.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\cookie-parser.d.ts" />
@@ -53,6 +54,7 @@
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <Content Include="bower.json" />
     <Content Include="package.json" />
+    <Content Include="pages\about.html" />
     <Content Include="pages\index.html" />
     <Content Include="pages\invalidcode.html" />
     <Content Include="public\components\content-panel.html" />
@@ -76,6 +78,7 @@
     <Folder Include="Scripts\typings\mime\" />
     <Folder Include="Scripts\typings\neo4j\" />
     <Folder Include="Scripts\typings\bluebird\" />
+    <Folder Include="Scripts\typings\cheerio\" />
     <Folder Include="Scripts\typings\sendgrid\" />
     <Folder Include="Scripts\typings\node\" />
   </ItemGroup>

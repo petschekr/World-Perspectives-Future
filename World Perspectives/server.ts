@@ -14,6 +14,7 @@ import moment = require("moment");
 var csv = require("csv");
 import SendGrid = require("sendgrid");
 var sendgrid = SendGrid(keys.sendgrid.username, keys.sendgrid.password);
+import cheerio = require("cheerio");
 // Set up the Express server
 import express = require("express");
 import serveStatic = require("serve-static");
@@ -50,6 +51,19 @@ app.route("/").get(function (request, response) {
 		})
 		.catch(common.handleError.bind(response));
 });
+app.route("/about").get(function (request, response) {
+	Promise.all([
+		fs.readFileAsync("pages/about.html", "utf8"),
+		fs.readFileAsync("package.json", "utf8")
+			.then(JSON.parse)
+			.get("version")
+	]).then(function ([aboutHTML, version]) {
+		// Dynamically update the version field to represent the current version from the package.json
+		var $ = cheerio.load(aboutHTML);
+		$("b#app-version").text(version);
+		$("b#node-version").text(process.version);
+		response.send($.html());
+	}).catch(common.handleError.bind(response));
 });
 
 
