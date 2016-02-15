@@ -43,7 +43,7 @@ router.route("/login/:code").get(function (request, response) {
 			// Invalid code
 			fs.readFile("pages/invalidcode.html", "utf8", function (err: Error, html: string) {
 				if (err) {
-					throw err;
+					return common.handleError(err);
 				}
 				response.send(html);
 			});
@@ -60,7 +60,7 @@ router.route("/login/:code").get(function (request, response) {
 			response.redirect("/register");
 		}
 	}).catch(function (err: Error) {
-
+		common.handleError(err);
 	});
 });
 

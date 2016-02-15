@@ -11,8 +11,6 @@ var keys = common.keys;
 var db = common.db;
 import moment = require("moment");
 var csv = require("csv");
-var pusher = require("pushbullet");
-pusher = new pusher(keys.pushbullet);
 import SendGrid = require("sendgrid");
 var sendgrid = SendGrid(keys.sendgrid.username, keys.sendgrid.password);
 // Set up the Express server
@@ -43,18 +41,11 @@ import userRouter = require("./routes/user");
 app.use("/data", dataRouter);
 app.use("/user", userRouter);
 
-function CancelError(message) {
-	this.message = message;
-}
-CancelError.prototype = Object.create(Error.prototype);
-function handleError(error) {
-	console.error(error.stack);
-	// Notify via PushBullet
-	pusher.note({}, "WPP Error", `${new Date().toString()}\n\n${error.stack}`, function () { });
-}
-
-app.route("/").get(function (request, response): void {
+app.route("/").get(function (request, response) {
 	fs.readFile("pages/index.html", "utf8", function (err, html) {
+		if (err) {
+			return common.handleError(err);
+		}
 		response.send(html);
 	});
 });
@@ -62,11 +53,12 @@ app.route("/").get(function (request, response): void {
 
 // 404 page
 app.use(function (request, response, next) {
+	console.info(`Handled 404 for ${request.url}`);
 	response.status(404).send("404 Not found!");
 });
 // Error handling
 app.use(function (err: Error, request, response, next) {
-	handleError(err);
+	common.handleError(err);
 	response.status(500);
 	response.send("An internal server error occurred.");
 });
@@ -74,12 +66,7 @@ app.use(function (err: Error, request, response, next) {
 const PORT = 8080;
 
 // Set up the Socket.io server
-var server = http.createServer(app).listen(PORT, "0.0.0.0", 511, function (): void {
+var server = http.createServer(app).listen(PORT, "0.0.0.0", 511, function () {
 	console.log("HTTP server listening on port " + PORT);
 });
 var io = require("socket.io").listen(server);
-
-/*
-app.get('/', routes.index);
-app.get('/users', user.list);
-*/

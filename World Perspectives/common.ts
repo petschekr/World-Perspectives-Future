@@ -50,6 +50,37 @@ export var authenticateMiddleware = function (request: express.Request, response
 		response.locals.user = user;
 		next();
 	}).catch(function (err: Error) {
-		next(err);
+			handleError(err);
+	});
+};
+
+var pusher = require("pushbullet");
+pusher = Promise.promisifyAll(new pusher(keys.pushbullet));
+// Enumerate active devices to push to in case of an error
+var pushbulletDevices: string[] = [];
+pusher.devicesAsync()
+	.then(function (response) {
+		var devices: any[] = response.devices;
+		for (let device of devices) {
+			if (device.active) {
+				pushbulletDevices.push(device.iden);
+			}
+		}
+	})
+	.catch(function (err: Error) {
+		throw err;
+	});
+export var handleError = function (err: any): void {
+	console.error(err.stack);
+	// Notify via PushBullet
+	var pushbulletPromises: any[] = [];
+	for (let deviceIden of pushbulletDevices) {
+		pushbulletPromises.push(pusher.noteAsync(deviceIden, "WPP Error", `${new Date().toString()}\n\n${err.stack}`));
+	}
+	Promise.all(pushbulletPromises).then(function () {
+		console.log("Error report sent via Pushbullet");
+	}).catch(function (err: Error) {
+		console.error("Error encountered while sending error report via Pushbullet");
+		console.error(err);
 	});
 };
