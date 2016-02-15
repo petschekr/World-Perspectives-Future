@@ -4,13 +4,12 @@ import express = require("express");
 var router = express.Router();
 
 router.route("/schedule").get(function (request, response) {
-    db.cypher({
+    db.cypherAsync({
 		query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.time AS time, item.location AS location, item.editable AS editable"
-	}, function (err: Error, results) {
-		if (err) {
-			return common.handleError(err);
-		}
+	}).then(function (results) {
 		response.json(results);
+	}).catch(function (err: Error) {
+		common.handleError(err);
 	});
 });
 
