@@ -52,8 +52,8 @@ app.route("/").get(function (request, response) {
 
 
 // 404 page
-app.use(function (request, response, next) {
-	console.info(`Handled 404 for ${request.url}`);
+app.use(common.authenticateMiddleware, function (request, response, next) {
+	console.info(`Handled 404 for ${request.url} by ${!!response.locals.user ? response.locals.user.username : "unauthenticated"} (${request.ip}) at ${new Date().toString()}`);
 	response.status(404).send("404 Not found!");
 });
 // Error handling
