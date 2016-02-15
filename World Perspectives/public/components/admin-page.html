@@ -1,5 +1,6 @@
 ﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
 <link rel="import" href="/bower_components/paper-toolbar/paper-toolbar.html" />
+<link rel="import" href="/bower_components/paper-tabs/paper-tabs.html" />
 <link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
 <link rel="import" href="/bower_components/paper-menu/paper-menu.html" />
 <link rel="import" href="/bower_components/paper-item/paper-item.html" />
@@ -29,6 +30,7 @@
 			color: #f1f1f1;
 			fill: #f1f1f1;
 			z-index: 150;
+			height: calc(64px * 2 - 20px) !important;
 		}
 			paper-toolbar span.title {
 				font-size: 125%;
@@ -39,6 +41,18 @@
 				user-select: none;
 				cursor: default;
 			}
+		paper-tabs {
+			--paper-tabs-selection-bar-color: #C4E9C7;
+			--paper-tabs-selection-bar: {
+				height: 3px;
+			}
+		}
+		paper-tab {
+			--paper-tab-ink: #3e77a3;
+			--paper-tab-content-unselected: {
+				font-weight: normal;
+			}
+		}
 
 		paper-toast {
 			width: 100%;
@@ -162,16 +176,20 @@
 		}
 	</style>
 	<template>
-		<iron-ajax id="info-ajax" auto url="/info" handle-as="json" on-response="userResponse" on-error="handleError"></iron-ajax>
-		<iron-ajax id="panels-ajax" auto url="/admin/panels/all/info" handle-as="json" on-response="panelsResponse" on-error="handleError"></iron-ajax>
-		<iron-ajax id="sessions-ajax" auto url="/admin/sessions/all/info" handle-as="json" on-response="sessionsResponse" on-error="handleError"></iron-ajax>
-		<iron-ajax id="add-students-ajax" method="POST" url="/admin/add/students" handle-as="json" on-response="addStudentsResponse" on-error="handleError"></iron-ajax>
-		<iron-ajax id="add-faculty-ajax" method="POST" url="/admin/add/faculty" handle-as="json" on-response="addFacultyResponse" on-error="handleError"></iron-ajax>
-		<iron-ajax id="send-emails-ajax" method="POST" url="/admin/send" handle-as="json" on-response="sendEmailsResponse" on-error="handleError"></iron-ajax>
-		<iron-ajax id="search-schedule-ajax" url="/admin/schedule/search" handle-as="json" on-response="seachScheduleResponse" on-error="handleError"></iron-ajax>
-		<paper-toolbar>
+		<iron-ajax id="user-ajax" auto url="/user" handle-as="json" on-response="userResponse" on-error="handleError"></iron-ajax>
+		<paper-toolbar class="medium-tall">
 			<paper-icon-button icon="menu" on-tap="toggleMenu"></paper-icon-button>
 			<span class="title">Admin Panel</span>
+			<div style="top: -4px;" class="middle fit">
+				<paper-tabs selected="0">
+					<paper-tab>Schedules</paper-tab>
+					<paper-tab>Panels</paper-tab>
+					<paper-tab>Sessions</paper-tab>
+					<paper-tab>Add Students</paper-tab>
+					<paper-tab>Add Faculty</paper-tab>
+					<paper-tab>Send Emails</paper-tab>
+				</paper-tabs>
+			</div>
 		</paper-toolbar>
 		<section id="sidepanel" class="hidden">
 			<paper-icon-button icon="arrow-back" on-tap="toggleMenu"></paper-icon-button>
@@ -203,9 +221,6 @@
 		<content-section>
 			<h2>Schedules</h2>
 			<paper-input id="schedulesearch" class="input-style" label="Name" always-float-label></paper-input>
-			<template is="dom-repeat" items="{{searchResults}}" as="result">
-				<p><a style="color: black;" target="_blank" href$="{{_computeHref(result)}}">{{result.name}}</a></p>
-			</template>
 			<div horizontal layout>
 				<span flex></span>
 				<paper-button raised on-click="allSchedules">
@@ -217,83 +232,7 @@
 				<span flex></span>
 			</div>
 		</content-section>
-		<content-section>
-			<h2>Panels</h2>
-			<template is="dom-if" if="{{_computeIf(panels)}}">
-				<p><em>Loading...</em></p>
-			</template>
-			<template is="dom-repeat" items="{{panels}}" as="panel">
-				<p>
-					<a style="color: black; text-decoration: none;" target="{{_computeHref2(panel)}}" href$="{{_computeHref(panel)}}">
-						<span>{{panel.name}}</span>
-						<br>
-						<small><strong>(<span>{{panel.panelists}}</span>)</strong></small>
-					</a>
-				</p>
-			</template>
-			<paper-button raised>
-				<a style="text-decoration: none; color: white;" href="/admin/panels/all" target="_blank">See All</a>
-			</paper-button>
-		</content-section>
-		<content-section>
-			<h2>Sessions</h2>
-			<template is="dom-if" if="{{_computeIf2(sessions)}}">
-				<p><em>Loading...</em></p>
-			</template>
-			<template is="dom-repeat" items="{{sessions}}" as="session">
-				<p>
-					<a style="color: black; text-decoration: none;" target="{{_computeHref3(session)}}" href$="{{_computeHref(session)}}">
-						<span>{{session.name}}</span>
-						<br>
-						<small><strong>(<span>{{session.presenter}}</span>)</strong></small>
-					</a>
-				</p>
-			</template>
-			<paper-button raised>
-				<a style="text-decoration: none; color: white;" href="/admin/sessions/all" target="_blank">See All</a>
-			</paper-button>
-		</content-section>
-		<content-section id="addstudents">
-			<h2>Add students</h2>
-			<paper-input-decorator class="input-style" label="Paste .csv file of students" floatinglabel>
-				<paper-autogrow-textarea>
-					<textarea></textarea>
-				</paper-autogrow-textarea>
-			</paper-input-decorator>
-			<div horizontal layout>
-				<span flex></span>
-				<paper-button raised on-click="addStudents">
-					Add
-				</paper-button>
-				<span flex></span>
-			</div>
-		</content-section>
-		<content-section id="addfaculty">
-			<h2>Add faculty</h2>
-			<paper-input-decorator class="input-style" label="Paste .csv file of faculty" floatinglabel>
-				<paper-autogrow-textarea>
-					<textarea></textarea>
-				</paper-autogrow-textarea>
-			</paper-input-decorator>
-			<div horizontal layout>
-				<span flex></span>
-				<paper-button raised on-click="addFaculty">
-					Add
-				</paper-button>
-				<span flex></span>
-			</div>
-		</content-section>
-		<content-section id="sendemails">
-			<h2>Send Registration Emails</h2>
-			<div horizontal layout>
-				<span flex></span>
-				<paper-button raised on-click="sendEmails">
-					Send
-				</paper-button>
-				<span flex></span>
-			</div>
-		</content-section>
-		<paper-toast id="loading" text="Loading..." duration="9999999" swipedisabled autoclosedisabled></paper-toast>
+		<paper-toast id="loading" text="Loading..." duration="9999999" swipeDisabled autoCloseDisabled></paper-toast>
 		<paper-toast id="notifier" error text="Something happened" duration="5000"></paper-toast>
 	</template>
 	<script>
@@ -338,87 +277,13 @@
 				}
 			},
 			userResponse: function () {
-				this.user = this.$["info-ajax"].response;
+				this.user = this.$["user-ajax"].lastResponse;
 				window.user = this.user;
-			},
-			addStudents: function () {
-				var data = Polymer.dom(this.$.addstudents).querySelector("textarea").value.trim();
-				if (!data)
-					return;
-				var sendData = { "data": data };
-				this.set("$.add-students-ajax.params", JSON.stringify(sendData));
-				this.$["add-students-ajax"].go();
-				this.$.loading.show();
-			},
-			addStudentsResponse: function () {
-				this.$.loading.dismiss();
-				Polymer.dom(this.$.addstudents).querySelector("textarea").value = "";
-				Polymer.dom(this.$.addstudents).querySelector("textarea").blur();
-			},
-			addFaculty: function () {
-				var data = Polymer.dom(this.$.addfaculty).querySelector("textarea").value.trim();
-				if (!data)
-					return;
-				var sendData = { "data": data };
-				this.set("$.add-faculty-ajax.params", JSON.stringify(sendData));
-				this.$["add-faculty-ajax"].go();
-				this.$.loading.show();
-			},
-			addFacultyResponse: function () {
-				this.$.loading.dismiss();
-				Polymer.dom(this.$.addfaculty).querySelector("textarea").value = "";
-				Polymer.dom(this.$.addfaculty).querySelector("textarea").blur();
-			},
-			sendEmails: function () {
-				var shouldSend = confirm("Are you sure you want to send out registration emails?");
-				if (shouldSend) {
-					this.$["send-emails-ajax"].go();
-					this.$.loading.show();
-				}
-			},
-			sendEmailsResponse: function () {
-				this.$.loading.dismiss();
-				Polymer.dom(this.$.sendemails).querySelector("paper-button").disabled = true;
-				Polymer.dom(this.$.sendemails).querySelector("paper-button").style.backgroundColor = "grey";
-			},
-			searchSchedule: function () {
-				var query = this.$.schedulesearch.value;
-				this.set("$.search-schedule-ajax.params", JSON.stringify({ q: query }));
-				this.$["search-schedule-ajax"].go();
-				this.$.loading.show();
-			},
-			seachScheduleResponse: function () {
-				this.$.loading.dismiss();
-				this.searchResults = this.$["search-schedule-ajax"].response.results;
-			},
-			panelsResponse: function () {
-				this.panels = this.$["panels-ajax"].response;
-				for (var i = 0; i < this.panels.length; i++) {
-					this.set("panels" + ("." + i) + ".panelists", this.panels[i].panelists.join(", "));
-				}
-			},
-			sessionsResponse: function () {
-				this.sessions = this.$["sessions-ajax"].response;
 			},
 			handleError: function (e) {
 				this.$.loading.dismiss();
 				this.set("$.notifier.text", e.detail.response.response.error || "An error occurred!");
 				this.$.notifier.show();
-			},
-			_computeIf: function (panels) {
-				return panels.length == 0;
-			},
-			_computeIf2: function (sessions) {
-				return sessions.length == 0;
-			},
-			_computeHref: function (result) {
-				return "/admin/schedule/get/" + result.username;
-			},
-			_computeHref2: function (panel) {
-				return "/admin/panels/get/" + panel.id;
-			},
-			_computeHref3: function (session) {
-				return "/admin/sessions/get/" + session.id;
 			}
 		});
 	</script>
