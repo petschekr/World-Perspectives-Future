@@ -3,6 +3,13 @@ import express = require("express");
 import Promise = require("bluebird");
 var neo4j = require("neo4j");
 
+export interface User {
+	"code": String;
+	"name": String;
+	"username": String;
+	"registered": Boolean;
+	"admin": Boolean;
+}
 export var keys: {
 	"orchestrate": string;
 	"neo4j": {

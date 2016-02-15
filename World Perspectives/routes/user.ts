@@ -4,13 +4,7 @@ var db = common.db;
 import express = require("express");
 var router = express.Router();
 
-interface User {
-	"code": String;
-	"name": String;
-	"username": String;
-	"registered": Boolean;
-	"admin": Boolean;
-}
+interface User extends common.User { };
 
 router.route("/").get(common.authenticateMiddleware, function (request, response) {
     if (response.locals.authenticated) {
