@@ -298,7 +298,7 @@
 	</template>
 	<script>
 		Polymer({
-			is: 'admin-page',
+			is: "admin-page",
 			properties: {
 				menuOpened: {
 					type: Boolean,
@@ -325,84 +325,84 @@
 				user: {
 					type: Object,
 					value: function () {
-						return { name: 'Loading...' };
+						return { name: "Loading..." };
 					}
 				}
 			},
 			toggleMenu: function () {
 				this.menuOpened = !this.menuOpened;
 				if (this.menuOpened) {
-					Polymer.dom(this.$.sidepanel).classList.remove('hidden');
+					Polymer.dom(this.$.sidepanel).classList.remove("hidden");
 				} else {
-					Polymer.dom(this.$.sidepanel).classList.add('hidden');
+					Polymer.dom(this.$.sidepanel).classList.add("hidden");
 				}
 			},
 			userResponse: function () {
-				this.user = this.$['info-ajax'].response;
+				this.user = this.$["info-ajax"].response;
 				window.user = this.user;
 			},
 			addStudents: function () {
-				var data = Polymer.dom(this.$.addstudents).querySelector('textarea').value.trim();
+				var data = Polymer.dom(this.$.addstudents).querySelector("textarea").value.trim();
 				if (!data)
 					return;
-				var sendData = { 'data': data };
-				this.set('$.add-students-ajax.params', JSON.stringify(sendData));
-				this.$['add-students-ajax'].go();
+				var sendData = { "data": data };
+				this.set("$.add-students-ajax.params", JSON.stringify(sendData));
+				this.$["add-students-ajax"].go();
 				this.$.loading.show();
 			},
 			addStudentsResponse: function () {
 				this.$.loading.dismiss();
-				Polymer.dom(this.$.addstudents).querySelector('textarea').value = '';
-				Polymer.dom(this.$.addstudents).querySelector('textarea').blur();
+				Polymer.dom(this.$.addstudents).querySelector("textarea").value = "";
+				Polymer.dom(this.$.addstudents).querySelector("textarea").blur();
 			},
 			addFaculty: function () {
-				var data = Polymer.dom(this.$.addfaculty).querySelector('textarea').value.trim();
+				var data = Polymer.dom(this.$.addfaculty).querySelector("textarea").value.trim();
 				if (!data)
 					return;
-				var sendData = { 'data': data };
-				this.set('$.add-faculty-ajax.params', JSON.stringify(sendData));
-				this.$['add-faculty-ajax'].go();
+				var sendData = { "data": data };
+				this.set("$.add-faculty-ajax.params", JSON.stringify(sendData));
+				this.$["add-faculty-ajax"].go();
 				this.$.loading.show();
 			},
 			addFacultyResponse: function () {
 				this.$.loading.dismiss();
-				Polymer.dom(this.$.addfaculty).querySelector('textarea').value = '';
-				Polymer.dom(this.$.addfaculty).querySelector('textarea').blur();
+				Polymer.dom(this.$.addfaculty).querySelector("textarea").value = "";
+				Polymer.dom(this.$.addfaculty).querySelector("textarea").blur();
 			},
 			sendEmails: function () {
-				var shouldSend = confirm('Are you sure you want to send out registration emails?');
+				var shouldSend = confirm("Are you sure you want to send out registration emails?");
 				if (shouldSend) {
-					this.$['send-emails-ajax'].go();
+					this.$["send-emails-ajax"].go();
 					this.$.loading.show();
 				}
 			},
 			sendEmailsResponse: function () {
 				this.$.loading.dismiss();
-				Polymer.dom(this.$.sendemails).querySelector('paper-button').disabled = true;
-				Polymer.dom(this.$.sendemails).querySelector('paper-button').style.backgroundColor = 'grey';
+				Polymer.dom(this.$.sendemails).querySelector("paper-button").disabled = true;
+				Polymer.dom(this.$.sendemails).querySelector("paper-button").style.backgroundColor = "grey";
 			},
 			searchSchedule: function () {
 				var query = this.$.schedulesearch.value;
-				this.set('$.search-schedule-ajax.params', JSON.stringify({ q: query }));
-				this.$['search-schedule-ajax'].go();
+				this.set("$.search-schedule-ajax.params", JSON.stringify({ q: query }));
+				this.$["search-schedule-ajax"].go();
 				this.$.loading.show();
 			},
 			seachScheduleResponse: function () {
 				this.$.loading.dismiss();
-				this.searchResults = this.$['search-schedule-ajax'].response.results;
+				this.searchResults = this.$["search-schedule-ajax"].response.results;
 			},
 			panelsResponse: function () {
-				this.panels = this.$['panels-ajax'].response;
+				this.panels = this.$["panels-ajax"].response;
 				for (var i = 0; i < this.panels.length; i++) {
-					this.set('panels' + ('.' + i) + '.panelists', this.panels[i].panelists.join(', '));
+					this.set("panels" + ("." + i) + ".panelists", this.panels[i].panelists.join(", "));
 				}
 			},
 			sessionsResponse: function () {
-				this.sessions = this.$['sessions-ajax'].response;
+				this.sessions = this.$["sessions-ajax"].response;
 			},
 			handleError: function (e) {
 				this.$.loading.dismiss();
-				this.set('$.notifier.text', e.detail.response.response.error || 'An error occurred!');
+				this.set("$.notifier.text", e.detail.response.response.error || "An error occurred!");
 				this.$.notifier.show();
 			},
 			_computeIf: function (panels) {
@@ -412,13 +412,13 @@
 				return sessions.length == 0;
 			},
 			_computeHref: function (result) {
-				return '/admin/schedule/get/' + result.username;
+				return "/admin/schedule/get/" + result.username;
 			},
 			_computeHref2: function (panel) {
-				return '/admin/panels/get/' + panel.id;
+				return "/admin/panels/get/" + panel.id;
 			},
 			_computeHref3: function (session) {
-				return '/admin/sessions/get/' + session.id;
+				return "/admin/sessions/get/" + session.id;
 			}
 		});
 	</script>
