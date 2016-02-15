@@ -53,9 +53,7 @@ router.route("/login/:code").get(function (request, response) {
 		else {
 			response.redirect("/register");
 		}
-	}).catch(function (err: Error) {
-		common.handleError(err);
-	});
+	}).catch(common.handleError.bind(response));
 });
 
 export = router;

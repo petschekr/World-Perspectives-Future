@@ -8,9 +8,7 @@ router.route("/schedule").get(function (request, response) {
 		query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.time AS time, item.location AS location, item.editable AS editable"
 	}).then(function (results) {
 		response.json(results);
-	}).catch(function (err: Error) {
-		common.handleError(err);
-	});
+	}).catch(common.handleError.bind(response));
 });
 
 export = router;

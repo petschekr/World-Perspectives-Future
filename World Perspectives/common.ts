@@ -56,9 +56,7 @@ export var authenticateMiddleware = function (request: express.Request, response
 		response.locals.authenticated = loggedIn;
 		response.locals.user = user;
 		next();
-	}).catch(function (err: Error) {
-			handleError(err);
-	});
+	}).catch(handleError.bind(response));
 };
 
 var pusher = require("pushbullet");
@@ -79,6 +77,18 @@ pusher.devicesAsync()
 	});
 export var handleError = function (err: any): void {
 	console.error(err.stack);
+
+	// Check if this error occurred while responding to a request
+	if (this.status && this.send) {
+		var response: express.Response = this;
+		response.status(500);
+		response.send("An internal server error occurred.");
+	}
+
+	const debugging: boolean = true;
+	if (debugging) {
+		return;
+	}
 	// Notify via PushBullet
 	var pushbulletPromises: any[] = [];
 	for (let deviceIden of pushbulletDevices) {

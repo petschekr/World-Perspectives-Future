@@ -1,6 +1,7 @@
-﻿// Node.js libraries
+﻿import Promise = require("bluebird");
+// Node.js libraries
 import crypto = require("crypto");
-import fs = require("fs");
+var fs = Promise.promisifyAll(require("fs"));
 import http = require("http");
 import https = require("https");
 import urllib = require("url");
@@ -42,12 +43,13 @@ app.use("/data", dataRouter);
 app.use("/user", userRouter);
 
 app.route("/").get(function (request, response) {
-	fs.readFile("pages/index.html", "utf8", function (err, html) {
-		if (err) {
-			return common.handleError(err);
-		}
-		response.send(html);
-	});
+	fs.readFileAsync("pages/index.html", "utf8")
+		.then(function (html: string) {
+			throw new Error("Something happened!");
+			response.send(html);
+		})
+		.catch(common.handleError.bind(response));
+});
 });
 
 
@@ -56,11 +58,9 @@ app.use(common.authenticateMiddleware, function (request, response, next) {
 	console.info(`Handled 404 for ${request.url} by ${!!response.locals.user ? response.locals.user.username : "unauthenticated"} (${request.ip}) at ${new Date().toString()}`);
 	response.status(404).send("404 Not found!");
 });
-// Error handling
+// Generic error handling
 app.use(function (err: Error, request, response, next) {
-	common.handleError(err);
-	response.status(500);
-	response.send("An internal server error occurred.");
+	common.handleError.bind(response)(err);
 });
 
 const PORT = 8080;
