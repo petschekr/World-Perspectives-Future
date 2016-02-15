@@ -1,0 +1,425 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/paper-toolbar/paper-toolbar.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/paper-menu/paper-menu.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-input/paper-input.html" />
+<link rel="import" href="/bower_components/paper-input/paper-input-decorator.html" />
+<link rel="import" href="/bower_components/paper-input/paper-autogrow-textarea.html" />
+<link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
+<link rel="import" href="/components/content-section.html" />
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html" />
+<dom-module id="admin-page">
+	<style>
+		/* TODO(polyup): For speed, consider reworking these styles with .classes
+						 and #ids rather than [attributes].
+		*/
+		[layout] {
+			@apply(--layout);
+		}
+			[layout][horizontal] {
+				@apply(--layout-horizontal);
+			}
+	</style>
+	<style>
+		paper-toolbar {
+			background: #3ea346;
+			color: #f1f1f1;
+			fill: #f1f1f1;
+			z-index: 150;
+		}
+			paper-toolbar span.title {
+				font-size: 125%;
+				text-align: center;
+				-webkit-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+				cursor: default;
+			}
+
+		paper-toast {
+			width: 100%;
+			bottom: 0;
+			left: 0;
+			border-radius: 0;
+			text-align: center;
+		}
+			paper-toast[error] {
+				background-color: #ff4136;
+			}
+
+		:host {
+			height: 100%;
+		}
+
+		#sidepanel {
+			height: 100%;
+			background-color: white;
+			width: 256px;
+			transition: margin-left 0.3s;
+			position: fixed;
+			top: 0px;
+			box-shadow: 0 0 6px rgba(0,0,0,0.3);
+			z-index: 200;
+		}
+
+			#sidepanel.hidden {
+				margin-left: -256px;
+			}
+			#sidepanel paper-icon-button {
+				top: 12px;
+				left: 15px;
+			}
+		paper-menu paper-item {
+			padding-left: 24px;
+		}
+		paper-menu paper-item iron-icon {
+			padding-right: 8px;
+		}
+
+		section.minor {
+			color: rgb(153, 153, 153);
+			position: absolute;
+			bottom: 0;
+			width: 100%;
+		}
+			section.minor ul {
+				list-style: none;
+				padding-left: 0;
+			}
+			section.minor paper-button {
+				margin-left: 10px;
+				margin-right: 10px;
+				width: calc(100% - 20px);
+			}
+				section.minor paper-button:hover {
+					color: black;
+				}
+
+		.input-style /deep/ ::-webkit-input-placeholder {
+			color: #3ea346;
+		}
+
+		.input-style /deep/ ::-moz-placeholder {
+			color: #3ea346;
+		}
+
+		.input-style /deep/ :-ms-input-placeholder {
+			color: #3ea346;
+		}
+
+		.input-style /deep/ .floated-label .label-text, .input-style /deep/ .error {
+			color: #3ea346;
+		}
+
+		.input-style /deep/ .unfocused-underline {
+			background-color: #3ea346;
+		}
+
+		.input-style[focused] /deep/ .floated-label .label-text {
+			color: #3ea346;
+		}
+
+		.input-style /deep/ .focused-underline {
+			background-color: #3ea346;
+		}
+
+		.input-style.invalid /deep/ .floated-label .label-text, .input-style /deep/ .error {
+			color: #3ea346;
+		}
+
+		.input-style.invalid /deep/ .focused-underline {
+			background-color: #3ea346;
+		}
+
+		.input-style {
+			color: #3ea346;
+			text-align: left;
+		}
+
+			.input-style /deep/ textarea, .input-style /deep/ input {
+				color: black;
+			}
+
+		content-section:first-of-type h2, content-section:nth-of-type(2) h2 {
+			margin-bottom: 0;
+		}
+
+		paper-button[raised] {
+			background: #3ea346;
+			color: #fff;
+		}
+		paper-button a {
+			color: rgb(153, 153, 153);
+			text-decoration: none;
+		}
+		/* Mobile styles */
+		@media screen and (max-width: 35.5em) {
+
+		}
+	</style>
+	<template>
+		<iron-ajax id="info-ajax" auto url="/info" handle-as="json" on-response="userResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="panels-ajax" auto url="/admin/panels/all/info" handle-as="json" on-response="panelsResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="sessions-ajax" auto url="/admin/sessions/all/info" handle-as="json" on-response="sessionsResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="add-students-ajax" method="POST" url="/admin/add/students" handle-as="json" on-response="addStudentsResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="add-faculty-ajax" method="POST" url="/admin/add/faculty" handle-as="json" on-response="addFacultyResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="send-emails-ajax" method="POST" url="/admin/send" handle-as="json" on-response="sendEmailsResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="search-schedule-ajax" url="/admin/schedule/search" handle-as="json" on-response="seachScheduleResponse" on-error="handleError"></iron-ajax>
+		<paper-toolbar>
+			<paper-icon-button icon="menu" on-tap="toggleMenu"></paper-icon-button>
+			<span class="title">Admin Panel</span>
+		</paper-toolbar>
+		<section id="sidepanel" class="hidden">
+			<paper-icon-button icon="arrow-back" on-tap="toggleMenu"></paper-icon-button>
+			<paper-menu selected="1">
+				<paper-item>
+					<iron-icon icon="event"></iron-icon>
+					<span>Schedule</span>
+				</paper-item>
+				<paper-item on-tap="admin">
+					<iron-icon icon="settings"></iron-icon>
+					<span>Admin Panel</span>
+				</paper-item>
+			</paper-menu>
+			<section class="minor">
+				<ul>
+					<li id="about">
+						<paper-button noink>
+							<a href="/about">About</a>
+						</paper-button>
+					</li>
+					<li id="contact">
+						<paper-button noink>
+							<a href="mailto:petschekr@gfacademy.org">Contact</a>
+						</paper-button>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<content-section>
+			<h2>Schedules</h2>
+			<paper-input id="schedulesearch" class="input-style" label="Name" always-float-label></paper-input>
+			<template is="dom-repeat" items="{{searchResults}}" as="result">
+				<p><a style="color: black;" target="_blank" href$="{{_computeHref(result)}}">{{result.name}}</a></p>
+			</template>
+			<div horizontal layout>
+				<span flex></span>
+				<paper-button raised on-click="allSchedules">
+					<a style="text-decoration: none; color: white;" href="/admin/schedule/all" target="_blank">Get All</a>
+				</paper-button>
+				<paper-button raised on-click="searchSchedule">
+					Search
+				</paper-button>
+				<span flex></span>
+			</div>
+		</content-section>
+		<content-section>
+			<h2>Panels</h2>
+			<template is="dom-if" if="{{_computeIf(panels)}}">
+				<p><em>Loading...</em></p>
+			</template>
+			<template is="dom-repeat" items="{{panels}}" as="panel">
+				<p>
+					<a style="color: black; text-decoration: none;" target="{{_computeHref2(panel)}}" href$="{{_computeHref(panel)}}">
+						<span>{{panel.name}}</span>
+						<br>
+						<small><strong>(<span>{{panel.panelists}}</span>)</strong></small>
+					</a>
+				</p>
+			</template>
+			<paper-button raised>
+				<a style="text-decoration: none; color: white;" href="/admin/panels/all" target="_blank">See All</a>
+			</paper-button>
+		</content-section>
+		<content-section>
+			<h2>Sessions</h2>
+			<template is="dom-if" if="{{_computeIf2(sessions)}}">
+				<p><em>Loading...</em></p>
+			</template>
+			<template is="dom-repeat" items="{{sessions}}" as="session">
+				<p>
+					<a style="color: black; text-decoration: none;" target="{{_computeHref3(session)}}" href$="{{_computeHref(session)}}">
+						<span>{{session.name}}</span>
+						<br>
+						<small><strong>(<span>{{session.presenter}}</span>)</strong></small>
+					</a>
+				</p>
+			</template>
+			<paper-button raised>
+				<a style="text-decoration: none; color: white;" href="/admin/sessions/all" target="_blank">See All</a>
+			</paper-button>
+		</content-section>
+		<content-section id="addstudents">
+			<h2>Add students</h2>
+			<paper-input-decorator class="input-style" label="Paste .csv file of students" floatinglabel>
+				<paper-autogrow-textarea>
+					<textarea></textarea>
+				</paper-autogrow-textarea>
+			</paper-input-decorator>
+			<div horizontal layout>
+				<span flex></span>
+				<paper-button raised on-click="addStudents">
+					Add
+				</paper-button>
+				<span flex></span>
+			</div>
+		</content-section>
+		<content-section id="addfaculty">
+			<h2>Add faculty</h2>
+			<paper-input-decorator class="input-style" label="Paste .csv file of faculty" floatinglabel>
+				<paper-autogrow-textarea>
+					<textarea></textarea>
+				</paper-autogrow-textarea>
+			</paper-input-decorator>
+			<div horizontal layout>
+				<span flex></span>
+				<paper-button raised on-click="addFaculty">
+					Add
+				</paper-button>
+				<span flex></span>
+			</div>
+		</content-section>
+		<content-section id="sendemails">
+			<h2>Send Registration Emails</h2>
+			<div horizontal layout>
+				<span flex></span>
+				<paper-button raised on-click="sendEmails">
+					Send
+				</paper-button>
+				<span flex></span>
+			</div>
+		</content-section>
+		<paper-toast id="loading" text="Loading..." duration="9999999" swipedisabled autoclosedisabled></paper-toast>
+		<paper-toast id="notifier" error text="Something happened" duration="5000"></paper-toast>
+	</template>
+	<script>
+		Polymer({
+			is: 'admin-page',
+			properties: {
+				menuOpened: {
+					type: Boolean,
+					value: false
+				},
+				panels: {
+					type: Array,
+					value: function () {
+						return [];
+					}
+				},
+				schedule: {
+					type: Array,
+					value: function () {
+						return [];
+					}
+				},
+				sessions: {
+					type: Array,
+					value: function () {
+						return [];
+					}
+				},
+				user: {
+					type: Object,
+					value: function () {
+						return { name: 'Loading...' };
+					}
+				}
+			},
+			toggleMenu: function () {
+				this.menuOpened = !this.menuOpened;
+				if (this.menuOpened) {
+					Polymer.dom(this.$.sidepanel).classList.remove('hidden');
+				} else {
+					Polymer.dom(this.$.sidepanel).classList.add('hidden');
+				}
+			},
+			userResponse: function () {
+				this.user = this.$['info-ajax'].response;
+				window.user = this.user;
+			},
+			addStudents: function () {
+				var data = Polymer.dom(this.$.addstudents).querySelector('textarea').value.trim();
+				if (!data)
+					return;
+				var sendData = { 'data': data };
+				this.set('$.add-students-ajax.params', JSON.stringify(sendData));
+				this.$['add-students-ajax'].go();
+				this.$.loading.show();
+			},
+			addStudentsResponse: function () {
+				this.$.loading.dismiss();
+				Polymer.dom(this.$.addstudents).querySelector('textarea').value = '';
+				Polymer.dom(this.$.addstudents).querySelector('textarea').blur();
+			},
+			addFaculty: function () {
+				var data = Polymer.dom(this.$.addfaculty).querySelector('textarea').value.trim();
+				if (!data)
+					return;
+				var sendData = { 'data': data };
+				this.set('$.add-faculty-ajax.params', JSON.stringify(sendData));
+				this.$['add-faculty-ajax'].go();
+				this.$.loading.show();
+			},
+			addFacultyResponse: function () {
+				this.$.loading.dismiss();
+				Polymer.dom(this.$.addfaculty).querySelector('textarea').value = '';
+				Polymer.dom(this.$.addfaculty).querySelector('textarea').blur();
+			},
+			sendEmails: function () {
+				var shouldSend = confirm('Are you sure you want to send out registration emails?');
+				if (shouldSend) {
+					this.$['send-emails-ajax'].go();
+					this.$.loading.show();
+				}
+			},
+			sendEmailsResponse: function () {
+				this.$.loading.dismiss();
+				Polymer.dom(this.$.sendemails).querySelector('paper-button').disabled = true;
+				Polymer.dom(this.$.sendemails).querySelector('paper-button').style.backgroundColor = 'grey';
+			},
+			searchSchedule: function () {
+				var query = this.$.schedulesearch.value;
+				this.set('$.search-schedule-ajax.params', JSON.stringify({ q: query }));
+				this.$['search-schedule-ajax'].go();
+				this.$.loading.show();
+			},
+			seachScheduleResponse: function () {
+				this.$.loading.dismiss();
+				this.searchResults = this.$['search-schedule-ajax'].response.results;
+			},
+			panelsResponse: function () {
+				this.panels = this.$['panels-ajax'].response;
+				for (var i = 0; i < this.panels.length; i++) {
+					this.set('panels' + ('.' + i) + '.panelists', this.panels[i].panelists.join(', '));
+				}
+			},
+			sessionsResponse: function () {
+				this.sessions = this.$['sessions-ajax'].response;
+			},
+			handleError: function (e) {
+				this.$.loading.dismiss();
+				this.set('$.notifier.text', e.detail.response.response.error || 'An error occurred!');
+				this.$.notifier.show();
+			},
+			_computeIf: function (panels) {
+				return panels.length == 0;
+			},
+			_computeIf2: function (sessions) {
+				return sessions.length == 0;
+			},
+			_computeHref: function (result) {
+				return '/admin/schedule/get/' + result.username;
+			},
+			_computeHref2: function (panel) {
+				return '/admin/panels/get/' + panel.id;
+			},
+			_computeHref3: function (session) {
+				return '/admin/sessions/get/' + session.id;
+			}
+		});
+	</script>
+</dom-module>

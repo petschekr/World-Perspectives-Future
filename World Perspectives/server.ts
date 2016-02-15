@@ -40,8 +40,10 @@ app.use("/img", serveStatic("public/img"));
 // Routes
 import dataRouter = require("./routes/data");
 import userRouter = require("./routes/user");
+import adminRouter = require("./routes/admin");
 app.use("/data", dataRouter);
 app.use("/user", userRouter);
+app.use("/admin", adminRouter);
 
 app.route("/").get(function (request, response) {
 	fs.readFileAsync("pages/index.html", "utf8")

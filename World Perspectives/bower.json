@@ -28,6 +28,8 @@
     "paper-toolbar": "PolymerElements/paper-toolbar#^1.1.4",
     "paper-icon-button": "PolymerElements/paper-icon-button#^1.0.6",
     "paper-behaviors": "PolymerElements/paper-behaviors#^1.0.11",
-    "paper-material": "PolymerElements/paper-material#^1.0.6"
+    "paper-material": "PolymerElements/paper-material#^1.0.6",
+    "paper-input": "PolymerElements/paper-input#^1.1.6",
+    "paper-toast": "PolymerElements/paper-toast#^1.1.3"
   }
 }
