@@ -12,6 +12,8 @@
 <link rel="import" href="/bower_components/neon-animation/neon-animated-pages.html" />
 <link rel="import" href="/bower_components/neon-animation/neon-animatable.html" />
 <link rel="import" href="/bower_components/neon-animation/neon-animations.html" />
+<link rel="import" href="/bower_components/paper-input/paper-input.html" />
+<link rel="import" href="/bower_components/paper-toggle-button/paper-toggle-button.html" />
 <dom-module id="admin-page">
 	<style>
 		/* TODO(polyup): For speed, consider reworking these styles with .classes
@@ -128,12 +130,30 @@
 			text-decoration: none;
 		}
 
+		paper-input {
+			--paper-input-container-focus-color: #3ea346;
+		}
+
+		paper-toggle-button {
+			--paper-toggle-button-checked-bar-color: #3ea346;
+			--paper-toggle-button-checked-button-color: #3ea346;
+			--paper-toggle-button-checked-ink-color: #3ea346;
+		}
+
 		neon-animated-pages {
 			@apply(--layout-flex);
 		}
 		neon-animatable {
 			@apply(--layout-horizontal);
 			@apply(--layout-center-center);
+		}
+
+		div.toggle-button-container {
+			padding-top: 10px;
+			@apply(--layout-horizontal);
+		}
+		div.toggle-button-container .flex {
+			@apply(--layout-flex);
 		}
 
 		/* Mobile styles */
@@ -149,10 +169,9 @@
 			<div style="top: -4px;" class="middle fit">
 				<paper-tabs id="tabs" selected="0" on-iron-select="tabSelection">
 					<paper-tab>Schedules</paper-tab>
-					<paper-tab>Panels</paper-tab>
 					<paper-tab>Sessions</paper-tab>
-					<paper-tab>Add Students</paper-tab>
-					<paper-tab>Add Faculty</paper-tab>
+					<paper-tab>Panels</paper-tab>
+					<paper-tab>Add Users</paper-tab>
 					<paper-tab>Send Emails</paper-tab>
 				</paper-tabs>
 			</div>
@@ -187,50 +206,35 @@
 		<neon-animated-pages id="pages" selected="0" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
 			<neon-animatible>
 				<content-section>
-					<h2>Schedules 1</h2>
-					<paper-input id="schedulesearch" class="input-style" label="Name" always-float-label></paper-input>
-					<div horizontal layout>
-						<span flex></span>
-						<paper-button raised on-click="allSchedules">
-							<a style="text-decoration: none; color: white;" href="/admin/schedule/all" target="_blank">Get All</a>
-						</paper-button>
-						<paper-button raised on-click="searchSchedule">
-							Search
-						</paper-button>
-						<span flex></span>
-					</div>
+					<h2>Schedules</h2>
 				</content-section>
 			</neon-animatible>
 			<neon-animatible>
 				<content-section>
-					<h2>Schedules 2</h2>
-					<paper-input id="schedulesearch" class="input-style" label="Name" always-float-label></paper-input>
-					<div horizontal layout>
-						<span flex></span>
-						<paper-button raised on-click="allSchedules">
-							<a style="text-decoration: none; color: white;" href="/admin/schedule/all" target="_blank">Get All</a>
-						</paper-button>
-						<paper-button raised on-click="searchSchedule">
-							Search
-						</paper-button>
-						<span flex></span>
-					</div>
+					<h2>Sessions</h2>
 				</content-section>
 			</neon-animatible>
 			<neon-animatible>
 				<content-section>
-					<h2>Schedules 3</h2>
-					<paper-input id="schedulesearch" class="input-style" label="Name" always-float-label></paper-input>
-					<div horizontal layout>
-						<span flex></span>
-						<paper-button raised on-click="allSchedules">
-							<a style="text-decoration: none; color: white;" href="/admin/schedule/all" target="_blank">Get All</a>
-						</paper-button>
-						<paper-button raised on-click="searchSchedule">
-							Search
-						</paper-button>
-						<span flex></span>
+					<h2>Panels</h2>
+				</content-section>
+			</neon-animatible>
+			<neon-animatible>
+				<content-section id="addUser">
+					<h2>Add User</h2>
+					<paper-input label="Name" on-input="updateUsername" id="addUserName"></paper-input>
+					<paper-input label="Username" id="addUserUsername"></paper-input>
+					<div class="toggle-button-container">
+						<span class="flex"></span>
+						<paper-toggle-button id="addUserType" on-change="updateUsername"><span id="addUsersTypeLabel">Student</span></paper-toggle-button>
+						<span class="flex"></span>
+						<paper-toggle-button id="addUserAdmin">Admin</paper-toggle-button>
+						<span class="flex"></span>
 					</div>
+			</neon-animatible>
+			<neon-animatible>
+				<content-section>
+					<h2>Send Emails</h2>
 				</content-section>
 			</neon-animatible>
 		</neon-animated-pages>
@@ -297,6 +301,32 @@
 					this.exitAnimation = "slide-right-animation";
 				}
 				this.$.pages.selected = selected;
+			},
+			updateUsername: function () {
+				// Automatically fill the username field
+				var name = this.$.addUserName.value.trim();
+				var isTeacher = this.$.addUserType.checked;
+				this.$.addUsersTypeLabel.textContent = (isTeacher) ? "Teacher" : "Student";
+				if (!name) {
+					this.$.addUserUsername.value = "";
+					return;
+				}
+
+				name = name.split(" ");
+				if (name.length !== 2)
+					return;
+				var lastName = name[1];
+				var username = "";
+				if (isTeacher) {
+					// Teacher usernames are of the form first initial + last name
+					username = name[0][0] + lastName;
+				}
+				else {
+					// Student usernames are of the form last name + first initial
+					username = lastName + name[0][0];
+				}
+				username = username.toLowerCase();
+				this.$.addUserUsername.value = username;
 			},
 			userResponse: function () {
 				this.user = this.$["user-ajax"].lastResponse;

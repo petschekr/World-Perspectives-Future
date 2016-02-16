@@ -33,6 +33,8 @@
     "paper-toast": "PolymerElements/paper-toast#^1.1.3",
     "paper-tabs": "PolymerElements/paper-tabs#^1.3.5",
     "neon-animation": "PolymerElements/neon-animation#^1.1.0",
-    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.2.3"
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.2.3",
+    "paper-checkbox": "PolymerElements/paper-checkbox#^1.1.2",
+    "paper-toggle-button": "PolymerElements/paper-toggle-button#^1.0.14"
   }
 }
