@@ -159,6 +159,10 @@
 			@apply(--layout-flex);
 		}
 
+		span[suffix] {
+			opacity: 0.6;
+		}
+
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
 
@@ -228,7 +232,9 @@
 				<content-section id="addUser">
 					<h2>Add User</h2>
 					<paper-input label="Name" on-input="updateUsername" id="addUserName"></paper-input>
-					<paper-input label="Username" id="addUserUsername"></paper-input>
+					<paper-input label="Username" id="addUserUsername">
+						<span suffix>@gfacademy.org</span>
+					</paper-input>
 					<div class="toggle-button-container">
 						<span class="flex"></span>
 						<paper-toggle-button id="addUserType" on-change="updateUsername"><span id="addUsersTypeLabel">Student</span></paper-toggle-button>
