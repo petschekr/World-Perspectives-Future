@@ -271,7 +271,7 @@
 				</content-section>
 				<content-section>
 					<h2>Users</h2>
-					<iron-ajax auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
+					<iron-ajax id="users-ajax" auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
 					<template is="dom-repeat" items="[[users]]">
 						<paper-item>
 							<paper-item-body two-line>
@@ -423,7 +423,8 @@
 					this.$.done.text = response.message;
 					this.$.done.open();
 				}
-				console.log(this.$["add-user-ajax"].lastResponse);
+				// Refresh users list
+				this.$["users-ajax"].generateRequest();
 			},
 			userResponse: function () {
 				this.user = this.$["user-ajax"].lastResponse;
