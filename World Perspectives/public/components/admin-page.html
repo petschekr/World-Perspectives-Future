@@ -4,6 +4,7 @@
 <link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
 <link rel="import" href="/bower_components/paper-menu/paper-menu.html" />
 <link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item-body.html" />
 <link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
 <link rel="import" href="/bower_components/paper-button/paper-button.html" />
 <link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
@@ -163,6 +164,29 @@
 			opacity: 0.6;
 		}
 
+		paper-item {
+			--paper-item-focused-before: {
+				opacity: 0;
+			}
+		}
+		paper-item .info {
+			padding: 0 5px;
+			font-family: "Roboto", "Noto", sans-serif;
+			-webkit-font-smoothing: antialiased;
+			font-size: 14px;
+			font-weight: 400;
+			line-height: 20px;
+			color: #737373;
+			margin-top: 1px;
+		}
+		.flex-container {
+			padding-top: 5px;
+			@apply(--layout-horizontal);
+		}
+		.flex {
+			@apply(--layout-flex);
+		}
+
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
 
@@ -230,7 +254,7 @@
 			</neon-animatible>
 			<neon-animatible>
 				<content-section>
-					<h2>Users</h2>
+					<h2>Add Users</h2>
 					<paper-input label="Name" on-input="updateUsername" id="addUserName"></paper-input>
 					<paper-input label="Username" id="addUserUsername">
 						<span suffix>@gfacademy.org</span>
@@ -242,6 +266,31 @@
 						<paper-toggle-button id="addUserAdmin">Admin</paper-toggle-button>
 						<span class="flex"></span>
 						<paper-button raised disabled id="addUserButton" on-click="addUserSubmit">Add</paper-button>
+						<span class="flex"></span>
+					</div>
+				</content-section>
+				<content-section>
+					<h2>Users</h2>
+					<iron-ajax auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError"></iron-ajax>
+					<template is="dom-repeat" items="[[users]]">
+						<paper-item>
+							<paper-item-body two-line>
+								<div>[[item.name]]</div>
+								<div secondary>[[item.username]]@gfacademy.org</div>
+							</paper-item-body>
+							<template is="dom-if" if="[[item.admin]]">
+								<div class="info">Admin</div>
+							</template>
+							<template is="dom-if" if="[[item.teacher]]">
+								<div class="info">Teacher</div>
+							</template>
+							<paper-icon-button icon="clear"></paper-icon-button>
+						</paper-item>
+					</template>
+					<div class="flex-container">
+						<span class="flex"></span>
+						<paper-button>Next</paper-button>
+						<paper-button>Previous</paper-button>
 						<span class="flex"></span>
 					</div>
 				</content-section>

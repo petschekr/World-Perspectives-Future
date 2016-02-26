@@ -30,29 +30,38 @@ router.route("/").get(function (request, response) {
 		.catch(common.handleError.bind(response));
 });
 
-router.route("/user").post(postParser, function (request, response) {
-	// Generate a unique code for this user
-	var code = crypto.randomBytes(16).toString("hex");
-	var name = request.body.name;
-	var username = request.body.username;
-	var isTeacher = !!request.body.teacher;
-	var isAdmin = !!request.body.admin;
-	db.cypherAsync({
-		query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
-		params: {
-			name: name,
-			username: username,
-			registered: false,
-			teacher: isTeacher,
-			admin: isAdmin,
-			code: code
-		}
-	}).then(function (results) {
-		console.log(results);
-		response.json({ "success": true, "message": "User successfully created" });
-	}).catch(neo4j.ClientError, function () {
-		response.json({ "success": false, "message": "A user with that username already exists" });
-	}).catch(common.handleError.bind(response));
-});
+router.route("/user")
+	.get(function (request, response) {
+		db.cypherAsync({
+			query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher ORDER BY last(split(user.name, \" \")) SKIP 0 LIMIT 10",
+			params: {}
+		}).then(function (results) {
+			response.json(results);
+		}).catch(common.handleError.bind(response));
+	})
+	.post(postParser, function (request, response) {
+		// Generate a unique code for this user
+		var code = crypto.randomBytes(16).toString("hex");
+		var name = request.body.name;
+		var username = request.body.username;
+		var isTeacher = !!request.body.teacher;
+		var isAdmin = !!request.body.admin;
+		db.cypherAsync({
+			query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
+			params: {
+				name: name,
+				username: username,
+				registered: false,
+				teacher: isTeacher,
+				admin: isAdmin,
+				code: code
+			}
+		}).then(function (results) {
+			console.log(results);
+			response.json({ "success": true, "message": "User successfully created" });
+		}).catch(neo4j.ClientError, function () {
+			response.json({ "success": false, "message": "A user with that username already exists" });
+		}).catch(common.handleError.bind(response));
+	});
 
 export = router;
