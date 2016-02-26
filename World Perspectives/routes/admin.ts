@@ -67,5 +67,23 @@ router.route("/user")
 			response.json({ "success": false, "message": "A user with that username already exists" });
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/user/:username")
+	.get(function (request, response) {
+		var username = request.params.username;
+		db.cypherAsync({
+			query: "MATCH (user:User {username: {username}}) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher",
+			params: {
+				username: username
+			}
+		}).then(function (results) {
+			if (results.length == 0) {
+				results = null;
+			}
+			else {
+				results = results[0];
+			}
+			response.json(results);
+		}).catch(common.handleError.bind(response));
+	});
 
 export = router;
