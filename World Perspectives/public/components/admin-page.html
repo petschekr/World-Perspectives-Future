@@ -195,6 +195,7 @@
 	<template>
 		<iron-ajax id="user-ajax" auto url="/user" handle-as="json" on-response="userResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="add-user-ajax" method="POST" url="/admin/user" handle-as="json" on-response="addUserResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="delete-user-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUserResponse" on-error="handleError"></iron-ajax>
 
 		<paper-toolbar class="medium-tall">
 			<paper-icon-button icon="menu" on-tap="toggleMenu"></paper-icon-button>
@@ -276,7 +277,7 @@
 						<paper-item>
 							<paper-item-body two-line>
 								<div>[[item.name]]</div>
-								<div secondary>[[item.username]]@gfacademy.org</div>
+								<div secondary><span>[[item.username]]</span>@gfacademy.org</div>
 							</paper-item-body>
 							<template is="dom-if" if="[[item.admin]]">
 								<div class="info">Admin</div>
@@ -284,7 +285,7 @@
 							<template is="dom-if" if="[[item.teacher]]">
 								<div class="info">Teacher</div>
 							</template>
-							<paper-icon-button icon="clear"></paper-icon-button>
+							<paper-icon-button icon="clear" on-click="deleteUser"></paper-icon-button>
 						</paper-item>
 					</template>
 					<div class="flex-container">
@@ -449,6 +450,32 @@
 				this.userListParams = {
 					page: currentPage
 				};
+			},
+			deleteUser: function (e) {
+				var username = Polymer.dom(e.currentTarget).parentNode.querySelector("span").textContent;
+				var message = "Are you sure that you want to delete the user \"" + username + "\"?";
+				if (!confirm(message))
+					return;
+
+				var url = "/admin/user/" + username;
+				this.$.loading.open();
+				this.$["delete-user-ajax"].url = url;
+				this.$["delete-user-ajax"].contentType = "application/json";
+				this.$["delete-user-ajax"].generateRequest();
+			},
+			deleteUserResponse: function () {
+				this.$.loading.close();
+				var response = this.$["delete-user-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.text = response.message;
+					this.$.error.open();
+				}
+				else {
+					this.$.done.text = response.message;
+					this.$.done.open();
+				}
+				// Refresh users list
+				this.$["users-ajax"].generateRequest();
 			},
 			handleError: function (e) {
 				this.$.loading.dismiss();

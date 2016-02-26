@@ -61,7 +61,6 @@ router.route("/user")
 				code: code
 			}
 		}).then(function (results) {
-			console.log(results);
 			response.json({ "success": true, "message": "User successfully created" });
 		}).catch(neo4j.ClientError, function () {
 			response.json({ "success": false, "message": "A user with that username already exists" });
@@ -83,6 +82,17 @@ router.route("/user/:username")
 				results = results[0];
 			}
 			response.json(results);
+		}).catch(common.handleError.bind(response));
+	})
+	.delete(function (request, response) {
+		var username = request.params.username;
+		db.cypherAsync({
+			query: "MATCH (user:User {username: {username}}) DELETE user",
+			params: {
+				username: username
+			}
+		}).then(function (results) {
+			response.json({ "success": true, "message": "User deleted successfully" });
 		}).catch(common.handleError.bind(response));
 	});
 
