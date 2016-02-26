@@ -32,9 +32,13 @@ router.route("/").get(function (request, response) {
 
 router.route("/user")
 	.get(function (request, response) {
+		const usersPerPage = 10;
 		db.cypherAsync({
-			query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher ORDER BY last(split(user.name, \" \")) SKIP 0 LIMIT 10",
-			params: {}
+			query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
+			params: {
+				skip: request.query.page * usersPerPage,
+				limit: usersPerPage
+			}
 		}).then(function (results) {
 			response.json(results);
 		}).catch(common.handleError.bind(response));

@@ -271,7 +271,7 @@
 				</content-section>
 				<content-section>
 					<h2>Users</h2>
-					<iron-ajax auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError"></iron-ajax>
+					<iron-ajax auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
 					<template is="dom-repeat" items="[[users]]">
 						<paper-item>
 							<paper-item-body two-line>
@@ -289,8 +289,8 @@
 					</template>
 					<div class="flex-container">
 						<span class="flex"></span>
-						<paper-button>Next</paper-button>
-						<paper-button>Previous</paper-button>
+						<paper-button on-click="previousUserList">Previous</paper-button>
+						<paper-button on-click="nextUserList">Next</paper-button>
 						<span class="flex"></span>
 					</div>
 				</content-section>
@@ -335,6 +335,12 @@
 					type: Object,
 					value: function () {
 						return { name: "Loading..." };
+					}
+				},
+				userListParams: {
+					type: Object,
+					value: function () {
+						return { page: 0 };
 					}
 				}
 			},
@@ -422,6 +428,26 @@
 			userResponse: function () {
 				this.user = this.$["user-ajax"].lastResponse;
 				window.user = this.user;
+			},
+			nextUserList: function (e) {
+				var currentPage = this.userListParams.page;
+				currentPage++;
+				if (Object.keys(this.users).length < 10) {
+					currentPage--;
+				}
+				this.userListParams = {
+					page: currentPage
+				};
+			},
+			previousUserList: function (e) {
+				var currentPage = this.userListParams.page;
+				currentPage--;
+				if (currentPage < 0) {
+					currentPage = 0;
+				}
+				this.userListParams = {
+					page: currentPage
+				};
 			},
 			handleError: function (e) {
 				this.$.loading.dismiss();
