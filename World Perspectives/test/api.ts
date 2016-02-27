@@ -114,9 +114,36 @@ describe("User endpoints", () => {
 			})
 			.end(done);
 	});
-	it("Invalid GET /login/:code");
-	it("Valid unregistered GET /login/:code");
-	it("Valid registered GET /login/:code");
+	it("Invalid GET /login/:code", (done) => {
+		request(app)
+			.get("/user/login/abcd")
+			.redirects(0)
+			.expect(200)
+			.expect("Content-Type", /html/)
+			.end(done);
+	});
+	it("Valid unregistered GET /login/:code", (done) => {
+		request(app)
+			.get(`/user/login/${testUser.code}`)
+			.redirects(0)
+			.expect(302)
+			.expect("set-cookie", new RegExp(`${testUser.cookie};`))
+			.expect("location", "/register")
+			.end(done);
+	});
+	it("Valid registered GET /login/:code", (done) => {
+		removeTestUser(function () {
+			insertTestUser(true, false, false, function () {
+				request(app)
+					.get(`/user/login/${testUser.code}`)
+					.redirects(0)
+					.expect(302)
+					.expect("set-cookie", new RegExp(`${testUser.cookie};`))
+					.expect("location", "/")
+					.end(done);
+			});
+		});
+	});
 });
 describe("Admin endpoints", () => {
 
