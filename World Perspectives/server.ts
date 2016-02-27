@@ -85,3 +85,5 @@ var server = http.createServer(app).listen(PORT, "0.0.0.0", 511, function () {
 	console.log("HTTP server listening on port " + PORT);
 });
 var io = require("socket.io").listen(server);
+
+export = app;

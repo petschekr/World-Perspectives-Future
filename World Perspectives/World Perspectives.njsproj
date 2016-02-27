@@ -40,6 +40,7 @@
     </TypeScriptCompile>
     <TypeScriptCompile Include="routes\user.ts" />
     <TypeScriptCompile Include="Scripts\typings\bluebird\bluebird.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\chai\chai.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\cheerio\cheerio.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\body-parser.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\compression.d.ts" />
@@ -50,6 +51,8 @@
     <TypeScriptCompile Include="Scripts\typings\moment\moment.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\neo4j\neo4j.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\sendgrid\sendgrid.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\superagent\superagent.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\supertest\supertest.d.ts" />
     <TypeScriptCompile Include="server.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
@@ -66,8 +69,16 @@
     <Content Include="public\components\home-page.html" />
     <Content Include="public\components\table-repeat.html" />
     <Content Include="README.md" />
+    <TypeScriptCompile Include="test\api.ts">
+      <SubType>Code</SubType>
+      <TestFramework>Mocha</TestFramework>
+    </TypeScriptCompile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Scripts\typings\chai\" />
+    <Folder Include="Scripts\typings\superagent\" />
+    <Folder Include="Scripts\typings\supertest\" />
+    <Folder Include="test\" />
     <Folder Include="pages\" />
     <Folder Include="public\" />
     <Folder Include="public\css\" />
