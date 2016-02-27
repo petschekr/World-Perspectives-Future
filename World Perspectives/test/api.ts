@@ -22,4 +22,20 @@ describe("Main endpoints", () => {
 			.end(done);
     });
 });
+describe("Data endpoints", () => {
+	it("GET /schedule", (done) => {
+		request(app)
+			.get("/data/schedule")
+			.expect(200)
+			.expect("Content-Type", /json/)
+			.expect(function (response) {
+				expect(response.body).to.be.an("array");
+				expect(response.body).to.have.length.above(0);
+				for (let item of response.body) {
+					expect(item).to.have.all.keys(["title", "time", "location", "editable"]);
+				}
+			})
+			.end(done);
+	});
+});
 });
