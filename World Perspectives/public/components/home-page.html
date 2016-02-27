@@ -46,9 +46,19 @@
 
 			paper-menu paper-item {
 				padding-left: 24px;
+				cursor: pointer;
+			}
+			paper-menu paper-item a {
+				color: rgb(33, 33, 33);
+				text-decoration: none;
 			}
 			paper-menu paper-item iron-icon {
 				padding-right: 8px;
+			}
+			paper-item {
+				--paper-item-focused-before: {
+					opacity: 0;
+				}
 			}
 
 			:host {
@@ -190,13 +200,17 @@
 			<paper-icon-button icon="arrow-back" on-tap="toggleMenu"></paper-icon-button>
 			<paper-menu selected="0">
 				<paper-item>
-					<iron-icon icon="event"></iron-icon>
-					<span>Schedule</span>
+					<a href="/">
+						<iron-icon icon="event"></iron-icon>
+						<span>Schedule</span>
+					</a>
 				</paper-item>
-				<template if="{{user.admin}}">
-					<paper-item on-tap="admin">
-						<iron-icon icon="settings"></iron-icon>
-						<span>Admin Panel</span>
+				<template is="dom-if" if="{{user.admin}}">
+					<paper-item>
+						<a href="/admin">
+							<iron-icon icon="settings"></iron-icon>
+							<span>Admin Panel</span>
+						</a>
 					</paper-item>
 				</template>
 			</paper-menu>
@@ -298,9 +312,6 @@
 				else {
 					this.$.sidepanel.classList.add("hidden");
 				}
-			},
-			admin: function() {
-				window.location = "/admin";
 			},
 			userResponse: function() {
 				this.user = this.$["user-ajax"].lastResponse;

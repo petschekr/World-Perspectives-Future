@@ -93,6 +93,11 @@
 			}
 		paper-menu paper-item {
 			padding-left: 24px;
+			cursor: pointer;
+		}
+		paper-menu paper-item a {
+			color: rgb(33, 33, 33);
+			text-decoration: none;
 		}
 		paper-menu paper-item iron-icon {
 			padding-right: 8px;
@@ -214,12 +219,16 @@
 			<paper-icon-button icon="arrow-back" on-tap="toggleMenu"></paper-icon-button>
 			<paper-menu selected="1">
 				<paper-item>
-					<iron-icon icon="event"></iron-icon>
-					<span>Schedule</span>
+					<a href="/">
+						<iron-icon icon="event"></iron-icon>
+						<span>Schedule</span>
+					</a>
 				</paper-item>
 				<paper-item on-tap="admin">
-					<iron-icon icon="settings"></iron-icon>
-					<span>Admin Panel</span>
+					<a href="/admin">
+						<iron-icon icon="settings"></iron-icon>
+						<span>Admin Panel</span>
+					</a>
 				</paper-item>
 			</paper-menu>
 			<section class="minor">
