@@ -146,5 +146,40 @@ describe("User endpoints", () => {
 	});
 });
 describe("Admin endpoints", () => {
-
+	before(function (done) {
+		insertTestUser(false, false, false, done);
+	});
+	after(function (done) {
+		removeTestUser(done);
+	});
+	it("Unauthenticated GET /", (done) => {
+		request(app)
+			.get("/admin")
+			.redirects(0)
+			.expect(302)
+			.expect("location", "/")
+			.end(done);
+	});
+	it("Unauthorized GET /", (done) => {
+		request(app)
+			.get("/admin")
+			.set("Cookie", testUser.cookie)
+			.redirects(0)
+			.expect(302)
+			.expect("location", "/")
+			.end(done);
+	});
+	it("Authorized GET /", (done) => {
+		removeTestUser(function () {
+			insertTestUser(false, false, true, function () {
+				request(app)
+					.get("/admin")
+					.set("Cookie", testUser.cookie)
+					.redirects(0)
+					.expect(200)
+					.expect("Content-Type", /html/)
+					.end(done);
+			});
+		});
+	});
 });
