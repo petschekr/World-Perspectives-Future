@@ -15,10 +15,37 @@ declare var after: (func: (done?: () => void) => void) => void;
 declare var beforeEach: (func: (done?: () => void) => void) => void;
 declare var afterEach: (func: (done?: () => void) => void) => void;
 
-function signCookie(val, secret): string {
+function signCookie (val, secret): string {
 	// Simplified from node-cookie-signature
 	var signature = crypto.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
 	return val + "." + signature;
+}
+var testUser: any = {
+	"name": "Test User",
+	"username": "usertest",
+	"code": crypto.randomBytes(16).toString("hex"),
+};
+testUser.cookie = "username=s" + encodeURIComponent(":" + signCookie(testUser.username, common.keys.cookieSecret));
+function insertTestUser (registered: boolean = false, teacher: boolean = false, admin: boolean = false, done: (err?: Error) => void): void {
+	db.cypher({
+		query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
+		params: {
+			name: testUser.name,
+			username: testUser.username,
+			registered: registered,
+			teacher: teacher,
+			admin: admin,
+			code: testUser.code
+		}
+	}, done);
+}
+function removeTestUser(done: (err?: Error) => void): void {
+	db.cypher({
+		query: "MATCH (user:User {username: {username}}) DELETE user",
+		params: {
+			username: testUser.username
+		}
+	}, done);
 }
 
 describe("Main endpoints", () => {
@@ -54,35 +81,11 @@ describe("Data endpoints", () => {
 	});
 });
 describe("User endpoints", () => {
-	var testUser = {
-		"name": "Test User",
-		"username": "usertest",
-		"code": crypto.randomBytes(16).toString("hex"),
-		"cookie": null
-	};
 	before(function (done) {
-		// Insert a test user into the database
-		testUser.cookie = "username=s" + encodeURIComponent(":" + signCookie(testUser.username, common.keys.cookieSecret));
-		db.cypher({
-			query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
-			params: {
-				name: testUser.name,
-				username: testUser.username,
-				registered: false,
-				teacher: false,
-				admin: false,
-				code: testUser.code
-			}
-		}, done);
+		insertTestUser(false, false, false, done);
 	});
 	after(function (done) {
-		// Remove test user from the database
-		db.cypher({
-			query: "MATCH (user:User {username: {username}}) DELETE user",
-			params: {
-				username: testUser.username
-			}
-		}, done);
+		removeTestUser(done);
 	});
 	it("Unauthenticated GET /", (done) => {
 		request(app)
