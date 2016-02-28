@@ -14,8 +14,14 @@
 <link rel="import" href="/bower_components/neon-animation/neon-animatable.html" />
 <link rel="import" href="/bower_components/neon-animation/neon-animations.html" />
 <link rel="import" href="/bower_components/paper-input/paper-input.html" />
+<link rel="import" href="/bower_components/paper-input/paper-textarea.html" />
 <link rel="import" href="/bower_components/paper-toggle-button/paper-toggle-button.html" />
+<link rel="import" href="/bower_components/paper-dialog/paper-dialog.html" />
+<link rel="import" href="/bower_components/paper-time-picker/paper-time-picker.html" />
+<link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
+<link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
 <dom-module id="admin-page">
+	<style is="custom-style" include="paper-time-picker-dialog-style"></style>
 	<style>
 		/* TODO(polyup): For speed, consider reworking these styles with .classes
 						 and #ids rather than [attributes].
@@ -32,7 +38,7 @@
 			background: #3ea346;
 			color: #f1f1f1;
 			fill: #f1f1f1;
-			z-index: 150;
+			z-index: 100;
 			height: calc(64px * 2 - 20px) !important;
 		}
 			paper-toolbar span.title {
@@ -139,7 +145,7 @@
 			text-decoration: none;
 		}
 
-		paper-input {
+		paper-input, paper-textarea {
 			--paper-input-container-focus-color: #3ea346;
 		}
 
@@ -160,9 +166,6 @@
 		div.toggle-button-container {
 			padding-top: 10px;
 			@apply(--layout-horizontal);
-		}
-		div.toggle-button-container .flex {
-			@apply(--layout-flex);
 		}
 
 		span[suffix] {
@@ -260,7 +263,41 @@
 			</neon-animatible>
 			<neon-animatible>
 				<content-section>
-					<h2>Sessions</h2>
+					<h2>Add Session</h2>
+					<paper-input label="Title"></paper-input>
+					<paper-textarea label="Description"></paper-textarea>
+
+					<div class="flex-container">
+						<paper-input label="Location" style="width: 49%;"></paper-input>
+						<span class="flex"></span>
+						<paper-input label="Maximum capacity" type="number" value="30" min="1" style="width: 49%;">
+							<div suffix>people</div>
+						</paper-input>
+					</div>
+					
+					<div class="flex-container">
+						<paper-dropdown-menu label="Session type" style="width: 33%;">
+							<paper-listbox class="dropdown-content">
+								<paper-item>Global session</paper-item>
+								<paper-item>Science session</paper-item>
+								<paper-item>Panel</paper-item>
+							</paper-listbox>
+						</paper-dropdown-menu>
+						<span class="flex"></span>
+						<paper-input label="Start time" value="[[addSessionTime]]" readonly="true" on-focus="showTimeDialog" style="width: 30%;"></paper-input>
+						<span class="flex"></span>
+						<paper-input label="Duration" type="number" value="50" step="5" min="5" style="width: 33%;">
+							<div suffix>minutes</div>
+						</paper-input>
+					</div>
+
+					<paper-dialog id="addSessionTimeDialog" class="paper-time-picker-dialog" modal>
+						<paper-time-picker id="addSessionTimePicker" animated="true" time="{{addSessionTime}}"></paper-time-picker>
+						<div class="buttons">
+							<paper-button dialog-dismiss>Cancel</paper-button>
+							<paper-button dialog-confirm>OK</paper-button>
+						</div>
+					</paper-dialog>
 				</content-section>
 			</neon-animatible>
 			<neon-animatible>
@@ -363,6 +400,8 @@
 			ready: function () {
 				// Ensure that the first selected page is always 0 and that the index is a number and not a string
 				this.$.pages.selected = 0;
+				this.$.addSessionTimePicker.hour = 12;
+				this.$.addSessionTimePicker.period = "PM";
 			},
 			toggleMenu: function () {
 				this.menuOpened = !this.menuOpened;
@@ -387,6 +426,9 @@
 					this.exitAnimation = "slide-right-animation";
 				}
 				this.$.pages.selected = selected;
+			},
+			showTimeDialog: function () {
+				this.$.addSessionTimeDialog.toggle();
 			},
 			updateUsername: function () {
 				// Automatically fill the username field
