@@ -63,6 +63,11 @@
     <Content Include="pages\index.html" />
     <Content Include="pages\invalidcode.html" />
     <Content Include="public\components\admin-page.html" />
+    <Content Include="public\components\admin\admin-emails.html" />
+    <Content Include="public\components\admin\admin-panels.html" />
+    <Content Include="public\components\admin\admin-schedules.html" />
+    <Content Include="public\components\admin\admin-sessions.html" />
+    <Content Include="public\components\admin\admin-users.html" />
     <Content Include="public\components\content-panel.html" />
     <Content Include="public\components\content-section.html" />
     <Content Include="public\components\home-page-original.html" />
@@ -75,6 +80,7 @@
     </TypeScriptCompile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="public\components\admin\" />
     <Folder Include="Scripts\typings\chai\" />
     <Folder Include="Scripts\typings\superagent\" />
     <Folder Include="Scripts\typings\supertest\" />

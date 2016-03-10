@@ -1,0 +1,150 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item-body.html" />
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html" />
+<link rel="import" href="/bower_components/paper-input/paper-input.html" />
+<link rel="import" href="/bower_components/paper-input/paper-textarea.html" />
+<link rel="import" href="/bower_components/paper-toggle-button/paper-toggle-button.html" />
+<link rel="import" href="/bower_components/paper-dialog/paper-dialog.html" />
+<link rel="import" href="/bower_components/paper-date-picker/paper-date-picker.html" />
+<link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
+<link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
+<link rel="import" href="/components/content-section.html" />
+
+<dom-module id="admin-schedules">
+	<style is="custom-style" include="paper-date-picker-dialog-style"></style>
+	<style>
+		/* TODO(polyup): For speed, consider reworking these styles with .classes
+						 and #ids rather than [attributes].
+		*/
+		[layout] {
+			@apply(--layout);
+		}
+			[layout][horizontal] {
+				@apply(--layout-horizontal);
+			}
+	</style>
+	<style>
+		paper-toast {
+			width: 100%;
+			min-width: 0;
+			border-radius: 0;
+			margin: 0;
+		}
+			paper-toast[error] {
+				--paper-toast-background-color: #ff4136;
+			}
+
+		content-section:first-of-type h2, content-section:nth-of-type(2) h2 {
+			margin-bottom: 0;
+		}
+
+		paper-button[raised] {
+			background: #3ea346;
+			color: #fff;
+		}
+		paper-button[raised][disabled] {
+			background: #eaeaea;
+			color: #a8a8a8;
+		}
+		paper-button a {
+			color: rgb(153, 153, 153);
+			text-decoration: none;
+		}
+
+		paper-input, paper-textarea, paper-dropdown-menu {
+			--paper-input-container-focus-color: #3ea346;
+		}
+
+		paper-toggle-button {
+			--paper-toggle-button-checked-bar-color: #3ea346;
+			--paper-toggle-button-checked-button-color: #3ea346;
+			--paper-toggle-button-checked-ink-color: #3ea346;
+		}
+
+		paper-item {
+			--paper-item-focused-before: {
+				opacity: 0;
+			}
+		}
+
+		.flex-container {
+			padding-top: 5px;
+			@apply(--layout-horizontal);
+		}
+		.flex {
+			@apply(--layout-flex);
+		}
+
+		/* Mobile styles */
+		@media screen and (max-width: 35.5em) {
+
+		}
+	</style>
+	<template>
+		<content-section>
+			<h2>Master Schedule</h2>
+
+			<paper-input label="Symposium date" value="[[symposiumDate]]" readonly="true" on-focus="showDateDialog"></paper-input>
+			<paper-dialog id="symposiumDateDialog" class="paper-date-picker-dialog" modal>
+				<paper-date-picker date="{{symposiumDate}}"></paper-date-picker>
+				<div class="buttons">
+					<paper-button dialog-dismiss>Cancel</paper-button>
+					<paper-button dialog-confirm>OK</paper-button>
+				</div>
+			</paper-dialog>
+
+			<iron-ajax id="schedule-ajax" auto url="/admin/schedule" handle-as="json" last-response="{{schedule}}" on-error="handleError"></iron-ajax>
+			<template is="dom-repeat" items="[[schedule]]">
+				<paper-item>
+					<paper-item-body two-line>
+						<div>
+							<template is="dom-if" if="[[item.editable]]">
+								<b>[[item.title]]</b>
+							</template>
+							<template is="dom-if" if="[[!item.editable]]">
+								[[item.title]]
+							</template>
+						</div>
+						<div secondary>
+							<span class="time">[[item.time]]</span>
+							<template is="dom-if" if="[[item.location]]">
+								&nbsp;|&nbsp;
+								<span class="location">[[item.location]]</span>
+							</template>
+						</div>
+					</paper-item-body>
+					<paper-toggle-button>Customizable</paper-toggle-button>
+					<paper-icon-button icon="clear"></paper-icon-button>
+				</paper-item>
+			</template>
+		</content-section>
+		<content-section>
+			<h2>Student Schedules</h2>
+		</content-section>
+		<content-section>
+			<h2>Teacher Schedules</h2>
+		</content-section>
+		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
+		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
+		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>
+	</template>
+	<script>
+		Polymer({
+			is: "admin-schedules",
+			properties: {},
+			showDateDialog: function () {
+				this.$.symposiumDateDialog.toggle();
+			},
+			handleError: function (e) {
+				this.$.loading.dismiss();
+				this.set("$.notifier.text", e.detail.response.response.error || "An error occurred!");
+				this.$.notifier.show();
+			}
+		})
+	</script>
+</dom-module>

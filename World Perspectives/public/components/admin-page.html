@@ -8,7 +8,6 @@
 <link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
 <link rel="import" href="/bower_components/paper-button/paper-button.html" />
 <link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
-<link rel="import" href="/components/content-section.html" />
 <link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html" />
 <link rel="import" href="/bower_components/neon-animation/neon-animated-pages.html" />
 <link rel="import" href="/bower_components/neon-animation/neon-animatable.html" />
@@ -21,6 +20,13 @@
 <link rel="import" href="/bower_components/paper-date-picker/paper-date-picker.html" />
 <link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
 <link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
+<link rel="import" href="/components/content-section.html" />
+<link rel="import" href="/components/admin/admin-schedules.html" />
+<link rel="import" href="/components/admin/admin-sessions.html" />
+<link rel="import" href="/components/admin/admin-panels.html" />
+<link rel="import" href="/components/admin/admin-users.html" />
+<link rel="import" href="/components/admin/admin-emails.html" />
+
 <dom-module id="admin-page">
 	<style is="custom-style" include="paper-time-picker-dialog-style"></style>
 	<style is="custom-style" include="paper-date-picker-dialog-style"></style>
@@ -170,10 +176,6 @@
 			@apply(--layout-horizontal);
 		}
 
-		span[suffix] {
-			opacity: 0.6;
-		}
-
 		paper-item {
 			--paper-item-focused-before: {
 				opacity: 0;
@@ -189,13 +191,6 @@
 			color: #737373;
 			margin-top: 1px;
 		}
-		.flex-container {
-			padding-top: 5px;
-			@apply(--layout-horizontal);
-		}
-		.flex {
-			@apply(--layout-flex);
-		}
 
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
@@ -203,10 +198,6 @@
 		}
 	</style>
 	<template>
-		<iron-ajax id="user-ajax" auto url="/user" handle-as="json" on-response="userResponse" on-error="handleError"></iron-ajax>
-		<iron-ajax id="add-user-ajax" method="POST" url="/admin/user" handle-as="json" on-response="addUserResponse" on-error="handleError"></iron-ajax>
-		<iron-ajax id="delete-user-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUserResponse" on-error="handleError"></iron-ajax>
-
 		<paper-toolbar class="medium-tall">
 			<paper-icon-button icon="menu" on-tap="toggleMenu"></paper-icon-button>
 			<span class="title">Admin Panel</span>
@@ -253,151 +244,21 @@
 		</section>
 		<neon-animated-pages id="pages" selected="0" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
 			<neon-animatible>
-				<content-section>
-					<h2>Master Schedule</h2>
-
-					<paper-input label="Symposium date" value="[[symposiumDate]]" readonly="true" on-focus="showDateDialog"></paper-input>
-					<paper-dialog id="symposiumDateDialog" class="paper-date-picker-dialog" modal>
-						<paper-date-picker date="{{symposiumDate}}"></paper-date-picker>
-						<div class="buttons">
-							<paper-button dialog-dismiss>Cancel</paper-button>
-							<paper-button dialog-confirm>OK</paper-button>
-						</div>
-					</paper-dialog>
-
-					<iron-ajax id="schedule-ajax" auto url="/admin/schedule" handle-as="json" last-response="{{schedule}}" on-error="handleError"></iron-ajax>
-					<template is="dom-repeat" items="[[schedule]]">
-						<paper-item>
-							<paper-item-body two-line>
-								<div>
-									<template is="dom-if" if="[[item.editable]]">
-										<b>[[item.title]]</b>
-									</template>
-									<template is="dom-if" if="[[!item.editable]]">
-										[[item.title]]
-									</template>
-								</div>
-								<div secondary>
-									<span class="time">[[item.time]]</span>
-									<template is="dom-if" if="[[item.location]]">
-										&nbsp;|&nbsp;
-										<span class="location">[[item.location]]</span>
-									</template>
-								</div>
-							</paper-item-body>
-							<paper-toggle-button>Customizable</paper-toggle-button>
-							<paper-icon-button icon="clear"></paper-icon-button>
-						</paper-item>
-					</template>
-				</content-section>
-				<content-section>
-					<h2>Student Schedules</h2>
-				</content-section>
-				<content-section>
-					<h2>Teacher Schedules</h2>
-				</content-section>
+				<admin-schedules></admin-schedules>
 			</neon-animatible>
 			<neon-animatible>
-				<content-section>
-					<h2>Add Session</h2>
-					<paper-input label="Title"></paper-input>
-					<paper-textarea label="Description"></paper-textarea>
-
-					<div class="flex-container">
-						<paper-input label="Location" style="width: 49%;"></paper-input>
-						<span class="flex"></span>
-						<paper-input label="Maximum capacity" type="number" value="30" min="1" style="width: 49%;">
-							<div suffix>people</div>
-						</paper-input>
-					</div>
-					
-					<div class="flex-container">
-						<paper-dropdown-menu label="Session type" style="width: 33%;">
-							<paper-listbox class="dropdown-content">
-								<paper-item>Global session</paper-item>
-								<paper-item>Science session</paper-item>
-								<paper-item>Panel</paper-item>
-							</paper-listbox>
-						</paper-dropdown-menu>
-						<span class="flex"></span>
-						<paper-input label="Start time" value="[[addSessionTime]]" readonly="true" on-focus="showTimeDialog" style="width: 30%;"></paper-input>
-						<span class="flex"></span>
-						<paper-input label="Duration" type="number" value="50" step="5" min="5" style="width: 33%;">
-							<div suffix>minutes</div>
-						</paper-input>
-					</div>
-					<div class="flex-container">
-						<span class="flex"></span>
-						<paper-button raised disabled style="margin-top: 10px;">Add</paper-button>
-						<span class="flex"></span>
-					</div>
-
-					<paper-dialog id="addSessionTimeDialog" class="paper-time-picker-dialog" modal>
-						<paper-time-picker id="addSessionTimePicker" animated="true" time="{{addSessionTime}}"></paper-time-picker>
-						<div class="buttons">
-							<paper-button dialog-dismiss>Cancel</paper-button>
-							<paper-button dialog-confirm>OK</paper-button>
-						</div>
-					</paper-dialog>
-				</content-section>
+				<admin-sessions></admin-sessions>
 			</neon-animatible>
 			<neon-animatible>
-				<content-section>
-					<h2>Panels</h2>
-				</content-section>
+				<admin-panels></admin-panels>
 			</neon-animatible>
 			<neon-animatible>
-				<content-section>
-					<h2>Add Users</h2>
-					<paper-input label="Name" on-input="updateUsername" id="addUserName"></paper-input>
-					<paper-input label="Username" id="addUserUsername">
-						<span suffix>@gfacademy.org</span>
-					</paper-input>
-					<div class="toggle-button-container">
-						<span class="flex"></span>
-						<paper-toggle-button id="addUserType" on-change="updateUsername"><span id="addUsersTypeLabel">Student</span></paper-toggle-button>
-						<span class="flex"></span>
-						<paper-toggle-button id="addUserAdmin">Admin</paper-toggle-button>
-						<span class="flex"></span>
-						<paper-button raised disabled id="addUserButton" on-click="addUserSubmit">Add</paper-button>
-						<span class="flex"></span>
-					</div>
-				</content-section>
-				<content-section>
-					<h2>Users</h2>
-					<iron-ajax id="users-ajax" auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
-					<template is="dom-repeat" items="[[users]]">
-						<paper-item>
-							<paper-item-body two-line>
-								<div>[[item.name]]</div>
-								<div secondary><span>[[item.username]]</span>@gfacademy.org</div>
-							</paper-item-body>
-							<template is="dom-if" if="[[item.admin]]">
-								<div class="info">Admin</div>
-							</template>
-							<template is="dom-if" if="[[item.teacher]]">
-								<div class="info">Teacher</div>
-							</template>
-							<paper-icon-button icon="clear" on-click="deleteUser"></paper-icon-button>
-						</paper-item>
-					</template>
-					<div class="flex-container">
-						<span class="flex"></span>
-						<paper-button on-click="previousUserList">Previous</paper-button>
-						<paper-button on-click="nextUserList">Next</paper-button>
-						<span class="flex"></span>
-					</div>
-				</content-section>
+				<admin-users></admin-users>
 			</neon-animatible>
 			<neon-animatible>
-				<content-section>
-					<h2>Send Emails</h2>
-				</content-section>
+				<admin-emails></admin-emails>
 			</neon-animatible>
 		</neon-animated-pages>
-		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
-		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
-		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>
 	</template>
 	<script>
 		Polymer({
@@ -406,43 +267,11 @@
 				menuOpened: {
 					type: Boolean,
 					value: false
-				},
-				panels: {
-					type: Array,
-					value: function () {
-						return [];
-					}
-				},
-				schedule: {
-					type: Array,
-					value: function () {
-						return [];
-					}
-				},
-				sessions: {
-					type: Array,
-					value: function () {
-						return [];
-					}
-				},
-				user: {
-					type: Object,
-					value: function () {
-						return { name: "Loading..." };
-					}
-				},
-				userListParams: {
-					type: Object,
-					value: function () {
-						return { page: 0 };
-					}
 				}
 			},
 			ready: function () {
 				// Ensure that the first selected page is always 0 and that the index is a number and not a string
 				this.$.pages.selected = 0;
-				this.$.addSessionTimePicker.hour = 12;
-				this.$.addSessionTimePicker.period = "PM";
 			},
 			toggleMenu: function () {
 				this.menuOpened = !this.menuOpened;
@@ -467,121 +296,6 @@
 					this.exitAnimation = "slide-right-animation";
 				}
 				this.$.pages.selected = selected;
-			},
-			showTimeDialog: function () {
-				this.$.addSessionTimeDialog.toggle();
-			},
-			showDateDialog: function () {
-				this.$.symposiumDateDialog.toggle();
-			},
-			updateUsername: function () {
-				// Automatically fill the username field
-				var name = this.$.addUserName.value.trim();
-				var isTeacher = this.$.addUserType.checked;
-				this.$.addUsersTypeLabel.textContent = (isTeacher) ? "Teacher" : "Student";
-				if (!name) {
-					this.$.addUserUsername.value = "";
-					Polymer.dom(this.$.addUserButton).setAttribute("disabled", "disabled");
-					return;
-				}
-
-				name = name.split(" ");
-				if (name.length !== 2)
-					return;
-				var lastName = name[1];
-				var username = "";
-				if (isTeacher) {
-					// Teacher usernames are of the form first initial + last name
-					username = name[0][0] + lastName;
-				}
-				else {
-					// Student usernames are of the form last name + first initial
-					username = lastName + name[0][0];
-				}
-				username = username.toLowerCase();
-				this.$.addUserUsername.value = username;
-				Polymer.dom(this.$.addUserButton).removeAttribute("disabled");
-			},
-			addUserSubmit: function () {
-				this.$.loading.open();
-				var sendData = {
-					"name": this.$.addUserName.value.trim(),
-					"username": this.$.addUserUsername.value.trim(),
-					"teacher": this.$.addUserType.checked,
-					"admin": this.$.addUserAdmin.checked
-				};
-				this.$["add-user-ajax"].contentType = "application/json";
-				this.$["add-user-ajax"].body = sendData;
-				this.$["add-user-ajax"].generateRequest();
-			},
-			addUserResponse: function () {
-				this.$.loading.close();
-				var response = this.$["add-user-ajax"].lastResponse;
-				if (!response.success) {
-					this.$.error.text = response.message;
-					this.$.error.open();
-				}
-				else {
-					this.$.done.text = response.message;
-					this.$.done.open();
-				}
-				// Refresh users list
-				this.$["users-ajax"].generateRequest();
-			},
-			userResponse: function () {
-				this.user = this.$["user-ajax"].lastResponse;
-				window.user = this.user;
-			},
-			nextUserList: function (e) {
-				var currentPage = this.userListParams.page;
-				currentPage++;
-				if (Object.keys(this.users).length < 10) {
-					currentPage--;
-				}
-				this.userListParams = {
-					page: currentPage
-				};
-			},
-			previousUserList: function (e) {
-				var currentPage = this.userListParams.page;
-				currentPage--;
-				if (currentPage < 0) {
-					currentPage = 0;
-				}
-				this.userListParams = {
-					page: currentPage
-				};
-			},
-			deleteUser: function (e) {
-				var username = Polymer.dom(e.currentTarget).parentNode.querySelector("span").textContent;
-				var message = "Are you sure that you want to delete the user \"" + username + "\"?";
-				if (!confirm(message))
-					return;
-
-				var url = "/admin/user/" + username;
-				this.$.loading.open();
-				this.$["delete-user-ajax"].url = url;
-				this.$["delete-user-ajax"].contentType = "application/json";
-				this.$["delete-user-ajax"].generateRequest();
-			},
-			deleteUserResponse: function () {
-				this.$.loading.close();
-				var response = this.$["delete-user-ajax"].lastResponse;
-				if (!response.success) {
-					this.$.error.text = response.message;
-					this.$.error.open();
-				}
-				else {
-					this.$.done.text = response.message;
-					this.$.done.open();
-				}
-				// Refresh users list
-				this.$["users-ajax"].generateRequest();
-			},
-			handleError: function (e) {
-				this.$.loading.dismiss();
-				this.set("$.notifier.text", e.detail.response.response.error || "An error occurred!");
-				this.$.notifier.show();
 			}
 		});
 	</script>

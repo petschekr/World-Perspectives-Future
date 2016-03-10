@@ -1,0 +1,270 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/components/content-section.html" />
+
+<dom-module id="admin-users">
+	<style>
+		/* TODO(polyup): For speed, consider reworking these styles with .classes
+						 and #ids rather than [attributes].
+		*/
+		[layout] {
+			@apply(--layout);
+		}
+			[layout][horizontal] {
+				@apply(--layout-horizontal);
+			}
+	</style>
+	<style>
+		paper-toast {
+			width: 100%;
+			min-width: 0;
+			border-radius: 0;
+			margin: 0;
+		}
+			paper-toast[error] {
+				--paper-toast-background-color: #ff4136;
+			}
+
+		paper-menu paper-item {
+			padding-left: 24px;
+			cursor: pointer;
+		}
+		paper-menu paper-item a {
+			color: rgb(33, 33, 33);
+			text-decoration: none;
+		}
+		paper-menu paper-item iron-icon {
+			padding-right: 8px;
+		}
+
+		content-section:first-of-type h2, content-section:nth-of-type(2) h2 {
+			margin-bottom: 0;
+		}
+
+		paper-button[raised] {
+			background: #3ea346;
+			color: #fff;
+		}
+		paper-button[raised][disabled] {
+			background: #eaeaea;
+			color: #a8a8a8;
+		}
+		paper-button a {
+			color: rgb(153, 153, 153);
+			text-decoration: none;
+		}
+
+		paper-input, paper-textarea, paper-dropdown-menu {
+			--paper-input-container-focus-color: #3ea346;
+		}
+
+		paper-toggle-button {
+			--paper-toggle-button-checked-bar-color: #3ea346;
+			--paper-toggle-button-checked-button-color: #3ea346;
+			--paper-toggle-button-checked-ink-color: #3ea346;
+		}
+
+		paper-item {
+			--paper-item-focused-before: {
+				opacity: 0;
+			}
+		}
+		paper-item .info {
+			padding: 0 5px;
+			font-family: "Roboto", "Noto", sans-serif;
+			-webkit-font-smoothing: antialiased;
+			font-size: 14px;
+			font-weight: 400;
+			line-height: 20px;
+			color: #737373;
+			margin-top: 1px;
+		}
+		
+		span[suffix] {
+			opacity: 0.6;
+		}
+
+		.flex-container {
+			padding-top: 5px;
+			@apply(--layout-horizontal);
+		}
+		.flex {
+			@apply(--layout-flex);
+		}
+
+		/* Mobile styles */
+		@media screen and (max-width: 35.5em) {
+
+		}
+	</style>
+	<template>
+		<iron-ajax id="user-ajax" auto url="/user" handle-as="json" on-response="userResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="add-user-ajax" method="POST" url="/admin/user" handle-as="json" on-response="addUserResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="delete-user-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUserResponse" on-error="handleError"></iron-ajax>
+		<content-section>
+			<h2>Add Users</h2>
+			<paper-input label="Name" on-input="updateUsername" id="addUserName"></paper-input>
+			<paper-input label="Username" id="addUserUsername">
+				<span suffix>@gfacademy.org</span>
+			</paper-input>
+			<div class="flex-container" style="padding-top: 10px;">
+				<span class="flex"></span>
+				<paper-toggle-button id="addUserType" on-change="updateUsername"><span id="addUsersTypeLabel">Student</span></paper-toggle-button>
+				<span class="flex"></span>
+				<paper-toggle-button id="addUserAdmin">Admin</paper-toggle-button>
+				<span class="flex"></span>
+				<paper-button raised disabled id="addUserButton" on-click="addUserSubmit">Add</paper-button>
+				<span class="flex"></span>
+			</div>
+		</content-section>
+		<content-section>
+			<h2>Users</h2>
+			<iron-ajax id="users-ajax" auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
+			<template is="dom-repeat" items="[[users]]">
+				<paper-item>
+					<paper-item-body two-line>
+						<div>[[item.name]]</div>
+						<div secondary><span>[[item.username]]</span>@gfacademy.org</div>
+					</paper-item-body>
+					<template is="dom-if" if="[[item.admin]]">
+						<div class="info">Admin</div>
+					</template>
+					<template is="dom-if" if="[[item.teacher]]">
+						<div class="info">Teacher</div>
+					</template>
+					<paper-icon-button icon="clear" on-click="deleteUser"></paper-icon-button>
+				</paper-item>
+			</template>
+			<div class="flex-container">
+				<span class="flex"></span>
+				<paper-button on-click="previousUserList">Previous</paper-button>
+				<paper-button on-click="nextUserList">Next</paper-button>
+				<span class="flex"></span>
+			</div>
+		</content-section>
+		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
+		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
+		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>
+	</template>
+	<script>
+		Polymer({
+			is: "admin-users",
+			properties: {
+				userListParams: {
+					type: Object,
+					value: function () {
+						return { page: 0 };
+					}
+				}
+			},
+			updateUsername: function () {
+				// Automatically fill the username field
+				var name = this.$.addUserName.value.trim();
+				var isTeacher = this.$.addUserType.checked;
+				this.$.addUsersTypeLabel.textContent = (isTeacher) ? "Teacher" : "Student";
+				if (!name) {
+					this.$.addUserUsername.value = "";
+					Polymer.dom(this.$.addUserButton).setAttribute("disabled", "disabled");
+					return;
+				}
+
+				name = name.split(" ");
+				if (name.length !== 2)
+					return;
+				var lastName = name[1];
+				var username = "";
+				if (isTeacher) {
+					// Teacher usernames are of the form first initial + last name
+					username = name[0][0] + lastName;
+				}
+				else {
+					// Student usernames are of the form last name + first initial
+					username = lastName + name[0][0];
+				}
+				username = username.toLowerCase();
+				this.$.addUserUsername.value = username;
+				Polymer.dom(this.$.addUserButton).removeAttribute("disabled");
+			},
+			addUserSubmit: function () {
+				this.$.loading.open();
+				var sendData = {
+					"name": this.$.addUserName.value.trim(),
+					"username": this.$.addUserUsername.value.trim(),
+					"teacher": this.$.addUserType.checked,
+					"admin": this.$.addUserAdmin.checked
+				};
+				this.$["add-user-ajax"].contentType = "application/json";
+				this.$["add-user-ajax"].body = sendData;
+				this.$["add-user-ajax"].generateRequest();
+			},
+			addUserResponse: function () {
+				this.$.loading.close();
+				var response = this.$["add-user-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.text = response.message;
+					this.$.error.open();
+				}
+				else {
+					this.$.done.text = response.message;
+					this.$.done.open();
+				}
+				// Refresh users list
+				this.$["users-ajax"].generateRequest();
+			},
+			userResponse: function () {
+				this.user = this.$["user-ajax"].lastResponse;
+				window.user = this.user;
+			},
+			nextUserList: function (e) {
+				var currentPage = this.userListParams.page;
+				currentPage++;
+				if (Object.keys(this.users).length < 10) {
+					currentPage--;
+				}
+				this.userListParams = {
+					page: currentPage
+				};
+			},
+			previousUserList: function (e) {
+				var currentPage = this.userListParams.page;
+				currentPage--;
+				if (currentPage < 0) {
+					currentPage = 0;
+				}
+				this.userListParams = {
+					page: currentPage
+				};
+			},
+			deleteUser: function (e) {
+				var username = Polymer.dom(e.currentTarget).parentNode.querySelector("span").textContent;
+				var message = "Are you sure that you want to delete the user \"" + username + "\"?";
+				if (!confirm(message))
+					return;
+
+				var url = "/admin/user/" + username;
+				this.$.loading.open();
+				this.$["delete-user-ajax"].url = url;
+				this.$["delete-user-ajax"].contentType = "application/json";
+				this.$["delete-user-ajax"].generateRequest();
+			},
+			deleteUserResponse: function () {
+				this.$.loading.close();
+				var response = this.$["delete-user-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.text = response.message;
+					this.$.error.open();
+				}
+				else {
+					this.$.done.text = response.message;
+					this.$.done.open();
+				}
+				// Refresh users list
+				this.$["users-ajax"].generateRequest();
+			},
+			handleError: function (e) {
+				this.$.loading.dismiss();
+				this.set("$.notifier.text", e.detail.response.response.error || "An error occurred!");
+				this.$.notifier.show();
+			}
+		})
+	</script>
+</dom-module>

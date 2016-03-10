@@ -1,0 +1,160 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item-body.html" />
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html" />
+<link rel="import" href="/bower_components/paper-input/paper-input.html" />
+<link rel="import" href="/bower_components/paper-input/paper-textarea.html" />
+<link rel="import" href="/bower_components/paper-toggle-button/paper-toggle-button.html" />
+<link rel="import" href="/bower_components/paper-dialog/paper-dialog.html" />
+<link rel="import" href="/bower_components/paper-time-picker/paper-time-picker.html" />
+<link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
+<link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
+<link rel="import" href="/components/content-section.html" />
+
+<dom-module id="admin-sessions">
+	<style is="custom-style" include="paper-time-picker-dialog-style"></style>
+	<style>
+		/* TODO(polyup): For speed, consider reworking these styles with .classes
+						 and #ids rather than [attributes].
+		*/
+		[layout] {
+			@apply(--layout);
+		}
+
+			[layout][horizontal] {
+				@apply(--layout-horizontal);
+			}
+	</style>
+	<style>
+		paper-toast {
+			width: 100%;
+			min-width: 0;
+			border-radius: 0;
+			margin: 0;
+		}
+			paper-toast[error] {
+				--paper-toast-background-color: #ff4136;
+			}
+
+		content-section:first-of-type h2, content-section:nth-of-type(2) h2 {
+			margin-bottom: 0;
+		}
+
+		paper-button[raised] {
+			background: #3ea346;
+			color: #fff;
+		}
+		paper-button[raised][disabled] {
+			background: #eaeaea;
+			color: #a8a8a8;
+		}
+		paper-button a {
+			color: rgb(153, 153, 153);
+			text-decoration: none;
+		}
+
+		paper-input, paper-textarea, paper-dropdown-menu {
+			--paper-input-container-focus-color: #3ea346;
+		}
+
+		paper-toggle-button {
+			--paper-toggle-button-checked-bar-color: #3ea346;
+			--paper-toggle-button-checked-button-color: #3ea346;
+			--paper-toggle-button-checked-ink-color: #3ea346;
+		}
+
+		span[suffix] {
+			opacity: 0.6;
+		}
+
+		paper-item {
+			--paper-item-focused-before: {
+				opacity: 0;
+			}
+		}
+		
+		.flex-container {
+			padding-top: 5px;
+			@apply(--layout-horizontal);
+		}
+		.flex {
+			@apply(--layout-flex);
+		}
+
+		/* Mobile styles */
+		@media screen and (max-width: 35.5em) {
+
+		}
+	</style>
+	<template>
+		<content-section>
+			<h2>Add Session</h2>
+			<paper-input label="Title"></paper-input>
+			<paper-textarea label="Description"></paper-textarea>
+
+			<div class="flex-container">
+				<paper-input label="Location" style="width: 49%;"></paper-input>
+				<span class="flex"></span>
+				<paper-input label="Maximum capacity" type="number" value="30" min="1" style="width: 49%;">
+					<div suffix>people</div>
+				</paper-input>
+			</div>
+
+			<div class="flex-container">
+				<paper-dropdown-menu label="Session type" style="width: 33%;">
+					<paper-listbox class="dropdown-content">
+						<paper-item>Global session</paper-item>
+						<paper-item>Science session</paper-item>
+						<paper-item>Panel</paper-item>
+					</paper-listbox>
+				</paper-dropdown-menu>
+				<span class="flex"></span>
+				<paper-input label="Start time" value="[[addSessionTime]]" readonly="true" on-focus="showTimeDialog" style="width: 30%;"></paper-input>
+				<span class="flex"></span>
+				<paper-input label="Duration" type="number" value="50" step="5" min="5" style="width: 33%;">
+					<div suffix>minutes</div>
+				</paper-input>
+			</div>
+			<div class="flex-container">
+				<span class="flex"></span>
+				<paper-button raised disabled style="margin-top: 10px;">Add</paper-button>
+				<span class="flex"></span>
+			</div>
+
+			<paper-dialog id="addSessionTimeDialog" class="paper-time-picker-dialog" modal>
+				<paper-time-picker id="addSessionTimePicker" animated="true" time="{{addSessionTime}}"></paper-time-picker>
+				<div class="buttons">
+					<paper-button dialog-dismiss>Cancel</paper-button>
+					<paper-button dialog-confirm>OK</paper-button>
+				</div>
+			</paper-dialog>
+		</content-section>
+		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
+		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
+		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>
+	</template>
+	<script>
+		Polymer({
+			is: "admin-sessions",
+			properties: {
+				
+			},
+			ready: function () {
+				this.$.addSessionTimePicker.hour = 12;
+				this.$.addSessionTimePicker.period = "PM";
+			},
+			showTimeDialog: function () {
+				this.$.addSessionTimeDialog.toggle();
+			},
+			handleError: function (e) {
+				this.$.loading.dismiss();
+				this.set("$.notifier.text", e.detail.response.response.error || "An error occurred!");
+				this.$.notifier.show();
+			}
+		})
+	</script>
+</dom-module>

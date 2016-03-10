@@ -1,0 +1,84 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/components/content-section.html" />
+
+<dom-module id="admin-emails">
+	<style>
+		/* TODO(polyup): For speed, consider reworking these styles with .classes
+								and #ids rather than [attributes].
+			*/
+		[layout] {
+			@apply(--layout);
+		}
+
+			[layout][horizontal] {
+				@apply(--layout-horizontal);
+			}
+	</style>
+	<style>
+		paper-toast {
+			width: 100%;
+			min-width: 0;
+			border-radius: 0;
+			margin: 0;
+		}
+			paper-toast[error] {
+				--paper-toast-background-color: #ff4136;
+			}
+
+		content-section:first-of-type h2, content-section:nth-of-type(2) h2 {
+			margin-bottom: 0;
+		}
+
+		paper-button[raised] {
+			background: #3ea346;
+			color: #fff;
+		}
+		paper-button[raised][disabled] {
+			background: #eaeaea;
+			color: #a8a8a8;
+		}
+		paper-button a {
+			color: rgb(153, 153, 153);
+			text-decoration: none;
+		}
+
+		paper-input, paper-textarea, paper-dropdown-menu {
+			--paper-input-container-focus-color: #3ea346;
+		}
+
+		paper-toggle-button {
+			--paper-toggle-button-checked-bar-color: #3ea346;
+			--paper-toggle-button-checked-button-color: #3ea346;
+			--paper-toggle-button-checked-ink-color: #3ea346;
+		}
+
+		paper-item {
+			--paper-item-focused-before: {
+				opacity: 0;
+			}
+		}
+
+		.flex-container {
+			padding-top: 5px;
+			@apply(--layout-horizontal);
+		}
+		.flex {
+			@apply(--layout-flex);
+		}
+
+		/* Mobile styles */
+		@media screen and (max-width: 35.5em) {
+
+		}
+	</style>
+	<template>
+		<content-section>
+			<h2>Send Emails</h2>
+		</content-section>
+	</template>
+	<script>
+		Polymer({
+			is: "admin-emails"
+		});
+	</script>
+</dom-module>
