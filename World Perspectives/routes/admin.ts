@@ -95,5 +95,13 @@ router.route("/user/:username")
 			response.json({ "success": true, "message": "User deleted successfully" });
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/schedule")
+	.get(function (request, response) {
+		db.cypherAsync({
+			query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.time AS time, item.location AS location, item.editable AS editable"
+		}).then(function (results) {
+			response.json(results);
+		}).catch(common.handleError.bind(response));
+	});
 
 export = router;

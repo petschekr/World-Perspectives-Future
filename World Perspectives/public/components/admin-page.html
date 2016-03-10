@@ -18,10 +18,12 @@
 <link rel="import" href="/bower_components/paper-toggle-button/paper-toggle-button.html" />
 <link rel="import" href="/bower_components/paper-dialog/paper-dialog.html" />
 <link rel="import" href="/bower_components/paper-time-picker/paper-time-picker.html" />
+<link rel="import" href="/bower_components/paper-date-picker/paper-date-picker.html" />
 <link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
 <link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
 <dom-module id="admin-page">
 	<style is="custom-style" include="paper-time-picker-dialog-style"></style>
+	<style is="custom-style" include="paper-date-picker-dialog-style"></style>
 	<style>
 		/* TODO(polyup): For speed, consider reworking these styles with .classes
 						 and #ids rather than [attributes].
@@ -253,6 +255,40 @@
 			<neon-animatible>
 				<content-section>
 					<h2>Master Schedule</h2>
+
+					<paper-input label="Symposium date" value="[[symposiumDate]]" readonly="true" on-focus="showDateDialog"></paper-input>
+					<paper-dialog id="symposiumDateDialog" class="paper-date-picker-dialog" modal>
+						<paper-date-picker date="{{symposiumDate}}"></paper-date-picker>
+						<div class="buttons">
+							<paper-button dialog-dismiss>Cancel</paper-button>
+							<paper-button dialog-confirm>OK</paper-button>
+						</div>
+					</paper-dialog>
+
+					<iron-ajax id="schedule-ajax" auto url="/admin/schedule" handle-as="json" last-response="{{schedule}}" on-error="handleError"></iron-ajax>
+					<template is="dom-repeat" items="[[schedule]]">
+						<paper-item>
+							<paper-item-body two-line>
+								<div>
+									<template is="dom-if" if="[[item.editable]]">
+										<b>[[item.title]]</b>
+									</template>
+									<template is="dom-if" if="[[!item.editable]]">
+										[[item.title]]
+									</template>
+								</div>
+								<div secondary>
+									<span class="time">[[item.time]]</span>
+									<template is="dom-if" if="[[item.location]]">
+										&nbsp;|&nbsp;
+										<span class="location">[[item.location]]</span>
+									</template>
+								</div>
+							</paper-item-body>
+							<paper-toggle-button>Customizable</paper-toggle-button>
+							<paper-icon-button icon="clear"></paper-icon-button>
+						</paper-item>
+					</template>
 				</content-section>
 				<content-section>
 					<h2>Student Schedules</h2>
@@ -434,6 +470,9 @@
 			},
 			showTimeDialog: function () {
 				this.$.addSessionTimeDialog.toggle();
+			},
+			showDateDialog: function () {
+				this.$.symposiumDateDialog.toggle();
 			},
 			updateUsername: function () {
 				// Automatically fill the username field
