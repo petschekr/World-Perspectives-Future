@@ -10,13 +10,11 @@
 <link rel="import" href="/bower_components/paper-input/paper-textarea.html" />
 <link rel="import" href="/bower_components/paper-toggle-button/paper-toggle-button.html" />
 <link rel="import" href="/bower_components/paper-dialog/paper-dialog.html" />
-<link rel="import" href="/bower_components/paper-date-picker/paper-date-picker.html" />
 <link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
 <link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
 <link rel="import" href="/components/content-section.html" />
 
 <dom-module id="admin-schedules">
-	<style is="custom-style" include="paper-date-picker-dialog-style"></style>
 	<style>
 		/* TODO(polyup): For speed, consider reworking these styles with .classes
 						 and #ids rather than [attributes].
@@ -89,14 +87,7 @@
 		<content-section>
 			<h2>Master Schedule</h2>
 
-			<paper-input label="Symposium date" value="[[symposiumDate]]" readonly="true" on-focus="showDateDialog"></paper-input>
-			<paper-dialog id="symposiumDateDialog" class="paper-date-picker-dialog" modal>
-				<paper-date-picker date="{{symposiumDate}}"></paper-date-picker>
-				<div class="buttons">
-					<paper-button dialog-dismiss>Cancel</paper-button>
-					<paper-button dialog-confirm>OK</paper-button>
-				</div>
-			</paper-dialog>
+			<paper-input label="Symposium date" value="April 20, 2016" auto-validate pattern="^(January|February|March|April|May|June|July|August|September|October|November|December) ([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-1]){1,2}(th|st|rd)?,? [0-9]{4}$" error-message="Invalid date"></paper-input>
 
 			<iron-ajax id="schedule-ajax" auto url="/admin/schedule" handle-as="json" last-response="{{schedule}}" on-error="handleError"></iron-ajax>
 			<template is="dom-repeat" items="[[schedule]]">
