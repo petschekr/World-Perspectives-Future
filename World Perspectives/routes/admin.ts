@@ -50,6 +50,10 @@ router.route("/user")
 		var code = crypto.randomBytes(16).toString("hex");
 		var name = request.body.name;
 		var username = request.body.username;
+		if (!name || !username) {
+			response.json({ "success": false, "message": "Please enter both the user's name and username" });
+			return;
+		}
 		var isTeacher = !!request.body.teacher;
 		var isAdmin = !!request.body.admin;
 		db.cypherAsync({
@@ -114,13 +118,37 @@ router.route("/session")
 		}).catch(common.handleError.bind(response));
 	})
 	.post(postParser, function (request, response) {
-		// TODO: validate the information sent here to avoid TypeErrors
 		var title = request.body.title;
 		var description = request.body.description;
 		var location = request.body.location;
 		var capacity = request.body.capacity;
 		var sessionType = request.body.type;
 		var duration = request.body.duration;
+		function isInteger (value: any): boolean {
+			return typeof value === "number" &&
+				isFinite(value) &&
+				Math.floor(value) === value;
+		}
+		if (!title || !description || !location || !sessionType) {
+			response.json({ "success": false, "message": "Please enter missing information" });
+			return;
+		}
+		title = title.toString().trim();
+		description = description.toString().trim();
+		location = location.toString().trim();
+		sessionType = sessionType.toString().trim();
+		if (!title || !description || !location || !sessionType) {
+			response.json({ "success": false, "message": "Please enter missing information" });
+			return;
+		}
+		if (!isInteger(capacity) || capacity < 1) {
+			response.json({ "success": false, "message": "Please enter a valid capacity" });
+			return;
+		}
+		if (!isInteger(duration) || duration < 1) {
+			response.json({ "success": false, "message": "Please enter a valid duration" });
+			return;
+		}
 		common.getSymposiumDate()
 			.then(function (date: moment.Moment) {
 				var startTime = moment(request.body.startTime, "hh:mm A");
