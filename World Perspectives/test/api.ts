@@ -187,4 +187,9 @@ describe("Admin endpoints", () => {
 	it("GET /user/username");
 	it("DELETE /user/username");
 	it("GET /schedule");
+	it("PATCH /schedule");
+	it("GET /session");
+	it("POST /session");
+	it("GET /session/:slug");
+	it("DELETE /session/:slug");
 });
