@@ -132,9 +132,8 @@
 				this.$.symposiumDateDialog.toggle();
 			},
 			handleError: function (e) {
-				this.$.loading.dismiss();
-				this.set("$.notifier.text", e.detail.response.response.error || "An error occurred!");
-				this.$.notifier.show();
+				this.$.loading.close();
+				this.$.error.show(e.target.lastError.error.message || "An error occurred!");
 			}
 		})
 	</script>

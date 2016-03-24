@@ -200,12 +200,10 @@
 				this.$.loading.close();
 				var response = this.$["add-user-ajax"].lastResponse;
 				if (!response.success) {
-					this.$.error.text = response.message;
-					this.$.error.open();
+					this.$.error.show(response.message);
 				}
 				else {
-					this.$.done.text = response.message;
-					this.$.done.open();
+					this.$.done.show(response.message);
 				}
 				// Refresh users list
 				this.$["users-ajax"].generateRequest();
@@ -250,20 +248,17 @@
 				this.$.loading.close();
 				var response = this.$["delete-user-ajax"].lastResponse;
 				if (!response.success) {
-					this.$.error.text = response.message;
-					this.$.error.open();
+					this.$.error.show(response.message);
 				}
 				else {
-					this.$.done.text = response.message;
-					this.$.done.open();
+					this.$.done.show(response.message);
 				}
 				// Refresh users list
 				this.$["users-ajax"].generateRequest();
 			},
 			handleError: function (e) {
-				this.$.loading.dismiss();
-				this.set("$.notifier.text", e.detail.response.response.error || "An error occurred!");
-				this.$.notifier.show();
+				this.$.loading.close();
+				this.$.error.show(e.target.lastError.error.message || "An error occurred!");
 			}
 		})
 	</script>

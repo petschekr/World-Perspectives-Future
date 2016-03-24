@@ -139,7 +139,7 @@
 			},
 			addSession: function () {
 				if (!this.$.time.validate()) {
-					this.showError("Please enter a valid time");
+					this.$.error.show("Please enter a valid time");
 					return;
 				}
 				var sendData = {
@@ -152,22 +152,22 @@
 					duration: parseInt(this.$.duration.value, 10)
 				};
 				if (!sendData.title || !sendData.description || !sendData.location || !sendData.type || !sendData.startTime) {
-					this.showError("Please enter missing information");
+					this.$.error.show("Please enter missing information");
 					return;
 				}
 				sendData.title = sendData.title.trim();
 				sendData.description = sendData.description.trim();
 				sendData.location = sendData.location.trim();
 				if (!sendData.title || !sendData.description || !sendData.location) {
-					this.showError("Please enter missing information");
+					this.$.error.show("Please enter missing information");
 					return;
 				}
 				if (isNaN(capacity) || capacity < 1) {
-					this.showError("Please enter a valid capacity");
+					this.$.error.show("Please enter a valid capacity");
 					return;
 				}
 				if (isNaN(duration) || duration < 1) {
-					this.showError("Please enter a valid duration");
+					this.$.error.show("Please enter a valid duration");
 					return;
 				}
 
@@ -180,23 +180,15 @@
 				this.$.loading.close();
 				var response = this.$["add-session-ajax"].lastResponse;
 				if (!response.success) {
-					this.showError(response.message);
+					this.$.error.show(response.message);
 				}
 				else {
-					this.showMessage(response.message);
+					this.$.done.show(response.message);
 				}
 			},
 			handleError: function (e) {
 				this.$.loading.close();
-				this.showError(e.target.lastError.error.message || "An error occurred!");
-			},
-			showMessage: function (message) {
-				this.$.done.text = message;
-				this.$.done.open();
-			},
-			showError: function (message) {
-				this.$.error.text = message;
-				this.$.error.show();
+				this.$.error.show(e.target.lastError.error.message || "An error occurred!");
 			}
 		})
 	</script>
