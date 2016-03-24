@@ -89,21 +89,22 @@
 		}
 	</style>
 	<template>
+		<iron-ajax id="add-session-ajax" method="POST" url="/admin/session" handle-as="json" on-response="addSessionResponse" on-error="handleError"></iron-ajax>
 		<content-section>
 			<h2>Add Session</h2>
-			<paper-input label="Title"></paper-input>
-			<paper-textarea label="Description"></paper-textarea>
+			<paper-input id="title" label="Title"></paper-input>
+			<paper-textarea id="description" label="Description"></paper-textarea>
 
 			<div class="flex-container">
-				<paper-input label="Location" style="width: 49%;"></paper-input>
+				<paper-input id="location" label="Location" style="width: 49%;"></paper-input>
 				<span class="flex"></span>
-				<paper-input label="Maximum capacity" type="number" value="30" min="1" style="width: 49%;">
+				<paper-input id="capacity" label="Maximum capacity" type="number" value="30" min="1" style="width: 49%;">
 					<div suffix>people</div>
 				</paper-input>
 			</div>
 
 			<div class="flex-container">
-				<paper-dropdown-menu label="Session type" style="width: 33%;">
+				<paper-dropdown-menu id="type" label="Session type" style="width: 33%;">
 					<paper-listbox class="dropdown-content">
 						<paper-item>Global session</paper-item>
 						<paper-item>Science session</paper-item>
@@ -111,15 +112,15 @@
 					</paper-listbox>
 				</paper-dropdown-menu>
 				<span class="flex"></span>
-				<paper-input id="startTime" label="Start time" value="12:00 PM" style="width: 30%;" auto-validate pattern="^([1-9]|0[1-9]|1[0-2]):[0-5][0-9] (AM|PM|am|pm)$" error-message="Invalid time"></paper-input>
+				<paper-input id="time" label="Start time" value="12:00 PM" style="width: 30%;" auto-validate pattern="^([1-9]|0[1-9]|1[0-2]):[0-5][0-9] (AM|PM|am|pm)$" error-message="Invalid time"></paper-input>
 				<span class="flex"></span>
-				<paper-input label="Duration" type="number" value="50" step="5" min="5" style="width: 33%;">
+				<paper-input id="duration" label="Duration" type="number" value="50" step="5" min="5" style="width: 33%;">
 					<div suffix>minutes</div>
 				</paper-input>
 			</div>
 			<div class="flex-container">
 				<span class="flex"></span>
-				<paper-button raised disabled style="margin-top: 10px;">Add</paper-button>
+				<paper-button raised style="margin-top: 10px;" on-click="addSession">Add</paper-button>
 				<span class="flex"></span>
 			</div>
 		</content-section>
@@ -136,10 +137,61 @@
 			ready: function () {
 
 			},
+			addSession: function () {
+				if (!this.$.time.validate()) {
+					this.showError("Please enter a valid time");
+				}
+				var sendData = {
+					title: this.$.title.value.trim(),
+					description: this.$.description.value.trim(),
+					location: this.$.location.value.trim(),
+					capacity: parseInt(this.$.capacity.value, 10),
+					type: this.$.type.value,
+					startTime: this.$.time.value,
+					duration: parseInt(this.$.duration.value, 10)
+				};
+				if (!sendData.title || !sendData.description || !sendData.location || !sendData.type || !sendData.startTime) {
+					this.showError("Please enter missing information");
+				}
+				sendData.title = sendData.title.trim();
+				sendData.description = sendData.description.trim();
+				sendData.location = sendData.location.trim();
+				if (!sendData.title || !sendData.description || !sendData.location) {
+					this.showError("Please enter missing information");
+				}
+				if (isNaN(capacity) || capacity < 1) {
+					this.showError("Please enter a valid capacity");
+				}
+				if (isNaN(duration) || duration < 1) {
+					this.showError("Please enter a valid duration");
+				}
+
+				this.$.loading.open();
+				this.$["add-session-ajax"].contentType = "application/json";
+				this.$["add-session-ajax"].body = sendData;
+				this.$["add-session-ajax"].generateRequest();
+			},
+			addSessionResponse: function () {
+				this.$.loading.close();
+				var response = this.$["add-session-ajax"].lastResponse;
+				if (!response.success) {
+					this.showError(response.message);
+				}
+				else {
+					this.showMessage(response.message);
+				}
+			},
 			handleError: function (e) {
-				this.$.loading.dismiss();
-				this.set("$.notifier.text", e.detail.response.response.error || "An error occurred!");
-				this.$.notifier.show();
+				this.$.loading.close();
+				this.showError(e.target.lastError.error.message || "An error occurred!");
+			},
+			showMessage: function (message) {
+				this.$.done.text = message;
+				this.$.done.open();
+			},
+			showError: function (message) {
+				this.$.error.text = message;
+				this.$.error.show();
 			}
 		})
 	</script>

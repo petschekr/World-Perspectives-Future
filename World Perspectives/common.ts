@@ -1,6 +1,7 @@
 ﻿import fs = require("fs");
 import express = require("express");
 import Promise = require("bluebird");
+import moment = require("moment");
 var neo4j = require("neo4j");
 
 export interface User {
@@ -58,6 +59,15 @@ export var authenticateMiddleware = function (request: express.Request, response
 		next();
 	}).catch(handleError.bind(response));
 };
+
+export var getSymposiumDate = function (): Promise<moment.Moment> {
+	return db.cypherAsync({
+		query: "MATCH (c:Constant) WHERE c.date IS NOT NULL RETURN c"
+	}).then(function (results) {
+		return moment(results[0].c.properties.date);
+	});
+};
+
 
 var pusher = require("pushbullet");
 pusher = Promise.promisifyAll(new pusher(keys.pushbullet));

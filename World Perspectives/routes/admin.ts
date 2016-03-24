@@ -8,6 +8,8 @@ import bodyParser = require("body-parser");
 var postParser = bodyParser.json();
 var router = express.Router();
 var neo4j = require("neo4j");
+import moment = require("moment");
+var slug = require("slug");
 
 interface User extends common.User { };
 
@@ -94,6 +96,73 @@ router.route("/user/:username")
 		}).then(function (results) {
 			response.json({ "success": true, "message": "User deleted successfully" });
 		}).catch(common.handleError.bind(response));
+	});
+router.route("/session")
+	.get(function (request, response) {
+		db.cypherAsync({
+			query: `MATCH (s:Session) RETURN
+				s.title AS title,
+				s.slug AS slug,
+				s.description AS description,
+				s.type AS type,
+				s.location AS location,
+				s.capacity AS capacity,
+				s.startTime AS startTime,
+				s.endTime AS endTime`
+		}).then(function (results) {
+			response.json(results);
+		}).catch(common.handleError.bind(response));
+	})
+	.post(postParser, function (request, response) {
+		// TODO: validate the information sent here to avoid TypeErrors
+		var title = request.body.title;
+		var description = request.body.description;
+		var location = request.body.location;
+		var capacity = request.body.capacity;
+		var sessionType = request.body.type;
+		var duration = request.body.duration;
+		common.getSymposiumDate()
+			.then(function (date: moment.Moment) {
+				var startTime = moment(request.body.startTime, "hh:mm A");
+				startTime.set("year", date.get("year"));
+				startTime.set("month", date.get("month"));
+				startTime.set("date", date.get("date"));
+				var endTime = startTime.clone().add(duration, "minutes");
+				return db.cypherAsync({
+					query: `CREATE (session:Session {
+						title: { title },
+						slug: { slug },
+						description: { description },
+						type: { type },
+						location: { location },
+						capacity: { capacity },
+						startTime: { startTime },
+						endTime: { endTime }
+					})`,
+					params: {
+						title: title,
+						slug: slug(title, { "lower": true }),
+						description: description,
+						location: location,
+						capacity: capacity,
+						type: sessionType,
+						startTime: startTime.format(),
+						endTime: endTime.format()
+					}
+				});
+			})
+			.then(function (results) {
+				response.json({ "success": true, "message": "Session successfully created" });
+			}).catch(neo4j.ClientError, function () {
+				response.json({ "success": false, "message": "A session with that title already exists" });
+			}).catch(common.handleError.bind(response));
+	});
+router.route("/session/:slug")
+	.get(function (request, response) {
+
+	})
+	.delete(function (request, response) {
+
 	});
 router.route("/schedule")
 	.get(function (request, response) {
