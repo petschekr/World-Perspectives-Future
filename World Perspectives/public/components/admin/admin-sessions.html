@@ -140,11 +140,12 @@
 			addSession: function () {
 				if (!this.$.time.validate()) {
 					this.showError("Please enter a valid time");
+					return;
 				}
 				var sendData = {
-					title: this.$.title.value.trim(),
-					description: this.$.description.value.trim(),
-					location: this.$.location.value.trim(),
+					title: this.$.title.value,
+					description: this.$.description.value,
+					location: this.$.location.value,
 					capacity: parseInt(this.$.capacity.value, 10),
 					type: this.$.type.value,
 					startTime: this.$.time.value,
@@ -152,18 +153,22 @@
 				};
 				if (!sendData.title || !sendData.description || !sendData.location || !sendData.type || !sendData.startTime) {
 					this.showError("Please enter missing information");
+					return;
 				}
 				sendData.title = sendData.title.trim();
 				sendData.description = sendData.description.trim();
 				sendData.location = sendData.location.trim();
 				if (!sendData.title || !sendData.description || !sendData.location) {
 					this.showError("Please enter missing information");
+					return;
 				}
 				if (isNaN(capacity) || capacity < 1) {
 					this.showError("Please enter a valid capacity");
+					return;
 				}
 				if (isNaN(duration) || duration < 1) {
 					this.showError("Please enter a valid duration");
+					return;
 				}
 
 				this.$.loading.open();
