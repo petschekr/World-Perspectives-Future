@@ -162,11 +162,11 @@
 					this.$.error.show("Please enter missing information");
 					return;
 				}
-				if (isNaN(capacity) || capacity < 1) {
+				if (isNaN(sendData.capacity) || sendData.capacity < 1) {
 					this.$.error.show("Please enter a valid capacity");
 					return;
 				}
-				if (isNaN(duration) || duration < 1) {
+				if (isNaN(sendData.duration) || sendData.duration < 1) {
 					this.$.error.show("Please enter a valid duration");
 					return;
 				}
