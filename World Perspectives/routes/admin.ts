@@ -188,10 +188,40 @@ router.route("/session")
 	});
 router.route("/session/:slug")
 	.get(function (request, response) {
-
+		var slug = request.params.slug;
+		db.cypherAsync({
+			query: `MATCH (s:Session {slug: {slug}}) RETURN
+				s.title AS title,
+				s.slug AS slug,
+				s.description AS description,
+				s.type AS type,
+				s.location AS location,
+				s.capacity AS capacity,
+				s.startTime AS startTime,
+				s.endTime AS endTime`,
+			params: {
+				slug: slug
+			}
+		}).then(function (results) {
+			if (results.length == 0) {
+				results = null;
+			}
+			else {
+				results = results[0];
+			}
+			response.json(results);
+		}).catch(common.handleError.bind(response));
 	})
 	.delete(function (request, response) {
-
+		var slug = request.params.slug;
+		db.cypherAsync({
+			query: "MATCH (s:Session {slug: {slug}}) DELETE s",
+			params: {
+				slug: slug
+			}
+		}).then(function (results) {
+			response.json({ "success": true, "message": "Session deleted successfully" });
+		}).catch(common.handleError.bind(response));
 	});
 router.route("/schedule")
 	.get(function (request, response) {
