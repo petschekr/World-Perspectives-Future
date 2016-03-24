@@ -185,13 +185,24 @@
 				Polymer.dom(this.$.addUserButton).removeAttribute("disabled");
 			},
 			addUserSubmit: function () {
-				this.$.loading.open();
 				var sendData = {
-					"name": this.$.addUserName.value.trim(),
-					"username": this.$.addUserUsername.value.trim(),
+					"name": this.$.addUserName.value,
+					"username": this.$.addUserUsername.value,
 					"teacher": this.$.addUserType.checked,
 					"admin": this.$.addUserAdmin.checked
 				};
+				if (!sendData.name || !sendData.username) {
+					this.$.error.show("Please enter both the user's name and username");
+					return;
+				}
+				sendData.name = sendData.name.trim();
+				sendData.username = sendData.username.trim();
+				if (!sendData.name || !sendData.username) {
+					this.$.error.show("Please enter both the user's name and username");
+					return;
+				}
+
+				this.$.loading.open();
 				this.$["add-user-ajax"].contentType = "application/json";
 				this.$["add-user-ajax"].body = sendData;
 				this.$["add-user-ajax"].generateRequest();
