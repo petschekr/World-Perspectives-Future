@@ -112,7 +112,8 @@ router.route("/session")
 				s.location AS location,
 				s.capacity AS capacity,
 				s.startTime AS startTime,
-				s.endTime AS endTime`
+				s.endTime AS endTime
+				ORDER BY s.startTime, s.title`
 		}).then(function (results) {
 			response.json(results);
 		}).catch(common.handleError.bind(response));
