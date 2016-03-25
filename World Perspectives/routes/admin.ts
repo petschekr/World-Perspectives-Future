@@ -12,6 +12,7 @@ import moment = require("moment");
 var slug = require("slug");
 
 interface User extends common.User { };
+const timeFormat: string = "h:mm A";
 
 var authenticateCheck = common.authenticateMiddleware;
 var adminCheck = function (request: express.Request, response: express.Response, next: express.NextFunction): void {
@@ -115,6 +116,30 @@ router.route("/session")
 				s.endTime AS endTime
 				ORDER BY s.startTime, s.title`
 		}).then(function (results) {
+			results = results.map(function (session) {
+				return {
+					"title": {
+						"formatted": session.title,
+						"slug": session.slug
+					},
+					"description": session.description,
+					"type": session.type,
+					"location": {
+						"name": session.location,
+						"capacity": session.capacity
+					},
+					"time": {
+						"start": {
+							"raw": session.startTime,
+							"formatted": moment(session.startTime).format(timeFormat)
+						},
+						"end": {
+							"raw": session.endTime,
+							"formatted": moment(session.endTime).format(timeFormat)
+						}
+					}
+				};
+			});
 			response.json(results);
 		}).catch(common.handleError.bind(response));
 	})
@@ -152,7 +177,7 @@ router.route("/session")
 		}
 		common.getSymposiumDate()
 			.then(function (date: moment.Moment) {
-				var startTime = moment(request.body.startTime, "hh:mm A");
+				var startTime = moment(request.body.startTime, timeFormat);
 				startTime.set("year", date.get("year"));
 				startTime.set("month", date.get("month"));
 				startTime.set("date", date.get("date"));
@@ -204,12 +229,32 @@ router.route("/session/:slug")
 			}
 		}).then(function (results) {
 			if (results.length == 0) {
-				results = null;
+				response.json(null);
 			}
 			else {
-				results = results[0];
+				response.json({
+					"title": {
+						"formatted": results[0].title,
+						"slug": results[0].slug
+					},
+					"description": results[0].description,
+					"type": results[0].type,
+					"location": {
+						"name": results[0].location,
+						"capacity": results[0].capacity
+					},
+					"time": {
+						"start": {
+							"raw": results[0].startTime,
+							"formatted": moment(results[0].startTime).format(timeFormat)
+						},
+						"end": {
+							"raw": results[0].endTime,
+							"formatted": moment(results[0].endTime).format(timeFormat)
+						}
+					}
+				});
 			}
-			response.json(results);
 		}).catch(common.handleError.bind(response));
 	})
 	.delete(function (request, response) {
