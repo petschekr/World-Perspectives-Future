@@ -185,6 +185,7 @@ describe("Admin endpoints", () => {
 	it("GET /user");
 	it("POST /user");
 	it("GET /user/username");
+	it("PUT /user/username");
 	it("DELETE /user/username");
 	it("GET /schedule");
 	it("PATCH /schedule");

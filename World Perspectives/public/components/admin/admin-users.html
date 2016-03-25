@@ -108,7 +108,7 @@
 	</style>
 	<template>
 		<iron-ajax id="user-ajax" auto url="/user" handle-as="json" on-response="userResponse" on-error="handleError"></iron-ajax>
-		<iron-ajax id="add-user-ajax" method="POST" url="/admin/user" handle-as="json" on-response="addUserResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="add-user-ajax" method="PUT" handle-as="json" on-response="addUserResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="delete-user-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUserResponse" on-error="handleError"></iron-ajax>
 		<content-section>
 			<h2>Add Users</h2>
@@ -219,6 +219,7 @@
 				}
 
 				this.$.loading.open();
+				this.$["add-user-ajax"].url = "/admin/user/" + sendData.username;
 				this.$["add-user-ajax"].contentType = "application/json";
 				this.$["add-user-ajax"].body = sendData;
 				this.$["add-user-ajax"].generateRequest();

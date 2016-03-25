@@ -10,6 +10,8 @@ var router = express.Router();
 var neo4j = require("neo4j");
 import moment = require("moment");
 var slug = require("slug");
+var Busboy = require("busboy");
+var xlsx = require("node-xlsx");
 
 interface User extends common.User { };
 const timeFormat: string = "h:mm A";
@@ -45,12 +47,30 @@ router.route("/user")
 		}).then(function (results) {
 			response.json(results);
 		}).catch(common.handleError.bind(response));
+	});
+router.route("/user/:username")
+	.get(function (request, response) {
+		var username = request.params.username;
+		db.cypherAsync({
+			query: "MATCH (user:User {username: {username}}) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher",
+			params: {
+				username: username
+			}
+		}).then(function (results) {
+			if (results.length == 0) {
+				results = null;
+			}
+			else {
+				results = results[0];
+			}
+			response.json(results);
+		}).catch(common.handleError.bind(response));
 	})
-	.post(postParser, function (request, response) {
+	.put(postParser, function (request, response) {
 		// Generate a unique code for this user
 		var code = crypto.randomBytes(16).toString("hex");
 		var name = request.body.name;
-		var username = request.body.username;
+		var username = request.params.username;
 		if (!name || !username) {
 			response.json({ "success": false, "message": "Please enter both the user's name and username" });
 			return;
@@ -71,24 +91,6 @@ router.route("/user")
 			response.json({ "success": true, "message": "User successfully created" });
 		}).catch(neo4j.ClientError, function () {
 			response.json({ "success": false, "message": "A user with that username already exists" });
-		}).catch(common.handleError.bind(response));
-	});
-router.route("/user/:username")
-	.get(function (request, response) {
-		var username = request.params.username;
-		db.cypherAsync({
-			query: "MATCH (user:User {username: {username}}) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher",
-			params: {
-				username: username
-			}
-		}).then(function (results) {
-			if (results.length == 0) {
-				results = null;
-			}
-			else {
-				results = results[0];
-			}
-			response.json(results);
 		}).catch(common.handleError.bind(response));
 	})
 	.delete(function (request, response) {
