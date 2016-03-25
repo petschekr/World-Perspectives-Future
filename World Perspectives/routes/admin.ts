@@ -112,6 +112,7 @@ router.route("/session")
 				s.type AS type,
 				s.location AS location,
 				s.capacity AS capacity,
+				s.attendees AS attendees,
 				s.startTime AS startTime,
 				s.endTime AS endTime
 				ORDER BY s.startTime, s.title`
@@ -124,9 +125,10 @@ router.route("/session")
 					},
 					"description": session.description,
 					"type": session.type,
-					"location": {
-						"name": session.location,
-						"capacity": session.capacity
+					"location": session.location,
+					"capacity": {
+						"total": session.capacity,
+						"filled": session.attendees
 					},
 					"time": {
 						"start": {
@@ -190,6 +192,7 @@ router.route("/session")
 						type: { type },
 						location: { location },
 						capacity: { capacity },
+						attendees: { attendees },
 						startTime: { startTime },
 						endTime: { endTime }
 					})`,
@@ -199,6 +202,7 @@ router.route("/session")
 						description: description,
 						location: location,
 						capacity: capacity,
+						attendees: 0,
 						type: sessionType,
 						startTime: startTime.format(),
 						endTime: endTime.format()
@@ -222,6 +226,7 @@ router.route("/session/:slug")
 				s.type AS type,
 				s.location AS location,
 				s.capacity AS capacity,
+				s.attendees AS attendees
 				s.startTime AS startTime,
 				s.endTime AS endTime`,
 			params: {
@@ -239,9 +244,10 @@ router.route("/session/:slug")
 					},
 					"description": results[0].description,
 					"type": results[0].type,
-					"location": {
-						"name": results[0].location,
-						"capacity": results[0].capacity
+					"location": results[0].location,
+					"capacity": {
+						"total": results[0].capacity,
+						"filled": results[0].attendees
 					},
 					"time": {
 						"start": {
