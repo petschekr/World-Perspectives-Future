@@ -10,7 +10,24 @@ var router = express.Router();
 var neo4j = require("neo4j");
 import moment = require("moment");
 var slug = require("slug");
-var Busboy = require("busboy");
+var multer = require("multer");
+var uploadHandler = multer({
+	"storage": multer.memoryStorage(),
+	"limits": {
+		"fileSize": 1000000, // 1 MB
+		"files": 1,
+		"fields": 0
+	},
+	"fileFilter": function (request, file, callback) {
+		const excelMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+		if (file.mimetype === excelMimeType && !!file.originalname.match("\.xlsx$")) {
+			callback(null, true);
+		}
+		else {
+			callback(null, false);
+		}
+	}
+});
 var xlsx = require("node-xlsx");
 
 interface User extends common.User { };
@@ -47,6 +64,87 @@ router.route("/user")
 		}).then(function (results) {
 			response.json(results);
 		}).catch(common.handleError.bind(response));
+	})
+	.post(uploadHandler.single("import"), function (request, response) {
+		try {
+			// CAUTION: This is a blocking method
+			var data = xlsx.parse(request.file.buffer);
+		}
+		catch (err) {
+			response.json({ "success": false, "message": "Invalid Excel file uploaded" });
+			return;
+		}
+		if (data.length !== 2) {
+			response.json({ "success": false, "message": "Please put students on the first sheet and faculty on the second" });
+			return;
+		}
+		var queries = [];
+		var emailRegEx = /^(.*?)@gfacademy.org$/i;
+		// Students
+		for (let i = 0; i < data[0].data.length; i++) {
+			let student = data[0].data[i];
+			if (student.length === 0)
+				continue;
+			let firstName = student[0];
+			let lastName = student[1];
+			let email = student[2];
+			let grade = parseInt(student[3], 10);
+			if ((!firstName || !lastName || !email || isNaN(grade)) && i !== 0) {
+				response.json({ "success": false, "message": "Invalid format for students. Expected first name, last name, email, grade." });
+				return;
+			}
+			var emailParsed = email.match(emailRegEx);
+			// Check if there is actually an email in the email field. If not, it's probably the header
+			if (!emailParsed)
+				continue;
+			var code = crypto.randomBytes(16).toString("hex");
+			queries.push({
+				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
+				params: {
+					name: `${firstName} ${lastName}`,
+					username: emailParsed[1],
+					registered: false,
+					teacher: false,
+					admin: false,
+					code: code
+				}
+			});
+		}
+		// Faculty
+		for (let i = 0; i < data[1].data.length; i++) {
+			let teacher = data[1].data[i];
+			if (teacher.length === 0)
+				continue;
+			let firstName = teacher[0];
+			let lastName = teacher[1];
+			let email = teacher[2];
+			if (!firstName || !lastName || !email) {
+				response.json({ "success": false, "message": "Invalid format for faculty. Expected first name, last name, email." });
+				return;
+			}
+			var emailParsed = email.match(emailRegEx);
+			// Check if there is actually an email in the email field. If not, it's probably the header
+			if (!emailParsed)
+				continue;
+			var code = crypto.randomBytes(16).toString("hex");
+			queries.push({
+				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
+				params: {
+					name: `${firstName} ${lastName}`,
+					username: emailParsed[1],
+					registered: false,
+					teacher: true,
+					admin: false,
+					code: code
+				}
+			});
+		}
+		db.cypherAsync({ queries: queries })
+			.then(function (results) {
+				response.json({ "success": true, "message": `${queries.length} users successfully created` });
+			}).catch(neo4j.ClientError, function () {
+				response.json({ "success": false, "message": "A user with an existing username can't be imported. Rolling back changes." });
+			}).catch(common.handleError.bind(response));
 	});
 router.route("/user/:username")
 	.get(function (request, response) {

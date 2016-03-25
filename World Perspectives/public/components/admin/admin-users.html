@@ -284,6 +284,41 @@
 				// Refresh users list
 				this.$["users-ajax"].generateRequest();
 			},
+			importUsers: function () {
+				var file = this.$$('input[type="file"]');
+				if (file.files.length !== 1)
+					return;
+				var excelFile = file.files[0];
+				if (!excelFile.name.match("\.xlsx$")) {
+					this.$.error.show("Please choose a valid Excel file (.xlsx)");
+					return;
+				}
+				var formData = new FormData();
+				formData.append("import", excelFile);
+				var xhr = new XMLHttpRequest();
+				xhr.open("POST", "/admin/user", true);
+				xhr.onload = (function () {
+					this.$.loading.close();
+					// Refresh the list of users
+					this.$["users-ajax"].generateRequest();
+					try {
+						var response = JSON.parse(xhr.response);
+					}
+					catch (e) {
+						this.$.error.show("The server returned a response that was not understandable");
+						return;
+					}
+					if (!response.success) {
+						this.$.error.show(response.message);
+						file.value = null;
+					}
+					else {
+						this.$.done.show(response.message);
+					}
+				}).bind(this);
+				this.$.loading.open();
+				xhr.send(formData);
+			},
 			handleError: function (e) {
 				this.$.loading.close();
 				this.$.error.show(e.target.lastError.error.message || "An error occurred!");
