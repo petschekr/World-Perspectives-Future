@@ -129,6 +129,65 @@
 	<template>
 		<iron-ajax id="add-session-ajax" method="POST" url="/admin/session" handle-as="json" on-response="addSessionResponse" on-error="handleError"></iron-ajax>
 		<content-section>
+			<h2>Sessions</h2>
+			<iron-ajax id="sessions-ajax" auto url="/admin/session" handle-as="json" last-response="{{sessions}}" on-error="handleError"></iron-ajax>
+			<template is="dom-repeat" items="[[sessions]]">
+				<paper-item on-click="openDetail" slug="[[item.title.slug]]">
+					<paper-ripple></paper-ripple>
+					<paper-item-body two-line>
+						<div>[[item.title.formatted]]</div>
+						<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]] – <b>[[item.location]]</b></div>
+					</paper-item-body>
+					<div class="info">[[item.type]]</div>
+				</paper-item>
+			</template>
+		</content-section>
+		<paper-dialog id="session-detail" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
+			<div class="flex-container">
+				<h1>
+					<span>[[selectedSession.title.formatted]]</span>
+					<br />
+					<small>[[selectedSession.time.start.formatted]] to [[selectedSession.time.end.formatted]] — [[selectedSession.location]] ([[selectedSession.capacity.filled]] / [[selectedSession.capacity.total]])</small>
+				</h1>
+				<span class="flex"></span>
+				<div class="fade">
+					<paper-icon-button icon="delete" style="margin-top: 20px;"></paper-icon-button>
+				</div>
+			</div>
+			<paper-dialog-scrollable>
+				[[selectedSession.description]]
+			</paper-dialog-scrollable>
+			<p>
+				<!-- For panels -->
+				<!--
+			<template is="dom-if" if="{{panel}}">
+				<b>Panelists:</b>
+				<template repeat="{{panelist, index in selectedSession.panelists}}">
+					<template if="{{index != selectedSession.panelists.length - 1}}">
+						{{panelist}},
+					</template>
+					<template if="{{index == selectedSession.panelists.length - 1}}">
+						{{panelist}}
+					</template>
+				</template>
+				<br />
+				<b>Moderator:</b>
+				{{selectedSession.moderator}}
+			</template>
+			-->
+				<!-- For regular sessions -->
+				<!--
+			<template if="{{!panel}}">
+				<b>Presenter:</b>
+				{{selectedSession.presenter}}
+			</template>
+			-->
+			</p>
+			<div class="buttons">
+				<paper-button dialog-dismiss autofocus>Close</paper-button>
+			</div>
+		</paper-dialog>
+		<content-section>
 			<h2>Add Session</h2>
 			<paper-input id="title" label="Title"></paper-input>
 			<paper-textarea id="description" label="Description"></paper-textarea>
@@ -162,65 +221,6 @@
 				<span class="flex"></span>
 			</div>
 		</content-section>
-		<content-section>
-			<h2>Sessions</h2>
-			<iron-ajax id="sessions-ajax" auto url="/admin/session" handle-as="json" last-response="{{sessions}}" on-error="handleError""></iron-ajax>
-			<template is="dom-repeat" items="[[sessions]]">
-				<paper-item on-click="openDetail" slug="[[item.title.slug]]">
-					<paper-ripple></paper-ripple>
-					<paper-item-body two-line>
-						<div>[[item.title.formatted]]</div>
-						<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]] – <b>[[item.location]]</b></div>
-					</paper-item-body>
-					<div class="info">[[item.type]]</div>
-				</paper-item>
-			</template>
-		</content-section>
-		<paper-dialog id="session-detail" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
-			<div class="flex-container">
-				<h1>
-					<span>[[selectedSession.title.formatted]]</span>
-					<br />
-					<small>[[selectedSession.time.start.formatted]] to [[selectedSession.time.end.formatted]] — [[selectedSession.location]] ([[selectedSession.capacity.filled]] / [[selectedSession.capacity.total]])</small>
-				</h1>
-				<span class="flex"></span>
-				<div class="fade">
-					<paper-icon-button icon="delete" style="margin-top: 20px;"></paper-icon-button>
-				</div>
-			</div>
-			<paper-dialog-scrollable>
-				[[selectedSession.description]]
-			</paper-dialog-scrollable>
-			<p>
-				<!-- For panels -->
-				<!--
-				<template is="dom-if" if="{{panel}}">
-					<b>Panelists:</b>
-					<template repeat="{{panelist, index in selectedSession.panelists}}">
-						<template if="{{index != selectedSession.panelists.length - 1}}">
-							{{panelist}},
-						</template>
-						<template if="{{index == selectedSession.panelists.length - 1}}">
-							{{panelist}}
-						</template>
-					</template>
-					<br />
-					<b>Moderator:</b>
-					{{selectedSession.moderator}}
-				</template>
-				-->
-				<!-- For regular sessions -->
-				<!--
-				<template if="{{!panel}}">
-					<b>Presenter:</b>
-					{{selectedSession.presenter}}
-				</template>
-				-->
-			</p>
-			<div class="buttons">
-				<paper-button dialog-dismiss autofocus>Close</paper-button>
-			</div>
-		</paper-dialog>
 		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
 		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
 		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>

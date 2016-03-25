@@ -111,28 +111,6 @@
 		<iron-ajax id="add-user-ajax" method="PUT" handle-as="json" on-response="addUserResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="delete-user-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUserResponse" on-error="handleError"></iron-ajax>
 		<content-section>
-			<h2>Add Users</h2>
-			<paper-input label="Name" on-input="updateUsername" id="addUserName"></paper-input>
-			<paper-input label="Username" id="addUserUsername">
-				<span suffix>@gfacademy.org</span>
-			</paper-input>
-			<div class="flex-container" style="padding-top: 10px;">
-				<span class="flex"></span>
-				<paper-toggle-button id="addUserType" on-change="updateUsername"><span id="addUsersTypeLabel">Student</span></paper-toggle-button>
-				<span class="flex"></span>
-				<paper-toggle-button id="addUserAdmin">Admin</paper-toggle-button>
-				<span class="flex"></span>
-				<paper-button raised disabled id="addUserButton" on-click="addUserSubmit">Add</paper-button>
-				<span class="flex"></span>
-			</div>
-		</content-section>
-		<content-section>
-			<h2>Import Users</h2>
-			<p>Upload an Excel file with students on the first sheet and faculty on the second. Columns be first name, last name, email address, and grade (students only) in that order.</p>
-			<input type="file" accept=".xlsx" />
-			<paper-button raised on-click="importUsers" style="margin: 0 4%;">Import</paper-button>
-		</content-section>
-		<content-section>
 			<h2>Users</h2>
 			<iron-ajax id="users-ajax" auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
 			<template is="dom-repeat" items="[[users]]">
@@ -156,6 +134,28 @@
 				<paper-button on-click="nextUserList">Next</paper-button>
 				<span class="flex"></span>
 			</div>
+		</content-section>
+		<content-section>
+			<h2>Add Users</h2>
+			<paper-input label="Name" on-input="updateUsername" id="addUserName"></paper-input>
+			<paper-input label="Username" id="addUserUsername">
+				<span suffix>@gfacademy.org</span>
+			</paper-input>
+			<div class="flex-container" style="padding-top: 10px;">
+				<span class="flex"></span>
+				<paper-toggle-button id="addUserType" on-change="updateUsername"><span id="addUsersTypeLabel">Student</span></paper-toggle-button>
+				<span class="flex"></span>
+				<paper-toggle-button id="addUserAdmin">Admin</paper-toggle-button>
+				<span class="flex"></span>
+				<paper-button raised disabled id="addUserButton" on-click="addUserSubmit">Add</paper-button>
+				<span class="flex"></span>
+			</div>
+		</content-section>
+		<content-section>
+			<h2>Import Users</h2>
+			<p>Upload an Excel file with students on the first sheet and faculty on the second. Columns be first name, last name, email address, and grade (students only) in that order.</p>
+			<input type="file" accept=".xlsx" />
+			<paper-button raised on-click="importUsers" style="margin: 0 4%;">Import</paper-button>
 		</content-section>
 		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
 		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
