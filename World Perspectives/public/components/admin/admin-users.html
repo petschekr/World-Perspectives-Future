@@ -83,6 +83,16 @@
 			opacity: 0.6;
 		}
 
+		input[type="file"] {
+			border-bottom: 1px solid #737373;
+			padding-bottom: 2px;
+			color: #212121;
+			outline: none;
+			width: 80%;
+			font-family: Roboto;
+			font-size: 95%;
+		}
+
 		.flex-container {
 			padding-top: 5px;
 			@apply(--layout-horizontal);
@@ -115,6 +125,12 @@
 				<paper-button raised disabled id="addUserButton" on-click="addUserSubmit">Add</paper-button>
 				<span class="flex"></span>
 			</div>
+		</content-section>
+		<content-section>
+			<h2>Import Users</h2>
+			<p>Upload an Excel file with students on the first sheet and faculty on the second. Columns be first name, last name, email address, and grade (students only) in that order.</p>
+			<input type="file" accept=".xlsx" />
+			<paper-button raised on-click="importUsers" style="margin: 0 4%;">Import</paper-button>
 		</content-section>
 		<content-section>
 			<h2>Users</h2>
