@@ -55,10 +55,14 @@ router.route("/").get(function (request, response) {
 router.route("/user")
 	.get(function (request, response) {
 		const usersPerPage = 10;
+		var page = parseInt(request.query.page, 10);
+		if (isNaN(page) || page < 0) {
+			page = 0;
+		}
 		db.cypherAsync({
 			query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
 			params: {
-				skip: request.query.page * usersPerPage,
+				skip: page * usersPerPage,
 				limit: usersPerPage
 			}
 		}).then(function (results) {
