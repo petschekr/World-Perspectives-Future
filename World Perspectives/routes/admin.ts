@@ -226,7 +226,7 @@ router.route("/session/:slug")
 				s.type AS type,
 				s.location AS location,
 				s.capacity AS capacity,
-				s.attendees AS attendees
+				s.attendees AS attendees,
 				s.startTime AS startTime,
 				s.endTime AS endTime`,
 			params: {
