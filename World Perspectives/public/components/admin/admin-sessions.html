@@ -120,6 +120,20 @@
 		.fade {
 			opacity: 0.6;
 		}
+		h4 {
+			margin: 10px 0 0;
+		}
+		paper-item.presenters {
+			padding: 0;
+		}
+		paper-item.presenters::before {
+			content: "●";
+			padding-right: 12px;
+			padding-left: 12px;
+		}
+		paper-item.presenters:last-child {
+			margin-bottom: -10px;
+		}
 
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
@@ -201,7 +215,7 @@
 			</div>
 
 			<div class="flex-container">
-				<paper-dropdown-menu id="type" label="Session type" style="width: 33%;">
+				<paper-dropdown-menu id="type" label="Session type" style="width: 33%;" on-iron-select="updateMultiplePresenters">
 					<paper-listbox class="dropdown-content">
 						<paper-item>Global session</paper-item>
 						<paper-item>Science session</paper-item>
@@ -215,6 +229,27 @@
 					<div suffix>minutes</div>
 				</paper-input>
 			</div>
+
+			<template is="dom-if" if="[[arePresenters]]">
+				<template is="dom-if" if="[[!multiplePresenters]]">
+					<h4>Presenter</h4>
+				</template>
+				<template is="dom-if" if="[[multiplePresenters]]">
+					<h4>Presenters</h4>
+				</template>
+			</template>
+			<template is="dom-repeat" items="[[presenters]]">
+				<paper-item class="presenters">
+					<paper-item-body>
+						<div>[[item.name]]</div>
+					</paper-item-body>
+					<paper-icon-button icon="clear" on-click="removePresenter" index="[[index]]"></paper-icon-button>
+				</paper-item>
+			</template>
+			<paper-input id="presenter" label="Presenter name">
+				<paper-icon-button suffix icon="add" on-click="addPresenter"></paper-icon-button>
+			</paper-input>
+
 			<div class="flex-container">
 				<span class="flex"></span>
 				<paper-button raised style="margin-top: 10px;" on-click="addSession">Add</paper-button>
@@ -229,7 +264,20 @@
 		Polymer({
 			is: "admin-sessions",
 			properties: {
-				
+				"presenters": {
+					type: Array,
+					value: function () {
+						return [];
+					}
+				},
+				"arePresenters": {
+					type: Boolean,
+					value: false
+				},
+				"multiplePresenters": {
+					type: Boolean,
+					value: false
+				}
 			},
 			ready: function () {
 				if (!Array.prototype.find) {
@@ -261,6 +309,36 @@
 					return session.title.slug == slug;
 				});
 				this.$["session-detail"].open();
+			},
+			addPresenter: function () {
+				var name = this.$.presenter.value.trim();
+				if (!name)
+					return;
+				if (this.presenters.length >= 1 && !this.multiplePresenters) {
+					this.$.error.show("Only panels can have multiple presenters");
+					return;
+				}
+				this.presenters = this.presenters.concat({
+					"name": name
+				});
+				this.$.presenter.value = "";
+				this.arePresenters = true;
+			},
+			removePresenter: function (e) {
+				var presenters = this.presenters.concat();
+				presenters.splice(e.currentTarget.index, 1);
+				this.presenters = presenters;
+				if (this.presenters.length < 1)
+					this.arePresenters = false;
+			},
+			updateMultiplePresenters: function (e) {
+				if (e.currentTarget.value === "Panel") {
+					this.multiplePresenters = true;
+				}
+				else {
+					this.multiplePresenters = false;
+					this.presenters = this.presenters.splice(0, 1);
+				}
 			},
 			addSession: function () {
 				if (!this.$.time.validate()) {
