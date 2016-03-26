@@ -161,7 +161,7 @@
 			<h2>Import Users</h2>
 			<p>Upload an Excel file with students on the first sheet and faculty on the second. Columns be first name, last name, email address, and grade (students only) in that order.</p>
 			<input type="file" accept=".xlsx" />
-			<paper-button raised on-click="importUsers" style="margin: 0 4%;">Import</paper-button>
+			<paper-button id="import" raised on-click="importUsers" style="margin: 0 4%;">Import</paper-button>
 		</content-section>
 		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
 		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
@@ -305,6 +305,7 @@
 				xhr.open("POST", "/admin/user", true);
 				xhr.onload = (function () {
 					this.$.loading.close();
+					this.toggleAttribute("disabled", false, this.$.import);
 					// Refresh the list of users
 					this.$["users-ajax"].generateRequest();
 					try {
@@ -323,6 +324,7 @@
 					}
 				}).bind(this);
 				this.$.loading.open();
+				this.toggleAttribute("disabled", true, this.$.import);
 				xhr.send(formData);
 			},
 			handleError: function (e) {
