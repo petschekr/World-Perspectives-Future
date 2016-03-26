@@ -316,10 +316,10 @@
 					}
 					if (!response.success) {
 						this.$.error.show(response.message);
-						file.value = null;
 					}
 					else {
 						this.$.done.show(response.message);
+						file.value = null;
 					}
 				}).bind(this);
 				this.$.loading.open();
