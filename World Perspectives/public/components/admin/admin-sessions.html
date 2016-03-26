@@ -15,6 +15,7 @@
 <link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
 <link rel="import" href="/bower_components/paper-ripple/paper-ripple.html" />
 <link rel="import" href="/bower_components/neon-animation/neon-animations.html" />
+<link rel="import" href="/bower_components/paper-autocomplete/paper-autocomplete.html" />
 <link rel="import" href="/components/content-section.html" />
 
 <dom-module id="admin-sessions">
@@ -246,9 +247,15 @@
 					<paper-icon-button icon="clear" on-click="removePresenter" index="[[index]]"></paper-icon-button>
 				</paper-item>
 			</template>
-			<paper-input id="presenter" label="Presenter name">
+
+			<iron-ajax auto url="/admin/user?all=true" handle-as="json" last-response="{{users}}" on-error="handleError"></iron-ajax>
+			<paper-autocomplete id="presenter" label="Presenter name" source="[[users]]">
 				<paper-icon-button suffix icon="add" on-click="addPresenter"></paper-icon-button>
-			</paper-input>
+			</paper-autocomplete>
+
+			<template is="dom-if" if="[[multiplePresenters]]">
+				<paper-autocomplete id="moderator" label="Moderator name" source="[[users]]"></paper-autocomplete>
+			</template>
 
 			<div class="flex-container">
 				<span class="flex"></span>
@@ -311,7 +318,7 @@
 				this.$["session-detail"].open();
 			},
 			addPresenter: function () {
-				var name = this.$.presenter.value.trim();
+				var name = this.$.presenter.getOption().text.trim();
 				if (!name)
 					return;
 				if (this.presenters.length >= 1 && !this.multiplePresenters) {
@@ -321,7 +328,7 @@
 				this.presenters = this.presenters.concat({
 					"name": name
 				});
-				this.$.presenter.value = "";
+				this.$.presenter.clear();
 				this.arePresenters = true;
 			},
 			removePresenter: function (e) {

@@ -54,32 +54,44 @@ router.route("/").get(function (request, response) {
 
 router.route("/user")
 	.get(function (request, response) {
-		const usersPerPage = 10;
-		var page = parseInt(request.query.page, 10);
-		if (isNaN(page) || page < 0) {
-			page = 0;
+		if (request.query.all && request.query.all.toLowerCase() === "true") {
+			// All users' names for autocomplete
+			db.cypherAsync({
+				query: "MATCH (user:User) RETURN user.name AS name ORDER BY last(split(user.name, \" \"))"
+			}).then(function (results) {
+				response.json(results.map(function (user) {
+					return user.name;
+				}));
+			}).catch(common.handleError.bind(response));
 		}
-		db.cypherAsync({
-			queries: [{
-				query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
-				params: {
-					skip: page * usersPerPage,
-					limit: usersPerPage
-				}
-			}, {
-				query: "MATCH (user:User) RETURN count(user) AS total"
-			}]
-		}).then(function (results) {
-			response.json({
-				"info": {
-					"page": page + 1,
-					"pageSize": usersPerPage,
-					"total": results[1][0].total,
-					"totalPages": Math.ceil(results[1][0].total / usersPerPage)
-				},
-				"data": results[0]
-			});
-		}).catch(common.handleError.bind(response));
+		else {
+			const usersPerPage = 10;
+			var page = parseInt(request.query.page, 10);
+			if (isNaN(page) || page < 0) {
+				page = 0;
+			}
+			db.cypherAsync({
+				queries: [{
+					query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
+					params: {
+						skip: page * usersPerPage,
+						limit: usersPerPage
+					}
+				}, {
+						query: "MATCH (user:User) RETURN count(user) AS total"
+					}]
+			}).then(function (results) {
+				response.json({
+					"info": {
+						"page": page + 1,
+						"pageSize": usersPerPage,
+						"total": results[1][0].total,
+						"totalPages": Math.ceil(results[1][0].total / usersPerPage)
+					},
+					"data": results[0]
+				});
+			}).catch(common.handleError.bind(response));
+		}
 	})
 	.post(uploadHandler.single("import"), function (request, response) {
 		try {
