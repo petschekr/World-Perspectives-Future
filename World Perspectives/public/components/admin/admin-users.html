@@ -78,6 +78,10 @@
 			color: #737373;
 			margin-top: 1px;
 		}
+		div.list-info {
+			text-align: center;
+			font-style: italic;
+		}
 		
 		span[suffix] {
 			opacity: 0.6;
@@ -113,7 +117,8 @@
 		<content-section>
 			<h2>Users</h2>
 			<iron-ajax id="users-ajax" auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
-			<template is="dom-repeat" items="[[users]]">
+			<div class="list-info" style="margin-top: 10px;">[[users.info.total]] users</div>
+			<template is="dom-repeat" items="[[users.data]]">
 				<paper-item>
 					<paper-item-body two-line>
 						<div>[[item.name]]</div>
@@ -128,6 +133,7 @@
 					<paper-icon-button icon="clear" on-click="deleteUser"></paper-icon-button>
 				</paper-item>
 			</template>
+			<div class="list-info">Page [[users.info.page]] of [[users.info.totalPages]]</div>
 			<div class="flex-container">
 				<span class="flex"></span>
 				<paper-button on-click="previousUserList">Previous</paper-button>
@@ -243,7 +249,7 @@
 			nextUserList: function (e) {
 				var currentPage = this.userListParams.page;
 				currentPage++;
-				if (Object.keys(this.users).length < 10) {
+				if (Object.keys(this.users.data).length < 10) {
 					currentPage--;
 				}
 				this.userListParams = {

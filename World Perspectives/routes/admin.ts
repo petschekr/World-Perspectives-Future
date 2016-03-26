@@ -60,13 +60,25 @@ router.route("/user")
 			page = 0;
 		}
 		db.cypherAsync({
-			query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
-			params: {
-				skip: page * usersPerPage,
-				limit: usersPerPage
-			}
+			queries: [{
+				query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
+				params: {
+					skip: page * usersPerPage,
+					limit: usersPerPage
+				}
+			}, {
+				query: "MATCH (user:User) RETURN count(user) AS total"
+			}]
 		}).then(function (results) {
-			response.json(results);
+			response.json({
+				"info": {
+					"page": page + 1,
+					"pageSize": usersPerPage,
+					"total": results[1][0].total,
+					"totalPages": Math.ceil(results[1][0].total / usersPerPage)
+				},
+				"data": results[0]
+			});
 		}).catch(common.handleError.bind(response));
 	})
 	.post(uploadHandler.single("import"), function (request, response) {
