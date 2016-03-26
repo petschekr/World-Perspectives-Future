@@ -210,7 +210,7 @@ router.route("/user/:username")
 	.delete(function (request, response) {
 		var username = request.params.username;
 		db.cypherAsync({
-			query: "MATCH (user:User {username: {username}}) DELETE user",
+			query: "MATCH (user:User {username: {username}}) DETACH DELETE user",
 			params: {
 				username: username
 			}
@@ -382,7 +382,7 @@ router.route("/session/:slug")
 	.delete(function (request, response) {
 		var slug = request.params.slug;
 		db.cypherAsync({
-			query: "MATCH (s:Session {slug: {slug}}) DELETE s",
+			query: "MATCH (s:Session {slug: {slug}}) DETACH DELETE s",
 			params: {
 				slug: slug
 			}
