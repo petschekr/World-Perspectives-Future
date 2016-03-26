@@ -238,6 +238,11 @@
 				}
 				else {
 					this.$.done.show(response.message);
+					// Clear the form
+					this.$.addUserName.value = "";
+					this.$.addUserUsername.value = "";
+					this.$.addUserType.checked = false;
+					this.$.addUserAdmin.checked = false;
 				}
 				// Refresh users list
 				this.$["users-ajax"].generateRequest();
