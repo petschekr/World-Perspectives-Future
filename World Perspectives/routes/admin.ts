@@ -187,6 +187,13 @@ router.route("/user")
 			}).catch(neo4j.ClientError, function () {
 				response.json({ "success": false, "message": "A user with an existing username can't be imported. Rolling back changes." });
 			}).catch(common.handleError.bind(response));
+	})
+	.delete(function (request, response) {
+		db.cypherAsync({
+			query: "MATCH (user:User {admin: false}) DETACH DELETE user"
+		}).then(function (results) {
+			response.json({ "success": true, "message": "All non-admin users successfully deleted" });
+		}).catch(common.handleError.bind(response));
 	});
 router.route("/user/:username")
 	.get(function (request, response) {

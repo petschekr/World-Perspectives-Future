@@ -105,6 +105,10 @@
 			@apply(--layout-flex);
 		}
 
+		content-section p {
+			text-align: center;
+		}
+
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
 
@@ -114,6 +118,7 @@
 		<iron-ajax id="user-ajax" auto url="/user" handle-as="json" on-response="userResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="add-user-ajax" method="PUT" handle-as="json" on-response="addUserResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="delete-user-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUserResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="delete-users-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUsersResponse" on-error="handleError"></iron-ajax>
 		<content-section>
 			<h2>Users</h2>
 			<iron-ajax id="users-ajax" auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
@@ -162,6 +167,15 @@
 			<p>Upload an Excel file with students on the first sheet and faculty on the second. Columns be first name, last name, email address, and grade (students only) in that order.</p>
 			<input type="file" accept=".xlsx" />
 			<paper-button id="import" raised on-click="importUsers" style="margin: 0 4%;">Import</paper-button>
+		</content-section>
+		<content-section>
+			<h2>Delete Users</h2>
+			<p>This will delete every single non-admin user. This is <em>cannot</em> be undone.</p>
+			<div class="flex-container">
+				<span class="flex"></span>
+				<paper-button id="delete-all" raised on-click="deleteUsers" style="background-color: #ff4136">Delete all</paper-button>
+				<span class="flex"></span>
+			</div>
 		</content-section>
 		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
 		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
@@ -331,6 +345,26 @@
 				this.$.loading.open();
 				this.toggleAttribute("disabled", true, this.$.import);
 				xhr.send(formData);
+			},
+			deleteUsers: function (e) {
+				var message = "Are you sure that you want to delete every single non-admin user? This cannot be undone.";
+				if (!confirm(message))
+					return;
+
+				this.$.loading.open();
+				this.$["delete-users-ajax"].generateRequest();
+			},
+			deleteUsersResponse: function () {
+				this.$.loading.close();
+				var response = this.$["delete-users-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				// Refresh users list
+				this.$["users-ajax"].generateRequest();
 			},
 			handleError: function (e) {
 				this.$.loading.close();
