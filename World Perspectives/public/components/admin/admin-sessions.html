@@ -143,6 +143,7 @@
 	</style>
 	<template>
 		<iron-ajax id="add-session-ajax" method="POST" url="/admin/session" handle-as="json" on-response="addSessionResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="delete-session-ajax" method="DELETE" url="/admin/session" handle-as="json" on-response="deleteSessionResponse" on-error="handleError"></iron-ajax>
 		<content-section>
 			<h2>Sessions</h2>
 			<iron-ajax id="sessions-ajax" auto url="/admin/session" handle-as="json" last-response="{{sessions}}" on-error="handleError"></iron-ajax>
@@ -166,7 +167,7 @@
 				</h1>
 				<span class="flex"></span>
 				<div class="fade">
-					<paper-icon-button icon="delete" style="margin-top: 20px;"></paper-icon-button>
+					<paper-icon-button icon="delete" style="margin-top: 20px;" on-click="deleteSession"></paper-icon-button>
 				</div>
 			</div>
 			<paper-dialog-scrollable>
@@ -429,6 +430,27 @@
 				}
 				// Refresh list
 				this.$["sessions-ajax"].generateRequest();
+			},
+			deleteSession: function () {
+				var message = "Are you sure that you want to delete the session titled \"" + this.selectedSession.title.formatted + "\"?";
+				if (!confirm(message))
+					return;
+
+				var url = "/admin/session/" + this.selectedSession.title.slug;
+				this.$["session-detail"].close();
+				this.$.loading.open();
+				this.$["delete-session-ajax"].url = url;
+				this.$["delete-session-ajax"].contentType = "application/json";
+				this.$["delete-session-ajax"].generateRequest();
+			},
+			deleteSessionResponse: function () {
+				this.$.loading.close();
+				var response = this.$["delete-session-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
 				}
 				// Refresh list
 				this.$["sessions-ajax"].generateRequest();
