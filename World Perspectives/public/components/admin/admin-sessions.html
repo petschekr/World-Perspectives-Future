@@ -121,6 +121,9 @@
 		.fade {
 			opacity: 0.6;
 		}
+		.line-breaks {
+			white-space: pre-line;
+		}
 		h4 {
 			margin: 10px 0 0;
 		}
@@ -163,7 +166,7 @@
 			</template>
 		</content-section>
 		<paper-dialog id="session-detail" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
-			<div class="flex-container">
+			<div class="flex-container" style="max-height: 80px;">
 				<h1>
 					<span>[[selectedSession.title.formatted]]</span>
 					<br />
@@ -174,7 +177,7 @@
 					<paper-icon-button icon="delete" style="margin-top: 20px;" on-click="deleteSession"></paper-icon-button>
 				</div>
 			</div>
-			<paper-dialog-scrollable>
+			<paper-dialog-scrollable class="line-breaks" style="margin-top: 0">
 				[[selectedSession.description]]
 			</paper-dialog-scrollable>
 			<p>
