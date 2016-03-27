@@ -254,7 +254,7 @@
 			nextUserList: function (e) {
 				var currentPage = this.userListParams.page;
 				currentPage++;
-				if (Object.keys(this.users.data).length < 10) {
+				if (currentPage >= this.users.info.totalPages) {
 					currentPage--;
 				}
 				this.userListParams = {
