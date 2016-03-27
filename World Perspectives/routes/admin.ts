@@ -257,7 +257,7 @@ router.route("/session")
 				s.attendees AS attendees,
 				s.startTime AS startTime,
 				s.endTime AS endTime
-				ORDER BY s.startTime, s.title`
+				ORDER BY s.startTime, lower(s.title)`
 		}).then(function (results) {
 			results = results.map(function (session) {
 				return {
