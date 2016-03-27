@@ -262,12 +262,12 @@ router.route("/session")
 			return Promise.map(results, function (session: any) {
 				return db.cypherAsync({
 					queries: [{
-						query: "MATCH(user:User)-[r:PRESENTS]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name",
+						query: "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name ORDER BY last(split(user.name, \" \"))",
 						params: {
 							slug: session.slug
 						}
 					}, {
-						query: "MATCH(user:User)-[r:MODERATES]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name",
+						query: "MATCH (user:User)-[r:MODERATES]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name",
 						params: {
 							slug: session.slug
 						}
@@ -481,7 +481,7 @@ router.route("/session/:slug")
 					slug: slug
 				}
 			}, {
-				query: "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.username AS username, user.name AS name",
+				query: "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.username AS username, user.name AS name ORDER BY last(split(user.name, \" \"))",
 				params: {
 					slug: slug
 				}
