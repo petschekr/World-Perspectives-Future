@@ -21,7 +21,6 @@
 <link rel="import" href="/components/content-section.html" />
 <link rel="import" href="/components/admin/admin-schedules.html" />
 <link rel="import" href="/components/admin/admin-sessions.html" />
-<link rel="import" href="/components/admin/admin-panels.html" />
 <link rel="import" href="/components/admin/admin-users.html" />
 <link rel="import" href="/components/admin/admin-emails.html" />
 
@@ -201,7 +200,6 @@
 				<paper-tabs id="tabs" selected="0" on-iron-select="tabSelection">
 					<paper-tab>Schedules</paper-tab>
 					<paper-tab>Sessions</paper-tab>
-					<paper-tab>Panels</paper-tab>
 					<paper-tab>Users</paper-tab>
 					<paper-tab>Send Emails</paper-tab>
 				</paper-tabs>
@@ -244,9 +242,6 @@
 			</neon-animatible>
 			<neon-animatible>
 				<admin-sessions></admin-sessions>
-			</neon-animatible>
-			<neon-animatible>
-				<admin-panels></admin-panels>
 			</neon-animatible>
 			<neon-animatible>
 				<admin-users></admin-users>

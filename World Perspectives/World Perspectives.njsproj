@@ -64,7 +64,6 @@
     <Content Include="pages\invalidcode.html" />
     <Content Include="public\components\admin-page.html" />
     <Content Include="public\components\admin\admin-emails.html" />
-    <Content Include="public\components\admin\admin-panels.html" />
     <Content Include="public\components\admin\admin-schedules.html" />
     <Content Include="public\components\admin\admin-sessions.html" />
     <Content Include="public\components\admin\admin-users.html" />
