@@ -447,7 +447,6 @@ router.route("/session")
 		}).then(function (results) {
 			return tx.commitAsync();
 		}).then(function (results) {
-			console.log(5);
 			response.json({ "success": true, "message": "Session successfully created" });
 		}).catch(neo4j.ClientError, function (err) {
 			console.log(err);
