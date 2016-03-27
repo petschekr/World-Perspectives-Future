@@ -437,7 +437,9 @@
 					this.$.description.value = "";
 					this.$.location.value = "";
 					this.$.capacity.value = "30";
-					this.$.type._setSelectedItem(null);
+					// First set the dropdown to a session to hide the moderator field then set to null
+					this.$.type.querySelector("paper-listbox").selected = 0;
+					this.$.type.querySelector("paper-listbox").selected = null;
 					this.$.time.value = "12:00 PM";
 					this.$.duration.value = "50";
 					this.presenters = [];
