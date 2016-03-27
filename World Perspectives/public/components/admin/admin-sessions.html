@@ -404,6 +404,23 @@
 				}
 				else {
 					this.$.done.show(response.message);
+					// Reset form
+					this.$.title.value = "";
+					this.$.description.value = "";
+					this.$.location.value = "";
+					this.$.capacity.value = "30";
+					this.$.type._setSelectedItem(null);
+					this.$.time.value = "12:00 PM";
+					this.$.duration.value = "50";
+					this.presenters = [];
+					this.arePresenters = false;
+					if (this.multiplePresenters) {
+						this.multiplePresenters = false;
+						this.$$("#moderator").clear();
+					}
+				}
+				// Refresh list
+				this.$["sessions-ajax"].generateRequest();
 				}
 				// Refresh list
 				this.$["sessions-ajax"].generateRequest();
