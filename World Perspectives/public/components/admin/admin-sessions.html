@@ -352,6 +352,14 @@
 					this.$.error.show("Please enter a valid time");
 					return;
 				}
+				if (this.presenters.length < 1) {
+					this.$.error.show("Please add a presenter");
+					return;
+				}
+				if (this.multiplePresenters && !this.$$("#moderator").getOption().text.trim()) {
+					this.$.error.show("Please add a moderator");
+					return;
+				}
 				var sendData = {
 					title: this.$.title.value,
 					description: this.$.description.value,
@@ -359,7 +367,9 @@
 					capacity: parseInt(this.$.capacity.value, 10),
 					type: this.$.type.value,
 					startTime: this.$.time.value,
-					duration: parseInt(this.$.duration.value, 10)
+					duration: parseInt(this.$.duration.value, 10),
+					presenters: this.presenters,
+					moderator: (this.multiplePresenters) ? this.$$("#moderator").getOption().text.trim() : null
 				};
 				if (!sendData.title || !sendData.description || !sendData.location || !sendData.type || !sendData.startTime) {
 					this.$.error.show("Please enter missing information");
