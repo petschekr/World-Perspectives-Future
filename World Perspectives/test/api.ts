@@ -182,15 +182,21 @@ describe("Admin endpoints", () => {
 			});
 		});
 	});
-	it("GET /user");
-	it("POST /user");
-	it("GET /user/username");
-	it("PUT /user/username");
-	it("DELETE /user/username");
+
+	it("GET /user (list all users)");
+	it("POST /user (import users from Excel file)");
+	it("DELETE /user (delete all non-admin users)");
+
+	it("GET /user/:username (get specific user)");
+	it("PUT /user/:username (create user with username)");
+	it("DELETE /user/:username (delete specific user");
+
+	it("GET /session (list all sessions)");
+	it("POST /session (create a new session)");
+
+	it("GET /session/:slug (get specific session)");
+	it("DELETE /session/:slug (delete specific session");
+
 	it("GET /schedule");
 	it("PATCH /schedule");
-	it("GET /session");
-	it("POST /session");
-	it("GET /session/:slug");
-	it("DELETE /session/:slug");
 });
