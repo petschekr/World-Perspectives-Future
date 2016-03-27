@@ -174,29 +174,18 @@
 			</paper-dialog-scrollable>
 			<p>
 				<!-- For panels -->
-				<!--
-			<template is="dom-if" if="{{panel}}">
-				<b>Panelists:</b>
-				<template repeat="{{panelist, index in selectedSession.panelists}}">
-					<template if="{{index != selectedSession.panelists.length - 1}}">
-						{{panelist}},
-					</template>
-					<template if="{{index == selectedSession.panelists.length - 1}}">
-						{{panelist}}
-					</template>
+				<template is="dom-if" if="[[selectedSession.isPanel]]">
+					<b>Panelists:</b>
+					[[selectedSession.presentersString]]
+					<br />
+					<b>Moderator:</b>
+					[[selectedSession.moderatorString]]
 				</template>
-				<br />
-				<b>Moderator:</b>
-				{{selectedSession.moderator}}
-			</template>
-			-->
 				<!-- For regular sessions -->
-				<!--
-			<template if="{{!panel}}">
-				<b>Presenter:</b>
-				{{selectedSession.presenter}}
-			</template>
-			-->
+				<template is="dom-if" if="[[!selectedSession.isPanel]]">
+					<b>Presenter:</b>
+					[[selectedSession.presentersString]]
+				</template>
 			</p>
 			<div class="buttons">
 				<paper-button dialog-dismiss autofocus>Close</paper-button>
@@ -271,6 +260,12 @@
 		Polymer({
 			is: "admin-sessions",
 			properties: {
+				"selectedSession": {
+					type: Object,
+					value: function () {
+						return {};
+					}
+				},
 				"presenters": {
 					type: Array,
 					value: function () {
@@ -313,8 +308,21 @@
 			openDetail: function (e) {
 				var slug = e.currentTarget.slug;
 				this.selectedSession = this.sessions.find(function (session) {
-					return session.title.slug == slug;
+					return session.title.slug === slug;
 				});
+				this.selectedSession.presentersString = this.selectedSession.presenters.map(function (presenter) {
+					return presenter.name;
+				}).join(", ");
+				this.selectedSession.isPanel = !!this.selectedSession.moderator;
+				if (this.selectedSession.moderator) {
+					this.selectedSession.moderatorString = this.selectedSession.moderator.name;
+				}
+				// Don't ask me why this hack is necessary
+				// I think it has something to do with the fact that Polymer doesn't think adding properties consists of an update to the object
+				var temp = this.selectedSession;
+				this.selectedSession = {};
+				this.selectedSession = temp;
+
 				this.$["session-detail"].open();
 			},
 			addPresenter: function () {
