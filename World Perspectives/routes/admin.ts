@@ -259,33 +259,52 @@ router.route("/session")
 				s.endTime AS endTime
 				ORDER BY s.startTime, lower(s.title)`
 		}).then(function (results) {
-			results = results.map(function (session) {
-				return {
-					"title": {
-						"formatted": session.title,
-						"slug": session.slug
-					},
-					"description": session.description,
-					"type": session.type,
-					"location": session.location,
-					"capacity": {
-						"total": session.capacity,
-						"filled": session.attendees
-					},
-					"time": {
-						"start": {
-							"raw": session.startTime,
-							"formatted": moment(session.startTime).format(timeFormat)
-						},
-						"end": {
-							"raw": session.endTime,
-							"formatted": moment(session.endTime).format(timeFormat)
+			return Promise.map(results, function (session: any) {
+				return db.cypherAsync({
+					queries: [{
+						query: "MATCH(user:User)-[r:PRESENTS]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name",
+						params: {
+							slug: session.slug
 						}
-					}
-				};
+					}, {
+						query: "MATCH(user:User)-[r:MODERATES]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name",
+						params: {
+							slug: session.slug
+						}
+					}]
+				}).then(function (sessionRelationships) {
+					return {
+						"title": {
+							"formatted": session.title,
+							"slug": session.slug
+						},
+						"description": session.description,
+						"type": session.type,
+						"location": session.location,
+						"capacity": {
+							"total": session.capacity,
+							"filled": session.attendees
+						},
+						"time": {
+							"start": {
+								"raw": session.startTime,
+								"formatted": moment(session.startTime).format(timeFormat)
+							},
+							"end": {
+								"raw": session.endTime,
+								"formatted": moment(session.endTime).format(timeFormat)
+							}
+						},
+						"presenters": sessionRelationships[0],
+						"moderator": (sessionRelationships[1].length !== 0) ? sessionRelationships[1][0] : null
+					};
+				});
 			});
-			response.json(results);
-		}).catch(common.handleError.bind(response));
+		})
+		.then(function (sessions) {
+			response.json(sessions);
+		})
+		.catch(common.handleError.bind(response));
 	})
 	.post(postParser, function (request, response) {
 		var title = request.body.title;
