@@ -71,7 +71,14 @@ app.route("/about").get(function (request, response) {
 // 404 page
 app.use(common.authenticateMiddleware, function (request, response, next) {
 	console.info(`Handled 404 for ${request.url} (${request.method}) by ${!!response.locals.user ? response.locals.user.username : "unauthenticated"} (${request.ip}) at ${new Date().toString()}`);
-	response.status(404).send("404 Not found!");
+	//response.status(404).send("404 Not found!");
+	fs.readFileAsync("pages/404.html", "utf8")
+		.then(function (html: string) {
+			var $ = cheerio.load(html);
+			$("#url").text(request.url);
+			response.status(404).send($.html());
+		})
+		.catch(common.handleError.bind(response));
 });
 // Generic error handling
 app.use(function (err: Error, request, response, next) {

@@ -58,6 +58,7 @@
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <Content Include="bower.json" />
     <Content Include="package.json" />
+    <Content Include="pages\404.html" />
     <Content Include="pages\about.html" />
     <Content Include="pages\admin.html" />
     <Content Include="pages\index.html" />
