@@ -364,6 +364,18 @@
 				}
 			},
 			addSession: function () {
+				var addPresenterName = this.$.presenter.getOption().text.trim();
+				if (addPresenterName) {
+					// The user forgot to properly add a filled in presenter
+					if (this.multiplePresenters || (!this.multiplePresenters && this.presenters.length === 0)) {
+						this.presenters = this.presenters.concat({
+							"name": addPresenterName
+						});
+						this.arePresenters = true;
+					}
+					this.$.presenter.clear();
+				}
+
 				if (!this.$.time.validate()) {
 					this.$.error.show("Please enter a valid time");
 					return;
