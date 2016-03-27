@@ -91,8 +91,15 @@ export var handleError = function (err: any): void {
 	// Check if this error occurred while responding to a request
 	if (this.status && this.send) {
 		var response: express.Response = this;
-		response.status(500);
-		response.send("An internal server error occurred.");
+		fs.readFile("pages/500.html", "utf8", function (err, html) {
+			response.status(500);
+			if (err) {
+				console.error(err);
+				response.send("An internal server error occurred and an additional error occurred while serving an error page.");
+				return;
+			}
+			response.send(html);
+		});
 	}
 
 	const debugging: boolean = true;
