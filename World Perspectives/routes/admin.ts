@@ -447,46 +447,61 @@ router.route("/session/:slug")
 	.get(function (request, response) {
 		var slug = request.params.slug;
 		db.cypherAsync({
-			query: `MATCH (s:Session {slug: {slug}}) RETURN
-				s.title AS title,
-				s.slug AS slug,
-				s.description AS description,
-				s.type AS type,
-				s.location AS location,
-				s.capacity AS capacity,
-				s.attendees AS attendees,
-				s.startTime AS startTime,
-				s.endTime AS endTime`,
-			params: {
-				slug: slug
-			}
+			queries: [{
+				query: `MATCH (s:Session {slug: {slug}}) RETURN
+					s.title AS title,
+					s.slug AS slug,
+					s.description AS description,
+					s.type AS type,
+					s.location AS location,
+					s.capacity AS capacity,
+					s.attendees AS attendees,
+					s.startTime AS startTime,
+					s.endTime AS endTime`,
+				params: {
+					slug: slug
+				}
+			}, {
+				query: "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.username AS username, user.name AS name",
+				params: {
+					slug: slug
+				}
+			}, {
+				query: "MATCH (user:User)-[r:MODERATES]->(s:Session {slug: {slug}}) RETURN user.username AS username, user.name AS name",
+				params: {
+					slug: slug
+				}
+			}]
 		}).then(function (results) {
-			if (results.length == 0) {
+			var sessions = results[0];
+			if (sessions.length == 0) {
 				response.json(null);
 			}
 			else {
 				response.json({
 					"title": {
-						"formatted": results[0].title,
-						"slug": results[0].slug
+						"formatted": sessions[0].title,
+						"slug": sessions[0].slug
 					},
-					"description": results[0].description,
-					"type": results[0].type,
-					"location": results[0].location,
+					"description": sessions[0].description,
+					"type": sessions[0].type,
+					"location": sessions[0].location,
 					"capacity": {
-						"total": results[0].capacity,
-						"filled": results[0].attendees
+						"total": sessions[0].capacity,
+						"filled": sessions[0].attendees
 					},
 					"time": {
 						"start": {
-							"raw": results[0].startTime,
-							"formatted": moment(results[0].startTime).format(timeFormat)
+							"raw": sessions[0].startTime,
+							"formatted": moment(sessions[0].startTime).format(timeFormat)
 						},
 						"end": {
-							"raw": results[0].endTime,
-							"formatted": moment(results[0].endTime).format(timeFormat)
+							"raw": sessions[0].endTime,
+							"formatted": moment(sessions[0].endTime).format(timeFormat)
 						}
-					}
+					},
+					"presenters": results[1],
+					"moderator": (results[2].length !== 0) ? results[2][0] : null
 				});
 			}
 		}).catch(common.handleError.bind(response));
