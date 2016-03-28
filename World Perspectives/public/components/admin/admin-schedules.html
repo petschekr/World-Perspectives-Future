@@ -78,6 +78,13 @@
 			@apply(--layout-flex);
 		}
 
+		p.info {
+			text-align: center;
+			font-style: italic;
+			font-size: 1em;
+			margin: 10px;
+		}
+
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
 
@@ -95,6 +102,7 @@
 				<paper-button raised on-click="changeDate" style="margin: 0 4%; height: 42px; align-self: center;">Set Date</paper-button>
 			</div>
 
+			<p class="info">Bolded periods are customized by users during registration</p>
 			<iron-ajax id="schedule-ajax" auto url="/admin/schedule" handle-as="json" last-response="{{schedule}}" on-error="handleError"></iron-ajax>
 			<template is="dom-repeat" items="[[schedule]]">
 				<paper-item>
