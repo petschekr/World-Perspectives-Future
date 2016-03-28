@@ -116,7 +116,7 @@
 							</template>
 						</div>
 						<div secondary>
-							<span class="time">[[item.time]]</span>
+							<span class="time">[[item.time.start.formatted]] – [[item.time.end.formatted]]</span>
 							<template is="dom-if" if="[[item.location]]">
 								&nbsp;|&nbsp;
 								<span class="location">[[item.location]]</span>

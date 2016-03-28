@@ -259,7 +259,7 @@
 					<template is="dom-template" class="row-template">
 						<table>
 							<tr>
-								<td class="longtime">{{item.time}}</td>
+								<td class="longtime">[[item.time.start.formatted]] – [[item.time.end.formatted]]</td>
 								<td class="shorttime">{{item.shortTime}}</td>
 								<td>
 									<template is="dom-if" if="{{!item.editable}}">
@@ -327,7 +327,7 @@
 					if (!this.schedule[i].location) {
 						this.schedule[i].location = "";
 					}
-					this.schedule[i].shortTime = this.schedule[i].time.replace(/ (AM|PM)/g, "").replace(/ – /g, "\nto\n");
+					this.schedule[i].shortTime = this.schedule[i].time.start.formatted.replace(/ (AM|PM)/g, "") + " to " + this.schedule[i].time.end.formatted.replace(/ (AM|PM)/g, "");
 				}
 				this.scheduleLoaded = true;
 			},
