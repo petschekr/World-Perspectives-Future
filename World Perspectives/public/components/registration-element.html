@@ -34,20 +34,10 @@
 			position: fixed;
 			bottom: 0;
 			width: 100%;
-			height: 6px;
+			--paper-progress-height: 5px;
+			--paper-progress-active-color: #3ea346;
+			--paper-progress-transition-duration: 0.5s;
 		}
-			paper-progress::shadow #activeProgress {
-				background-color: #3ea346;
-				-webkit-transition: transform 0.5s;
-				-moz-transition: transform 0.5s;
-				transition: transform 0.5s;
-			}
-			paper-progress #activeProgress {
-				background-color: #3ea346;
-				-webkit-transition: transform 0.5s;
-				-moz-transition: transform 0.5s;
-				transition: transform 0.5s;
-			}
 
 		paper-toast {
 			width: 100%;
@@ -210,7 +200,7 @@
 				</footer>
 			</content-panel>
 		</neon-animated-pages>
-		<paper-progress id="progress"></paper-progress>
+		<paper-progress id="progress" class="transiting"></paper-progress>
 		<paper-toast id="loading" text="Loading..." duration="9999999" swipedisabled autoclosedisabled></paper-toast>
 		<paper-toast id="notifier" error text="Something happened" duration="5000"></paper-toast>
 	</template>
