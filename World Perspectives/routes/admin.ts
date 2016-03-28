@@ -32,6 +32,7 @@ var xlsx = require("node-xlsx");
 
 interface User extends common.User { };
 const timeFormat: string = "h:mm A";
+const dateFormat: string = "MMMM Do, YYYY";
 function IgnoreError() {
     var temp = Error.apply(this, arguments);
     temp.name = this.name = "IgnoreError";
@@ -300,7 +301,8 @@ router.route("/session")
 							"end": {
 								"raw": session.endTime,
 								"formatted": moment(session.endTime).format(timeFormat)
-							}
+							},
+							"date": moment(session.startTime).format(dateFormat)
 						},
 						"presenters": sessionRelationships[0],
 						"moderator": (sessionRelationships[1].length !== 0) ? sessionRelationships[1][0] : null
@@ -523,7 +525,8 @@ router.route("/session/:slug")
 						"end": {
 							"raw": sessions[0].endTime,
 							"formatted": moment(sessions[0].endTime).format(timeFormat)
-						}
+						},
+						"date": moment(sessions[0].startTime).format(dateFormat)
 					},
 					"presenters": results[1],
 					"moderator": (results[2].length !== 0) ? results[2][0] : null
@@ -569,7 +572,7 @@ router.route("/schedule/date")
 			response.json({ "success": false, "message": "No date input" });
 			return;
 		}
-		var date: moment.Moment = moment(rawDate, "MMMM Do, YYYY");
+		var date: moment.Moment = moment(rawDate, dateFormat);
 		if (!date.isValid()) {
 			response.json({ "success": false, "message": "Invalid date input" });
 			return;
