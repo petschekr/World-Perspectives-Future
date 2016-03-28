@@ -90,7 +90,7 @@
 			<iron-ajax auto method="GET" url="/admin/schedule/date" handle-as="json" last-response="{{date}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="change-date-ajax" method="PATCH" url="/admin/schedule/date" handle-as="json" on-response="changeDateResponse" on-error="handleError"></iron-ajax>
 			<div class="flex-container">
-				<paper-input id="date" label="Symposium date" value="[[date.formatted]]" auto-validate pattern="^(January|February|March|April|May|June|July|August|September|October|November|December) ([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-1]){1,2}(th|st|nd|rd)?,? [0-9]{4}$" error-message="Invalid date" style="width: 80%;"></paper-input>
+				<paper-input id="date" label="Symposium date (applied to newly created sessions)" value="[[date.formatted]]" auto-validate pattern="^(January|February|March|April|May|June|July|August|September|October|November|December) ([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-1]){1,2}(th|st|nd|rd)?,? [0-9]{4}$" error-message="Invalid date" style="width: 80%;"></paper-input>
 				<span class="flex"></span>
 				<paper-button raised on-click="changeDate" style="margin: 0 4%; height: 42px; align-self: center;">Set Date</paper-button>
 			</div>
