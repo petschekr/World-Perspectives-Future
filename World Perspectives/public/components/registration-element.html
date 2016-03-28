@@ -41,14 +41,21 @@
 
 		paper-toast {
 			width: 100%;
-			bottom: 0;
-			left: 0;
+			min-width: 0;
 			border-radius: 0;
-			text-align: center;
+			margin: 0;
 		}
 			paper-toast[error] {
-				background-color: #ff4136;
+				--paper-toast-background-color: #ff4136;
 			}
+
+		.flex-container {
+			padding-top: 5px;
+			@apply(--layout-horizontal);
+		}
+		.flex {
+			@apply(--layout-flex);
+		}
 	</style>
 	<template>
 		<!-- Key handler for arrow key events -->
@@ -67,9 +74,9 @@
 					Registering for: <span>{{user.name}}</span>
 				</p>
 				<footer>
-					<div horizontal layout>
-						<span flex></span>
-						<paper-button class="custom" forward id="forward-0" on-click="handleButton">
+					<div class="flex-container">
+						<span class="flex"></span>
+						<paper-button forward id="forward-0" on-click="handleButton">
 							Next
 							<iron-icon icon="arrow-forward"></iron-icon>
 						</paper-button>
@@ -85,13 +92,13 @@
 				</ul>
 				<p><em>You must choose at least one panel and one session</em></p>
 				<footer>
-					<div horizontal layout>
-						<paper-button class="custom" backward id="backward-1" on-click="handleButton">
+					<div class="flex-container">
+						<paper-button backward id="backward-1" on-click="handleButton">
 							<iron-icon icon="arrow-back"></iron-icon>
 							Back
 						</paper-button>
-						<span flex></span>
-						<paper-button class="custom" forward id="forward-1" on-click="handleButton">
+						<span class="flex"></span>
+						<paper-button forward id="forward-1" on-click="handleButton">
 							Next
 							<iron-icon icon="arrow-forward"></iron-icon>
 						</paper-button>
@@ -101,13 +108,13 @@
 			<content-panel headtitle="Choose Session">
 				<timeslot-list url="/sessions/1" index="2"></timeslot-list>
 				<footer>
-					<div horizontal layout>
-						<paper-button class="custom" backward id="backward-2" on-click="handleButton">
+					<div class="flex-container">
+						<paper-button backward id="backward-2" on-click="handleButton">
 							<iron-icon icon="arrow-back"></iron-icon>
 							Back
 						</paper-button>
-						<span flex></span>
-						<paper-button class="custom" forward disabled id="forward-2" on-click="handleButton">
+						<span class="flex"></span>
+						<paper-button forward disabled id="forward-2" on-click="handleButton">
 							Next
 							<iron-icon icon="arrow-forward"></iron-icon>
 						</paper-button>
@@ -117,13 +124,13 @@
 			<content-panel headtitle="Choose Session">
 				<timeslot-list url="/sessions/2" index="3"></timeslot-list>
 				<footer>
-					<div horizontal layout>
-						<paper-button class="custom" backward id="backward-3" on-click="handleButton">
+					<div class="flex-container">
+						<paper-button backward id="backward-3" on-click="handleButton">
 							<iron-icon icon="arrow-back"></iron-icon>
 							Back
 						</paper-button>
-						<span flex></span>
-						<paper-button class="custom" forward disabled id="forward-3" on-click="handleButton">
+						<span class="flex"></span>
+						<paper-button forward disabled id="forward-3" on-click="handleButton">
 							Next
 							<iron-icon icon="arrow-forward"></iron-icon>
 						</paper-button>
@@ -133,13 +140,13 @@
 			<content-panel headtitle="Choose Session">
 				<timeslot-list url="/sessions/3" index="4"></timeslot-list>
 				<footer>
-					<div horizontal layout>
-						<paper-button class="custom" backward id="backward-4" on-click="handleButton">
+					<div class="flex-container">
+						<paper-button backward id="backward-4" on-click="handleButton">
 							<iron-icon icon="arrow-back"></iron-icon>
 							Back
 						</paper-button>
-						<span flex></span>
-						<paper-button class="custom" forward disabled id="forward-4" on-click="handleButton">
+						<span class="flex"></span>
+						<paper-button forward disabled id="forward-4" on-click="handleButton">
 							Next
 							<iron-icon icon="arrow-forward"></iron-icon>
 						</paper-button>
@@ -149,13 +156,13 @@
 			<content-panel headtitle="Choose Session">
 				<timeslot-list url="/sessions/4" index="5"></timeslot-list>
 				<footer>
-					<div horizontal layout>
-						<paper-button class="custom" backward id="backward-5" on-click="handleButton">
+					<div class="flex-container">
+						<paper-button backward id="backward-5" on-click="handleButton">
 							<iron-icon icon="arrow-back"></iron-icon>
 							Back
 						</paper-button>
-						<span flex></span>
-						<paper-button class="custom" forward disabled id="forward-5" on-click="handleButton">
+						<span class="flex"></span>
+						<paper-button forward disabled id="forward-5" on-click="handleButton">
 							Next
 							<iron-icon icon="arrow-forward"></iron-icon>
 						</paper-button>
@@ -165,13 +172,13 @@
 			<content-panel headtitle="Choose Session">
 				<timeslot-list url="/sessions/5" index="6"></timeslot-list>
 				<footer>
-					<div horizontal layout>
-						<paper-button class="custom" backward id="backward-6" on-click="handleButton">
+					<div class="flex-container">
+						<paper-button backward id="backward-6" on-click="handleButton">
 							<iron-icon icon="arrow-back"></iron-icon>
 							Back
 						</paper-button>
-						<span flex></span>
-						<paper-button class="custom" forward disabled id="forward-6" on-click="handleButton">
+						<span class="flex"></span>
+						<paper-button forward disabled id="forward-6" on-click="handleButton">
 							Next
 							<iron-icon icon="arrow-forward"></iron-icon>
 						</paper-button>
@@ -186,13 +193,13 @@
 				<p style="font-size: 1.4em;">12:25 AM - 1:15 PM: <b>{{selections.fourth.name}}</b></p>
 				<p style="font-size: 1.4em;">1:20 AM - 2:10 PM: <b>{{selections.fifth.name}}</b></p>
 				<footer>
-					<div horizontal layout>
-						<paper-button class="custom" backward id="backward-7" on-click="handleButton">
+					<div class="flex-container">
+						<paper-button backward id="backward-7" on-click="handleButton">
 							<iron-icon icon="arrow-back"></iron-icon>
 							Back
 						</paper-button>
-						<span flex></span>
-						<paper-button class="custom" forward id="forward-7" on-click="handleExit">
+						<span class="flex"></span>
+						<paper-button forward id="forward-7" on-click="handleExit">
 							<iron-icon icon="done-all" style="margin-left: 0; margin-right: 4px;"></iron-icon>
 							Done
 						</paper-button>
@@ -252,11 +259,11 @@
 			},
 			ready: function () {
 				this.panelCount = this.$.progressController.getElementsByTagName("content-panel").length;
-				this.$.progressController.addEventListener("core-animated-pages-transition-end", function () {
-					this.transitioning = false;
-				}.bind(this));
-				this.$.progressController.addEventListener("core-animated-pages-transition-prepare", function () {
+				this.$.progressController.addEventListener("iron-select", function () {
 					this.$.progress.value = this.$.progressController.selected / (this.panelCount - 1) * 100;
+				}.bind(this));
+				this.$.progressController.addEventListener("neon-animation-finish", function () {
+					this.transitioning = false;
 				}.bind(this));
 				window.loadingToast = this.$.loading;
 				window.notifierToast = this.$.notifier;
@@ -287,8 +294,9 @@
 				if (this.transitioning)
 					return;
 				window.scrollTo(0, 0);
-				this.$.progressController.selected--;
-				this.transitioning = this.checkBounds();
+				this.entryAnimation = "slide-from-left-animation";
+				this.exitAnimation = "slide-right-animation";
+				this.checkBoundsAndExecute(false);
 			},
 			goForward: function () {
 				if (this.transitioning)
@@ -296,20 +304,29 @@
 				// Check if progression is allowed
 				if (!this.$["forward-" + this.$.progressController.selected].disabled) {
 					window.scrollTo(0, 0);
-					this.$.progressController.selected++;
-					this.transitioning = this.checkBounds();
+					this.entryAnimation = "slide-from-right-animation";
+					this.exitAnimation = "slide-left-animation";
+					this.checkBoundsAndExecute(true);
 				}
 			},
-			checkBounds: function () {
-				if (this.$.progressController.selected < 0) {
-					this.set("$.progressController.selected", 0);
-					return false;
+			checkBoundsAndExecute: function (forward) {
+				if (this.$.progressController.selected <= 0 && !forward) {
+					this.$.progressController.selected = 0;
+					this.transitioning = false;
+					return;
 				}
-				if (this.$.progressController.selected >= this.panelCount) {
-					this.set("$.progressController.selected", this.panelCount - 1);
-					return false;
+				if (this.$.progressController.selected >= this.panelCount - 1 && forward) {
+					this.$.progressController.selected = this.panelCount - 1;
+					this.transitioning = false;
+					return;
 				}
-				return true;
+				if (forward) {
+					this.$.progressController.selected++;
+				}
+				else {
+					this.$.progressController.selected--;
+				}
+				this.transitioning = true;
 			}
 		});
 	</script>
