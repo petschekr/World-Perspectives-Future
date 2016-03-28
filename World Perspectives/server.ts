@@ -40,9 +40,11 @@ app.use("/img", serveStatic("public/img"));
 // Routes
 import dataRouter = require("./routes/data");
 import userRouter = require("./routes/user");
+import registerRouter = require("./routes/register");
 import adminRouter = require("./routes/admin");
 app.use("/data", dataRouter);
 app.use("/user", userRouter);
+app.use("/register", registerRouter);
 app.use("/admin", adminRouter);
 
 app.route("/").get(function (request, response) {

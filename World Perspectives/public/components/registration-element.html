@@ -1,0 +1,326 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<!-- <link rel="import" href="/components/schedule-chooser.html" /> -->
+<link rel="import" href="/bower_components/paper-toolbar/paper-toolbar.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/iron-a11y-keys/iron-a11y-keys.html" />
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
+<link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-material/paper-material.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/neon-animation/neon-animated-pages.html" />
+<link rel="import" href="/bower_components/neon-animation/neon-animations.html" />
+<link rel="import" href="/bower_components/paper-progress/paper-progress.html" />
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html" />
+<link rel="import" href="/components/content-panel.html" />
+<!--<link rel="import" href="/components/session-list.html" />-->
+<link rel="import" href="/components/timeslot-list.html" />
+
+<dom-module id="registration-element">
+	<style>
+			/* TODO(polyup): For speed, consider reworking these styles with .classes
+						 and #ids rather than [attributes].
+		*/
+			[layout] {
+				@apply(--layout);
+			}
+
+				[layout][horizontal] {
+					@apply(--layout-horizontal);
+				}
+	</style>
+	<style>
+		paper-progress {
+			position: fixed;
+			bottom: 0;
+			width: 100%;
+			height: 6px;
+		}
+			paper-progress::shadow #activeProgress {
+				background-color: #3ea346;
+				-webkit-transition: transform 0.5s;
+				-moz-transition: transform 0.5s;
+				transition: transform 0.5s;
+			}
+			paper-progress #activeProgress {
+				background-color: #3ea346;
+				-webkit-transition: transform 0.5s;
+				-moz-transition: transform 0.5s;
+				transition: transform 0.5s;
+			}
+
+		paper-toast {
+			width: 100%;
+			bottom: 0;
+			left: 0;
+			border-radius: 0;
+			text-align: center;
+		}
+			paper-toast[error] {
+				background-color: #ff4136;
+			}
+	</style>
+	<template>
+		<!-- Key handler for arrow key events -->
+		<iron-a11y-keys target="{{rootDocument}}" keys="left pagedown" on-keys-pressed="goBackward"></iron-a11y-keys>
+		<iron-a11y-keys target="{{rootDocument}}" keys="right pageup" on-keys-pressed="goForward"></iron-a11y-keys>
+		<!-- AJAX for loading the user's data -->
+		<iron-ajax auto url="/user" handle-as="json" last-response="{{user}}" on-error="handleError"></iron-ajax>
+		<iron-ajax id="complete-ajax" method="POST" url="/register/done" handle-as="json" on-core-response="handleExitDone" on-core-error="handleExitFailed"></iron-ajax>
+		<neon-animated-pages id="progressController" selected="0" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
+			<content-panel headtitle="Welcome">
+				<img src="/img/logo.svg" alt="WPP">
+				<h1>World Perspectives Symposium</h1>
+				<iron-ajax auto url="/data/date" handle-as="json" last-response="{{symposiumDate}}" on-error="handleError"></iron-ajax>
+				<h2>[[symposiumDate.formatted]]</h2>
+				<p>
+					Registering for: <span>{{user.name}}</span>
+				</p>
+				<footer>
+					<div horizontal layout>
+						<span flex></span>
+						<paper-button class="custom" forward id="forward-0" on-click="handleButton">
+							Next
+							<iron-icon icon="arrow-forward"></iron-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Instructions">
+				<p class="no-margin">You'll choose a session or panel to attend for each of the five presentation periods of the symposium</p>
+				<ul>
+					<li><strong>Panel:</strong> A panel is a large session with many presenters discussing a general topic</li>
+					<li><strong>Global Studies Session:</strong> A session with a single presenter on a specific global issue</li>
+					<li><strong>Science Session:</strong> A session with a single presenter on scientific research that the presenter has performed</li>
+				</ul>
+				<p><em>You must choose at least one panel and one session</em></p>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-1" on-click="handleButton">
+							<iron-icon icon="arrow-back"></iron-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward id="forward-1" on-click="handleButton">
+							Next
+							<iron-icon icon="arrow-forward"></iron-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Choose Session">
+				<timeslot-list url="/sessions/1" index="2"></timeslot-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-2" on-click="handleButton">
+							<iron-icon icon="arrow-back"></iron-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-2" on-click="handleButton">
+							Next
+							<iron-icon icon="arrow-forward"></iron-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Choose Session">
+				<timeslot-list url="/sessions/2" index="3"></timeslot-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-3" on-click="handleButton">
+							<iron-icon icon="arrow-back"></iron-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-3" on-click="handleButton">
+							Next
+							<iron-icon icon="arrow-forward"></iron-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Choose Session">
+				<timeslot-list url="/sessions/3" index="4"></timeslot-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-4" on-click="handleButton">
+							<iron-icon icon="arrow-back"></iron-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-4" on-click="handleButton">
+							Next
+							<iron-icon icon="arrow-forward"></iron-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Choose Session">
+				<timeslot-list url="/sessions/4" index="5"></timeslot-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-5" on-click="handleButton">
+							<iron-icon icon="arrow-back"></iron-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-5" on-click="handleButton">
+							Next
+							<iron-icon icon="arrow-forward"></iron-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Choose Session">
+				<timeslot-list url="/sessions/5" index="6"></timeslot-list>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-6" on-click="handleButton">
+							<iron-icon icon="arrow-back"></iron-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward disabled id="forward-6" on-click="handleButton">
+							Next
+							<iron-icon icon="arrow-forward"></iron-icon>
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+			<content-panel headtitle="Finished">
+				<p class="no-margin">Here are the sessions that you've selected and been placed in. Please note that they are subject to change before the symposium.</p>
+				<p style="font-size: 1.4em;">9:00 AM - 9:55 AM: <b>{{selections.first.name}}</b></p>
+				<p style="font-size: 1.4em;">9:55 AM - 10:45 AM: <b>{{selections.second.name}}</b></p>
+				<p style="font-size: 1.4em;">11:30 AM - 12:20 PM: <b>{{selections.third.name}}</b></p>
+				<p style="font-size: 1.4em;">12:25 AM - 1:15 PM: <b>{{selections.fourth.name}}</b></p>
+				<p style="font-size: 1.4em;">1:20 AM - 2:10 PM: <b>{{selections.fifth.name}}</b></p>
+				<footer>
+					<div horizontal layout>
+						<paper-button class="custom" backward id="backward-7" on-click="handleButton">
+							<iron-icon icon="arrow-back"></iron-icon>
+							Back
+						</paper-button>
+						<span flex></span>
+						<paper-button class="custom" forward id="forward-7" on-click="handleExit">
+							<iron-icon icon="done-all" style="margin-left: 0; margin-right: 4px;"></iron-icon>
+							Done
+						</paper-button>
+					</div>
+				</footer>
+			</content-panel>
+		</neon-animated-pages>
+		<paper-progress id="progress"></paper-progress>
+		<paper-toast id="loading" text="Loading..." duration="9999999" swipedisabled autoclosedisabled></paper-toast>
+		<paper-toast id="notifier" error text="Something happened" duration="5000"></paper-toast>
+	</template>
+	<script>
+		window.selections = {
+			"first": null,
+			"second": null,
+			"third": null,
+			"fourth": null,
+			"fifth": null
+		};
+		this.selections = window.selections;
+
+		Polymer({
+			is: "registration-element",
+			properties: {
+				panelCount: {
+					type: Number,
+					value: 0
+				},
+				remainingSlot1: {
+					type: Object,
+					value: function () {
+						return {};
+					}
+				},
+				remainingSlot2: {
+					type: Object,
+					value: function () {
+						return {};
+					}
+				},
+				rootDocument: {
+					value: function () {
+						return document;
+					}
+				},
+				// Progress functions
+				transitioning: {
+					type: Boolean,
+					value: false
+				},
+				user: {
+					type: Object,
+					value: function () {
+						return { "name": "Loading..." };
+					}
+				}
+			},
+			ready: function () {
+				this.panelCount = this.$.progressController.getElementsByTagName("content-panel").length;
+				this.$.progressController.addEventListener("core-animated-pages-transition-end", function () {
+					this.transitioning = false;
+				}.bind(this));
+				this.$.progressController.addEventListener("core-animated-pages-transition-prepare", function () {
+					this.$.progress.value = this.$.progressController.selected / (this.panelCount - 1) * 100;
+				}.bind(this));
+				window.loadingToast = this.$.loading;
+				window.notifierToast = this.$.notifier;
+			},
+			handleButton: function (e) {
+				var element = e.target || e.srcElement;
+				if (element.attributes.backward || element.parentElement.attributes.backward) {
+					this.goBackward();
+				} else if (element.attributes.forward || element.parentElement.attributes.forward) {
+					this.goForward();
+				}
+			},
+			handleExit: function () {
+				this.$["complete-ajax"].go();
+				// Show a loading indicator
+				window.loadingToast.show();
+			},
+			handleExitDone: function () {
+				window.loadingToast.dismiss();
+				window.location = "/";
+			},
+			handleExitFailed: function (e) {
+				window.loadingToast.dismiss();
+				window.notifierToast.text = e.detail.response.response.error || "An error occurred!";
+				window.notifierToast.show();
+			},
+			goBackward: function () {
+				if (this.transitioning)
+					return;
+				window.scrollTo(0, 0);
+				this.$.progressController.selected--;
+				this.transitioning = this.checkBounds();
+			},
+			goForward: function () {
+				if (this.transitioning)
+					return;
+				// Check if progression is allowed
+				if (!this.$["forward-" + this.$.progressController.selected].disabled) {
+					window.scrollTo(0, 0);
+					this.$.progressController.selected++;
+					this.transitioning = this.checkBounds();
+				}
+			},
+			checkBounds: function () {
+				if (this.$.progressController.selected < 0) {
+					this.set("$.progressController.selected", 0);
+					return false;
+				}
+				if (this.$.progressController.selected >= this.panelCount) {
+					this.set("$.progressController.selected", this.panelCount - 1);
+					return false;
+				}
+				return true;
+			}
+		});
+	</script>
+</dom-module>

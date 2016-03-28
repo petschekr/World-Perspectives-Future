@@ -1,0 +1,333 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="/bower_components/paper-material/paper-material.html">
+<link rel="import" href="/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="/bower_components/paper-toast/paper-toast.html">
+<script src="/bower_components/moment/moment.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<!-- This can be replaced with the code from admin-sessions -->
+<style>
+	body /deep/ paper-dialog h1 {
+		font-size: 2em;
+	}
+		body /deep/ paper-dialog h1 small {
+			float: left;
+			opacity: 0.65;
+			font-size: 60%;
+			margin: 5px 0;
+		}
+
+	body /deep/ paper-dialog p.lead {
+		font-size: 1.1em;
+		clear: both;
+	}
+	/* For browsers that don't support shadow DOM */
+	paper-dialog h1 {
+		font-size: 2em;
+	}
+		paper-dialog h1 small {
+			float: left;
+			opacity: 0.65;
+			font-size: 60%;
+			margin: 5px 0;
+		}
+
+	paper-dialog p.lead {
+		font-size: 1.1em;
+		clear: both;
+	}
+</style>
+
+<dom-module id="timeslot-list">
+	<style>
+		paper-item > span, paper-item > .button-content > span {
+			color: #555;
+			width: 24px;
+			text-align: center;
+			margin-right: 10px;
+			font-size: 1.4em;
+			font-weight: bold;
+		}
+
+			paper-item > span core-icon, paper-item > .button-content > span core-icon {
+				position: relative;
+				top: -1px;
+				left: -3px;
+			}
+
+		paper-item h2 {
+			margin: 0;
+			text-align: left;
+			font-size: 1.4em;
+			width: 476px; /* 500px - 24px */
+		}
+
+		paper-item {
+			padding-right: 30px;
+			width: 500px;
+		}
+			paper-item h2 > small {
+				color: #4F4F4F;
+				font-weight: lighter;
+				font-size: 75%;
+				display: block;
+				text-decoration: none !important;
+			}
+				paper-item h2 > small > span.session-type {
+					font-weight: bold;
+				}
+				paper-item h2 > small > span.panelist::after {
+					content: ",";
+				}
+				paper-item h2 > small > span.panelist:last-child::after {
+					content: "";
+				}
+
+		:host > p {
+			font-size: 1.2em;
+			margin-bottom: 0.5em;
+			margin-top: 0;
+		}
+		/* Mobile styles */
+		@media screen and (max-width: 35.5em) {
+			paper-item > span {
+				display: none;
+			}
+
+			paper-item {
+				width: auto;
+			}
+		}
+	</style>
+	<template>
+		<iron-ajax id="getSessions" auto url="{{url}}" on-core-response="loaded" handle-as="json"></iron-ajax>
+		<iron-ajax id="postSession" method="POST" url="{{url}}" on-core-response="finishSelection" on-core-error="handleError" handle-as="json"></iron-ajax>
+		<p>Please choose a panel, global studies session, or science session to fill the <b>{{startTimeFormat}}</b> to <b>{{endTimeFormat}}</b> period</p>
+		<div id="itemcontainer">
+			<template is="dom-if" if="{{_computeIf(sessions)}}">
+				<p style="font-size: 1.4em;">Loading...</p>
+			</template>
+			<template is="dom-repeat" items="{{sessions}}" as="session">
+				<paper-item on-tap="showDetails" id="{{_computeId(session)}}">
+					<span><iron-icon icon="radio-button-off"></iron-icon></span>
+					<h2>
+						<span>{{session.name}}</span>
+						<template is="dom-if" if="{{!session.type}}">
+							<small>
+								<span class="session-type">Panel</span> –
+								<template is="dom-repeat" items="{{session.panelists}}" as="panelist">
+									<span class="panelist">{{panelist}}</span>
+								</template>
+							</small>
+						</template>
+						<template is="dom-if" if="{{!!session.type}}">
+							<small>
+								<template is="dom-if" if="{{_computeIf2(session)}}">
+									<span class="session-type">Global Session</span> –
+								</template>
+								<template is="dom-if" if="{{_computeIf3(session)}}">
+									<span class="session-type">Science Session</span> –
+								</template>
+								<span>{{session.presenter}}</span>
+							</small>
+						</template>
+					</h2>
+				</paper-item>
+			</template>
+		</div>
+		<paper-dialog id="details" backdrop layered="true" transition="core-transition-center" style="max-width: 1500px;">
+			<h1>
+				<span>{{selectedSession.name}}</span>
+				<br>
+				<small><span>{{selectedSession.time.startFormat}}</span> to <span>{{selectedSession.time.endFormat}}</span> — <span>{{selectedSession.location}}</span> (<span>{{selectedSession.capacity.taken}}</span>/<span>{{selectedSession.capacity.total}}</span>)</small>
+			</h1>
+			<p class="lead">{{selectedSession.description}}</p>
+			<p>
+				<!-- For panels -->
+				<template is="dom-if" if="{{panel}}">
+					<b>Panelists:</b>
+					<template is="dom-repeat" items="{{selectedSession.panelists}}" as="panelist" index-as="index">
+						<template is="dom-if" if="{{_computeIf4(index, selectedSession)}}">
+							<span>{{panelist}}</span>,
+						</template>
+						<template is="dom-if" if="{{_computeIf5(index, selectedSession)}}">
+							<span>{{panelist}}</span>
+						</template>
+					</template>
+					<br>
+					<b>Moderator:</b>
+					<span>{{selectedSession.moderator}}</span>
+				</template>
+				<!-- For regular sessions -->
+				<template is="dom-if" if="{{!panel}}">
+					<b>Presenter:</b>
+					<span>{{selectedSession.presenter}}</span>
+				</template>
+			</p>
+			<paper-button affirmative type="cancel" on-tap="dialogButtonHandler">
+				Cancel
+			</paper-button>
+			<paper-button affirmative autofocus type="select" on-tap="dialogButtonHandler" style="color: #4285f4;">
+				Select
+			</paper-button>
+		</paper-dialog>
+	</template>
+	<script>
+		Polymer({
+			is: "timeslot-list",
+			properties: {
+				index: {
+					type: String,
+					value: "0",
+					notify: true
+				},
+				panel: {
+					type: Boolean,
+					value: false
+				},
+				url: { notify: true }
+			},
+			created: function () {
+				this.sessions = [];
+				this.sessionsLookup = {};
+				this.selectedSession = null;
+				this.previousSelectedSession = null;
+				this.forwardButton = null;
+				this.checkmark = '<core-icon icon="radio-button-on"></core-icon>';
+				this.dash = '<core-icon icon="radio-button-off"></core-icon>';
+				this.startTimeFormat = null;
+				this.endTimeFormat = null;
+			},
+			ready: function () {
+				// WebSocket connection to update session availability in real-time
+				var socket = io.connect("/");
+				socket.on("availability", function (data) {
+					if (this.sessionsLookup[data.session]) {
+						// Relevent to this session-list
+						this.sessionsLookup[data.session].capacity.taken = data.taken;
+						// Update any open dialog's data
+						if (this.selectedSession && this.selectedSession.id === data.session) {
+							this.selectedSession.capacity.taken = data.taken;
+						}
+					}
+				}.bind(this));
+				this.forwardButton = Polymer.dom(this.parentElement).querySelector("paper-button#" + "forward-" + this.index);
+			},
+			loaded: function () {
+				// Make a copy of the loaded data
+				this.sessions = this.$.getSessions.response.sessions.slice(0);
+				this.startTimeFormat = this.$.getSessions.response.start;
+				this.endTimeFormat = this.$.getSessions.response.end;
+				for (var i = 0, len = this.sessions.length; i < len; i++) {
+					this.set("sessionsLookup" + ("." + this.sessions[i].id), this.sessions[i]);
+				}
+			},
+			showDetails: function (e) {
+				var targetID = e.currentTarget.id;
+				this.previousSelectedSession = this.selectedSession;
+				this.selectedSession = this.sessionsLookup[targetID.slice(2)];
+				// .slice() to removed "id" at the beginning of the id
+				// Format the times
+				this.set("selectedSession.time.startFormat", moment(new Date(this.selectedSession.time.start)).format("h:mm A"));
+				this.set("selectedSession.time.endFormat", moment(new Date(this.selectedSession.time.end)).format("h:mm A"));
+				this.panel = !this.selectedSession.type;
+				this.async(function () {
+					this.$.details.open();
+				});
+			},
+			dialogButtonHandler: function (e) {
+				var initiatorAction = e.currentTarget.attributes.type.value;
+				this.$.details.close();
+				var uponDialogClose = function () {
+					document.removeEventListener("core-overlay-close-completed", uponDialogClose);
+					if (initiatorAction === "select") {
+						// Register this with the server
+						var sendData = { "session": this.selectedSession.id };
+						this.$.postSession.params = JSON.stringify(sendData);
+						this.$.postSession.go();
+						console.time("Session selection");
+						// Show a loading indicator
+						window.loadingToast.show();
+					}
+				};
+				uponDialogClose = uponDialogClose.bind(this);
+				document.addEventListener("core-overlay-close-completed", uponDialogClose);
+			},
+			finishSelection: function () {
+				console.timeEnd("Session selection");
+				window.loadingToast.dismiss();
+				switch (this.startTimeFormat) {
+					case "9:00 AM":
+						window.selections.first = this.selectedSession;
+						break;
+					case "9:55 AM":
+						window.selections.second = this.selectedSession;
+						break;
+					case "11:30 AM":
+						window.selections.third = this.selectedSession;
+						break;
+					case "12:25 PM":
+						window.selections.fourth = this.selectedSession;
+						break;
+					case "1:20 PM":
+						window.selections.fifth = this.selectedSession;
+						break;
+				}
+				// Unselect the previous choice
+				if (this.previousSelectedSession) {
+					Polymer.dom(Polymer.dom(this.$.itemcontainer).querySelector("#id" + this.previousSelectedSession.id + " span")).innerHTML = this.dash;
+				}
+				// Turn the item's dash into a checkmark
+				Polymer.dom(Polymer.dom(this.$.itemcontainer).querySelector("#id" + this.selectedSession.id + " span")).innerHTML = this.checkmark;
+				// Dim the other items
+				var titles = Polymer.dom(this.$.itemcontainer).querySelectorAll("h2");
+				for (var i = 0; i < titles.length; i++) {
+					titles[i].style.opacity = "0.5";
+				}
+				Polymer.dom(this.$.itemcontainer).querySelector("#id" + this.selectedSession.id + " h2").style.opacity = "1";
+				// Proceed
+				Polymer.dom(this.forwardButton).removeAttribute("disabled");
+				// Dirty hack for visual glitch in Google Chrome
+				setTimeout(function () {
+					this.forwardButton.click();
+				}.bind(this), 1);
+			},
+			handleError: function (e) {
+				console.timeEnd("Session selection");
+				window.loadingToast.dismiss();
+				window.notifierToast.text = e.detail.response.response.error || "An error occurred!";
+				window.notifierToast.show();
+				// Failed requests will still deregister any previous registrations for that session type
+				// Unselect the previous choice
+				if (this.previousSelectedSession) {
+					Polymer.dom(Polymer.dom(this.$.itemcontainer).querySelector("#id" + this.previousSelectedSession.id + " span")).innerHTML = this.dash;
+				}
+				// Undim all other items
+				var titles = Polymer.dom(this.$.itemcontainer).querySelectorAll("h2");
+				for (var i = 0; i < titles.length; i++) {
+					titles[i].style.opacity = "1";
+				}
+			},
+			_computeIf: function (sessions) {
+				return sessions.length == 0;
+			},
+			_computeId: function (session) {
+				return "id" + session.id;
+			},
+			_computeIf2: function (session) {
+				return session.type == "wpp";
+			},
+			_computeIf3: function (session) {
+				return session.type == "science";
+			},
+			_computeIf4: function (index, selectedSession) {
+				return index != selectedSession.panelists.length - 1;
+			},
+			_computeIf5: function (index, selectedSession) {
+				return index == selectedSession.panelists.length - 1;
+			}
+		});
+	</script>
+</dom-module>

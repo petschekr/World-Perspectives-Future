@@ -10,5 +10,12 @@ router.route("/schedule").get(function (request, response) {
 		response.json(results);
 	}).catch(common.handleError.bind(response));
 });
+router.route("/date").get(function (request, response) {
+    common.getSymposiumDate().then(function (date: moment.Moment) {
+		response.json({
+			"formatted": date.format("MMMM Do, YYYY")
+		});
+	}).catch(common.handleError.bind(response));
+});
 
 export = router;
