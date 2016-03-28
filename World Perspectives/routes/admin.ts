@@ -550,5 +550,39 @@ router.route("/schedule")
 			response.json(results);
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/schedule/date")
+	.get(function (request, response) {
+		common.getSymposiumDate().then(function (date: moment.Moment) {
+			response.json({
+				"formatted": date.format("MMMM Do, YYYY")
+			});
+		}).catch(common.handleError.bind(response));
+	})
+	.patch(postParser, function (request, response) {
+		var rawDate: string = request.body.date;
+		if (!rawDate) {
+			response.json({ "success": false, "message": "No date input" });
+			return;
+		}
+		rawDate = rawDate.toString().trim();
+		if (!rawDate) {
+			response.json({ "success": false, "message": "No date input" });
+			return;
+		}
+		var date: moment.Moment = moment(rawDate, "MMMM Do, YYYY");
+		if (!date.isValid()) {
+			response.json({ "success": false, "message": "Invalid date input" });
+			return;
+		}
+
+		return db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.date IS NOT NULL SET c.date = { date } RETURN c",
+			params: {
+				date: date.format("YYYY-MM-DD")
+			}
+		}).then(function (results) {
+			response.json({ "success": true, "message": "Symposium date changed successfully" });
+		}).catch(common.handleError.bind(response));
+	});
 
 export = router;
