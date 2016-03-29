@@ -1,0 +1,188 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/components/table-repeat.html" />
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400|Raleway" />
+<dom-module id="schedule-display">
+	<style>
+		@media print {
+			button {
+				display: none;
+			}
+
+			.schedule {
+				page-break-after: always;
+			}
+				.schedule:last-of-type {
+					page-break-after: auto;
+				}
+		}
+
+		img {
+			display: block;
+			margin: 20px auto;
+		}
+
+		button {
+			position: absolute;
+			top: 5px;
+			left: 5px;
+		}
+
+		h4 {
+			margin: 5px 10px 5px 10px;
+		}
+			h4:first-of-type {
+				font-family: "Ubuntu", sans-serif;
+				font-size: 22px;
+				float: left;
+			}
+			h4:last-of-type {
+				font-family: "Ubuntu", sans-serif;
+				font-weight: 300;
+				float: right;
+				position: relative;
+				top: 4px;
+			}
+
+		.clear {
+			clear: both;
+		}
+
+		hr {
+			border: 1px dashed rgba(0, 0, 0, 0.2);
+		}
+
+		tr td:first-of-type {
+			font-family: "Ubuntu Mono";
+			width: 152px;
+			white-space: pre;
+		}
+
+		tr td:nth-of-type(2), tr td:last-of-type {
+			font-family: "Raleway", sans-serif;
+			font-size: 95%;
+		}
+
+		tr td:last-of-type {
+			width: 118px;
+			text-align: center;
+		}
+
+		table {
+			border: 1px solid #DDD;
+			width: 100%;
+			border-collapse: collapse;
+			border-spacing: 0;
+		}
+			table tr:nth-child(odd) > td {
+				background-color: #F9F9F9;
+			}
+			table td {
+				padding: 8px;
+				border: 1px solid #DDD;
+			}
+			table tr {
+				vertical-align: top;
+			}
+	</style>
+	<template>
+		<iron-ajax auto url="/user" handle-as="json" last-response="{{user}}" on-error="handleError"></iron-ajax>
+		<iron-ajax auto url="/data/date" handle-as="json" last-response="{{date}}" on-error="handleError"></iron-ajax>
+		<iron-ajax auto url="/data/schedule" handle-as="json" last-response="{{schedule}}" on-response="scheduleResponse" on-error="handleError"></iron-ajax>
+		<button onclick="window.print()">Print Schedule</button>
+		<div class="schedule">
+			<img src="/img/logo.svg">
+			<h4 class="name">[[user.name]]</h4>
+			<h4 class="date">[[date.formatted]]</h4>
+			<div class="clear"></div>
+			<hr />
+
+			<table-repeat rows="[[schedule]]" id="scheduleTable">
+				<table>
+					<thead></thead>
+					<tbody></tbody>
+				</table>
+				<template is="dom-template" class="row-template">
+					<table>
+						<tr>
+							<td class="longtime">[[item.time.start.formatted]] – [[item.time.end.formatted]]</td>
+							<td>
+								<template is="dom-if" if="{{!item.editable}}">
+									{{item.title}}
+								</template>
+								<template is="dom-if" if="{{item.editable}}">
+									<b>{{item.title}}</b>
+									<br />
+									<i>{{item.people}}</i>
+								</template>
+							</td>
+							<td>{{item.location}}</td>
+						</tr>
+					</table>
+				</template>
+			</table-repeat>
+
+			<!--
+				<table id="scheduleTable">
+					<tbody>
+						<tr template repeat="{{_computeRepeat(entry, schedule)}}">
+							<td>{{entry.time}}</td>
+							<td>
+								<template is="dom-if" if="{{!entry.people}}">
+									<span>{{entry.title}}</span>
+								</template>
+								<template is="dom-if" if="{{entry.people}}">
+									<b>{{entry.title}}</b>
+									<br>
+									<i>{{entry.people}}</i>
+								</template>
+							</td>
+							<td>{{entry.location}}</td>
+						</tr>
+					</tbody>
+				</table>
+			-->
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: "schedule-display",
+			properties: {
+				schedule: {
+					type: Array,
+					value: function () {
+						return [];
+					}
+				}
+			},
+			ready: function () {
+			},
+			scheduleResponse: function (e) {
+				for (var i = 0; i < this.schedule.length; i++) {
+					if (!this.schedule[i].location) {
+						this.schedule[i].location = "";
+					}
+					// Format times
+					/*var time = this.schedule[i].time.split("–");
+					if (time[0].length === 8) {
+						time[0] += " ";
+					}
+					if (time[1].length === 8) {
+						time[1] = " " + time[1];
+					}
+					this.schedule[i].time = time.join("–");*/
+				}
+				setTimeout(function () {
+					window.print();
+					window.history.back();
+				}, 1000);
+			},
+			handleError: function (e) {
+				var errorMessage = e.target.lastError.error.message || "An error occurred!";
+			}
+		});
+	</script>
+</dom-module>

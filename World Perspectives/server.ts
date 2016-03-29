@@ -68,7 +68,13 @@ app.route("/about").get(function (request, response) {
 		response.send($.html());
 	}).catch(common.handleError.bind(response));
 });
-
+app.route("/print").get(function (request, response) {
+	fs.readFileAsync("pages/schedule.html", "utf8")
+		.then(function (html: string) {
+			response.send(html);
+		})
+		.catch(common.handleError.bind(response));
+});
 
 // 404 page
 app.use(common.authenticateMiddleware, function (request, response, next) {
