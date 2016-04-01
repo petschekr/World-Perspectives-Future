@@ -51,7 +51,12 @@ IgnoreError.prototype = Object.create(Error.prototype, {
 var authenticateCheck = common.authenticateMiddleware;
 var adminCheck = function (request: express.Request, response: express.Response, next: express.NextFunction): void {
 	if (!response.locals.authenticated || !response.locals.user.admin) {
-		response.redirect("/");
+		if (request.method === "GET") {
+			response.redirect("/");
+		}
+		else {
+			response.status(403).send("Forbidden to non-admin users");
+		}
 	}
 	else {
 		next();
