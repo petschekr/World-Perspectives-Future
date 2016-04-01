@@ -28,7 +28,7 @@ export var keys: {
 export var cookieOptions = {
 	"path": "/",
 	"maxAge": 1000 * 60 * 60 * 24 * 30 * 6, // 6 months
-	"secure": false,
+	"secure": true,
 	"httpOnly": true,
 	"signed": true
 };
