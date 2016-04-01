@@ -102,10 +102,6 @@ export var handleError = function (err: any): void {
 		});
 	}
 
-	const debugging: boolean = true;
-	if (debugging) {
-		return;
-	}
 	// Notify via PushBullet
 	var pushbulletPromises: any[] = [];
 	for (let deviceIden of pushbulletDevices) {
