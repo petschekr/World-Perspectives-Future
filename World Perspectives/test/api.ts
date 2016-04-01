@@ -272,6 +272,20 @@ describe("Admin endpoints", () => {
 	it("GET /session/:slug (get specific session)");
 	it("DELETE /session/:slug (delete specific session");
 
-	it("GET /schedule");
+	it("GET /schedule", (done) => {
+		request(app)
+			.get("/admin/schedule")
+			.set("Cookie", testUser.cookie)
+			.expect(200)
+			.expect("Content-Type", /json/)
+			.expect(function (response) {
+				expect(response.body).to.be.an("array");
+				expect(response.body).to.have.length.above(0);
+				for (let item of response.body) {
+					expect(item).to.have.all.keys(["title", "time", "location", "editable"]);
+				}
+			})
+			.end(done);
+	});
 	it("PATCH /schedule");
 });
