@@ -201,8 +201,45 @@ describe("Admin endpoints", () => {
 			.expect("Content-Type", /html/)
 			.end(done);
 	});
-
-	it("GET /user (list all users)");
+	it("GET /user (pagination)", (done) => {
+		request(app)
+			.get("/admin/user")
+			.set("Cookie", testUser.cookie)
+			.expect(200)
+			.expect("Content-Type", /json/)
+			.expect(function (response) {
+				expect(response.body).to.be.an("object");
+				expect(response.body).to.have.all.keys(["info", "data"]);
+				expect(response.body.info).to.be.an("object");
+				expect(response.body.info).to.have.all.keys(["page", "pageSize", "total", "totalPages"]);
+				expect(response.body.info.page).to.equal(1);
+				expect(response.body.data).to.be.an("array");
+				for (let item of response.body.data) {
+					expect(item).to.have.all.keys(["username", "name", "registered", "admin", "teacher"]);
+					expect(item.username).to.be.a("string");
+					expect(item.name).to.be.a("string");
+					expect(item.registered).to.be.a("boolean");
+					expect(item.admin).to.be.a("boolean");
+					expect(item.teacher).to.be.a("boolean");
+				}
+			})
+			.end(done);
+	});
+	it("GET /user (list all users)", (done) => {
+		request(app)
+			.get("/admin/user?all=true")
+			.set("Cookie", testUser.cookie)
+			.expect(200)
+			.expect("Content-Type", /json/)
+			.expect(function (response) {
+				expect(response.body).to.be.an("array");
+				expect(response.body).to.have.length.above(0);
+				for (let item of response.body) {
+					expect(item).to.be.a("string");
+				}
+			})
+			.end(done);
+	});
 	it("POST /user (import users from Excel file)");
 	it("DELETE /user (delete all non-admin users)");
 
