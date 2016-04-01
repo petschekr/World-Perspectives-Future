@@ -86,6 +86,18 @@ describe("Data endpoints", () => {
 			})
 			.end(done);
 	});
+	it("GET /date", (done) => {
+		request(app)
+			.get("/data/date")
+			.expect(200)
+			.expect("Content-Type", /json/)
+			.expect(function (response) {
+				expect(response.body).to.be.an("object");
+				expect(response.body).to.have.all.keys(["formatted"]);
+				expect(response.body.formatted).to.be.a("string");
+			})
+			.end(done);
+	});
 });
 describe("User endpoints", () => {
 	before(function (done) {
