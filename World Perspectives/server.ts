@@ -31,6 +31,20 @@ app.use(responseTime());
 app.use(hsts({
 	"maxAge": 1000 * 60 * 60 * 24 * 30 * 6 // 6 months
 }));
+app.use(function (request, response, next) {
+	if (request.secure) {
+		next();
+	}
+	else {
+		// Redirect to HTTPS
+		if (request.method === "GET") {
+			response.redirect(301, urllib.resolve("https://wppsymposium.org", request.originalUrl));
+		}
+		else {
+			response.status(403).send("Insecure access forbidden. Please use HTTPS.");
+		}
+	}
+});
 app.use(cookieParser(
 	keys.cookieSecret, // Secret for signing cookies
 	common.cookieOptions
@@ -111,5 +125,10 @@ var server = https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0",
 	console.log("HTTPS server listening on port " + HTTPS_PORT);
 });
 var io = require("socket.io").listen(server);
+
+// Only used for redirecting to HTTPS
+http.createServer(app).listen(PORT, "0.0.0.0", 511, function () {
+	console.log("HTTP server listening on port " + PORT);
+});
 
 export = app;
