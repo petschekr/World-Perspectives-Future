@@ -63,6 +63,13 @@ describe("Main endpoints", () => {
 			.expect("Content-Type", /html/)
 			.end(done);
     });
+	it("GET /print", (done) => {
+		request(app)
+			.get("/print")
+			.expect(200)
+			.expect("Content-Type", /html/)
+			.end(done);
+    });
 });
 describe("Data endpoints", () => {
 	it("GET /schedule", (done) => {
