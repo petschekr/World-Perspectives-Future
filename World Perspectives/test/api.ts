@@ -145,7 +145,7 @@ describe("User endpoints", () => {
 		});
 	});
 });
-describe("Admin endpoints", () => {
+describe("Unauthenticated admin endpoints", () => {
 	before(function (done) {
 		insertTestUser(false, false, false, done);
 	});
@@ -160,6 +160,13 @@ describe("Admin endpoints", () => {
 			.expect("location", "/")
 			.end(done);
 	});
+	it("Unauthenticated POST /", (done) => {
+		request(app)
+			.post("/admin")
+			.redirects(0)
+			.expect(403)
+			.end(done);
+	});
 	it("Unauthorized GET /", (done) => {
 		request(app)
 			.get("/admin")
@@ -169,18 +176,30 @@ describe("Admin endpoints", () => {
 			.expect("location", "/")
 			.end(done);
 	});
+	it("Unauthorized POST /", (done) => {
+		request(app)
+			.post("/admin")
+			.set("Cookie", testUser.cookie)
+			.redirects(0)
+			.expect(403)
+			.end(done);
+	});
+});
+describe("Admin endpoints", () => {
+	before(function (done) {
+		insertTestUser(false, false, true, done);
+	});
+	after(function (done) {
+		removeTestUser(done);
+	});
 	it("Authorized GET /", (done) => {
-		removeTestUser(function () {
-			insertTestUser(false, false, true, function () {
-				request(app)
-					.get("/admin")
-					.set("Cookie", testUser.cookie)
-					.redirects(0)
-					.expect(200)
-					.expect("Content-Type", /html/)
-					.end(done);
-			});
-		});
+		request(app)
+			.get("/admin")
+			.set("Cookie", testUser.cookie)
+			.redirects(0)
+			.expect(200)
+			.expect("Content-Type", /html/)
+			.end(done);
 	});
 
 	it("GET /user (list all users)");
