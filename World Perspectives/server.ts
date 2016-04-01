@@ -22,11 +22,15 @@ import responseTime = require("response-time");
 import compress = require("compression");
 import cookieParser = require("cookie-parser");
 import bodyParser = require("body-parser");
+var hsts = require("hsts");
 
 var app = express();
 var postParser = bodyParser.urlencoded({ "extended": false });
 app.use(compress());
 app.use(responseTime());
+app.use(hsts({
+	"maxAge": 1000 * 60 * 60 * 24 * 30 * 6 // 6 months
+}));
 app.use(cookieParser(
 	keys.cookieSecret, // Secret for signing cookies
 	common.cookieOptions
