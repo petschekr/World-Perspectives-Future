@@ -189,6 +189,7 @@
 		</style>
 
 		<iron-ajax id="user-ajax" auto url="/user" handleAs="json" on-response="userResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax auto url="/data/date" handle-as="json" last-response="{{date}}" on-error="handleError"></iron-ajax>
 		<iron-ajax id="schedule-ajax" auto url="/data/schedule" handle-as="json" on-response="scheduleResponse" on-error="handleError"></iron-ajax>
 
 		<paper-toolbar>
@@ -238,7 +239,7 @@
 		</content-section>
 		<content-section id="schedule">
 			<h2 class="name">{{user.name}}</h2>
-			<h2 class="time">April 22nd, 2015</h2>
+			<h2 class="time">[[date.formatted]]</h2>
 			<div class="clear"></div>
 
 			<template is="dom-if" if="{{!scheduleLoaded}}">
