@@ -90,16 +90,35 @@ router.route("/user")
 			if (isNaN(page) || page < 0) {
 				page = 0;
 			}
+			var filter = request.query.filter;
+			if (!filter)
+				filter = "all";
+			if (filter === "all") {
+				var criteria = "";
+			}
+			else if (filter === "admin") {
+				var criteria = "admin: true";
+			}
+			else if (filter === "nonadmin") {
+				var criteria = "admin: false";
+			}
+			else {
+				var criteria = "type: {type}";
+			}
 			db.cypherAsync({
 				queries: [{
-					query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.email AS email, user.registered AS registered, user.admin AS admin, user.type AS type ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
+					query: `MATCH (user:User {${criteria}}) RETURN user.username AS username, user.name AS name, user.email AS email, user.registered AS registered, user.admin AS admin, user.type AS type ORDER BY last(split(user.name, " ")) SKIP {skip} LIMIT {limit}`,
 					params: {
 						skip: page * usersPerPage,
-						limit: usersPerPage
+						limit: usersPerPage,
+						type: common.getUserType(filter)
 					}
 				}, {
-						query: "MATCH (user:User) RETURN count(user) AS total"
-					}]
+					query: `MATCH (user:User {${criteria}}) RETURN count(user) AS total`,
+					params: {
+						type: common.getUserType(filter)
+					}
+				}]
 			}).then(function (results) {
 				response.json({
 					"info": {

@@ -122,29 +122,53 @@
 		<content-section>
 			<h2>Users</h2>
 			<iron-ajax id="users-ajax" auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
-			<div class="list-info" style="margin-top: 10px;">[[users.info.total]] users</div>
-			<template is="dom-repeat" items="[[users.data]]">
-				<paper-item>
-					<paper-item-body two-line>
-						<div>[[item.name]]</div>
-						<div secondary>[[item.email]]</div>
-					</paper-item-body>
-					<template is="dom-if" if="[[item.admin]]">
-						<div class="info">Admin</div>
-					</template>
-					<template is="dom-if" if="[[_shouldShowLabel(item)]]">
-						<div class="info">[[_getLabelFromType(item)]]</div>
-					</template>
-					<paper-icon-button icon="clear" on-click="deleteUser"></paper-icon-button>
-				</paper-item>
-			</template>
-			<div class="list-info">Page [[users.info.page]] of [[users.info.totalPages]]</div>
-			<div class="flex-container">
-				<span class="flex"></span>
-				<paper-button on-click="previousUserList">Previous</paper-button>
-				<paper-button on-click="nextUserList">Next</paper-button>
-				<span class="flex"></span>
+			
+			<div style="text-align: center;">
+				<paper-dropdown-menu id="filter" label="Filter" style="margin-right: 15px;">
+					<paper-listbox class="dropdown-content" selected="0">
+						<paper-item filter="all">All</paper-item>
+						<paper-item filter="student">Students</paper-item>
+						<paper-item filter="teacher">Teachers</paper-item>
+						<paper-item filter="parent">Parents</paper-item>
+						<paper-item filter="alum">Alumni</paper-item>
+						<paper-item filter="visitor">Visitors</paper-item>
+						<paper-item filter="other">Other</paper-item>
+						<paper-item filter="admin">Admins</paper-item>
+						<paper-item filter="nonadmin">Non-admins</paper-item>
+					</paper-listbox>
+				</paper-dropdown-menu>
+				<paper-icon-button icon="refresh" on-click="refreshUserList"></paper-icon-button>
 			</div>
+
+			<div class="list-info" style="margin-top: 10px;">[[users.info.total]] [[_usersPluralize(users)]]</div>
+
+			<template is="dom-if" if="[[users.data.length]]">
+				<template is="dom-repeat" items="[[users.data]]">
+					<paper-item>
+						<paper-item-body two-line>
+							<div>[[item.name]]</div>
+							<div secondary>[[item.email]]</div>
+						</paper-item-body>
+						<template is="dom-if" if="[[item.admin]]">
+							<div class="info">Admin</div>
+						</template>
+						<template is="dom-if" if="[[_shouldShowLabel(item)]]">
+							<div class="info">[[_getLabelFromType(item)]]</div>
+						</template>
+						<paper-icon-button icon="clear" on-click="deleteUser"></paper-icon-button>
+					</paper-item>
+				</template>
+				<div class="list-info">Page [[users.info.page]] of [[users.info.totalPages]]</div>
+				<div class="flex-container">
+					<span class="flex"></span>
+					<paper-button on-click="previousUserList">Previous</paper-button>
+					<paper-button on-click="nextUserList">Next</paper-button>
+					<span class="flex"></span>
+				</div>
+			</template>
+			<template is="dom-if" if="[[!users.data.length]]">
+				<p><i>No users found. Try adjusting the filter and refreshing.</i></p>
+			</template>
 		</content-section>
 		<content-section>
 			<h2>Add Users</h2>
@@ -188,7 +212,7 @@
 				userListParams: {
 					type: Object,
 					value: function () {
-						return { page: 0 };
+						return { page: 0, filter: "all" };
 					}
 				}
 			},
@@ -220,6 +244,12 @@
 					case 5:
 						return "Other";
 				}
+			},
+			_usersPluralize: function (users) {
+				if (users.data.length === 1) {
+					return "user";
+				}
+				return "users";
 			},
 			updateUsername: function () {
 				// Automatically fill the username field
@@ -288,7 +318,7 @@
 					this.$.addUserAdmin.checked = false;
 				}
 				// Refresh users list
-				this.$["users-ajax"].generateRequest();
+				this.refreshUserList();
 			},
 			userResponse: function () {
 				this.user = this.$["user-ajax"].lastResponse;
@@ -313,6 +343,10 @@
 				this.userListParams = {
 					page: currentPage
 				};
+			},
+			refreshUserList: function () {
+				this.userListParams.filter = this.$.filter.selectedItem.getAttribute("filter");
+				this.$["users-ajax"].generateRequest();
 			},
 			deleteUser: function (e) {
 				var username = Polymer.dom(e.currentTarget).parentNode.querySelector("span").textContent;
@@ -355,7 +389,7 @@
 					this.$.loading.close();
 					this.toggleAttribute("disabled", false, this.$.import);
 					// Refresh the list of users
-					this.$["users-ajax"].generateRequest();
+					this.refreshUserList();
 					try {
 						var response = JSON.parse(xhr.response);
 					}
@@ -393,7 +427,7 @@
 					this.$.done.show(response.message);
 				}
 				// Refresh users list
-				this.$["users-ajax"].generateRequest();
+				this.refreshUserList();
 			},
 			handleError: function (e) {
 				this.$.loading.close();
