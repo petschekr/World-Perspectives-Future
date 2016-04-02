@@ -92,7 +92,7 @@ router.route("/user")
 			}
 			db.cypherAsync({
 				queries: [{
-					query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.type AS type ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
+					query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.email AS email, user.registered AS registered, user.admin AS admin, user.type AS type ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
 					params: {
 						skip: page * usersPerPage,
 						limit: usersPerPage
@@ -108,7 +108,12 @@ router.route("/user")
 						"total": results[1][0].total,
 						"totalPages": Math.ceil(results[1][0].total / usersPerPage)
 					},
-					"data": results[0]
+					"data": results[0].map(function (user) {
+						if (!user.email) {
+							user.email = `${user.username}@gfacademy.org`
+						}
+						return user;
+					})
 				});
 			}).catch(common.handleError.bind(response));
 		}
@@ -205,7 +210,7 @@ router.route("/user/:username")
 	.get(function (request, response) {
 		var username = request.params.username;
 		db.cypherAsync({
-			query: "MATCH (user:User {username: {username}}) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.type AS type",
+			query: "MATCH (user:User {username: {username}}) RETURN user.username AS username, user.name AS name, user.email AS email, user.registered AS registered, user.admin AS admin, user.type AS type",
 			params: {
 				username: username
 			}
@@ -215,6 +220,9 @@ router.route("/user/:username")
 			}
 			else {
 				results = results[0];
+				if (!results.email) {
+					results.email = `${results.username}@gfacademy.org`
+				}
 			}
 			response.json(results);
 		}).catch(common.handleError.bind(response));
