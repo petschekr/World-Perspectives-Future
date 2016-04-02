@@ -349,7 +349,11 @@
 				};
 			},
 			refreshUserList: function () {
+				var previousFilter = this.userListParams.filter;
 				this.userListParams.filter = this.$.filter.selectedItem.getAttribute("filter");
+				if (this.userListParams.filter !== previousFilter) {
+					this.userListParams.page = 0;
+				}
 				this.$["users-ajax"].generateRequest();
 			},
 			deleteUser: function (e) {
