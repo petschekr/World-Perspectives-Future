@@ -228,6 +228,12 @@ router.route("/user/:username")
 			response.json({ "success": false, "message": "Please enter both the user's name and username" });
 			return;
 		}
+		name = name.toString().trim();
+		username = name.toString().toLowerCase().trim();
+		if (!name || !username) {
+			response.json({ "success": false, "message": "Please enter both the user's name and username" });
+			return;
+		}
 		var isTeacher = !!request.body.teacher;
 		var isAdmin = !!request.body.admin;
 		db.cypherAsync({
