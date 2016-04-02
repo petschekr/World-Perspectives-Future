@@ -1,4 +1,5 @@
-﻿import fs = require("fs");
+﻿import Promise = require("bluebird");
+var fs = Promise.promisifyAll(require("fs"));
 import common = require("../common");
 var db = common.db;
 import express = require("express");
@@ -22,6 +23,13 @@ router.route("/").get(common.authenticateMiddleware, function (request, response
 		});
 		return;
 	}
+});
+router.route("/signup").get(function (request, response) {
+	fs.readFileAsync("pages/signup.html", "utf8")
+		.then(function (html: string) {
+			response.send(html);
+		})
+		.catch(common.handleError.bind(response));
 });
 router.route("/login/:code").get(function (request, response) {
 	response.clearCookie("username");

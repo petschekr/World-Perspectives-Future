@@ -67,7 +67,7 @@
 		<iron-ajax id="complete-ajax" method="POST" url="/register/done" handle-as="json" on-core-response="handleExitDone" on-core-error="handleExitFailed"></iron-ajax>
 		<neon-animated-pages id="progressController" selected="0" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
 			<content-panel headtitle="Welcome">
-				<img src="/img/logo.svg" alt="WPP">
+				<img src="/img/logo.svg" alt="WPP" />
 				<h1>World Perspectives Symposium</h1>
 				<iron-ajax auto url="/data/date" handle-as="json" last-response="{{symposiumDate}}" on-error="handleError"></iron-ajax>
 				<h2>[[symposiumDate.formatted]]</h2>

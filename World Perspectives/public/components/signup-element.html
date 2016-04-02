@@ -1,0 +1,164 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item-body.html" />
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html" />
+<link rel="import" href="/bower_components/paper-input/paper-input.html" />
+<link rel="import" href="/bower_components/gold-email-input/gold-email-input.html" />
+<link rel="import" href="/bower_components/paper-input/paper-textarea.html" />
+<link rel="import" href="/bower_components/paper-toggle-button/paper-toggle-button.html" />
+<link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
+<link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
+<link rel="import" href="/bower_components/paper-checkbox/paper-checkbox.html" />
+<link rel="import" href="/components/content-section.html" />
+<link rel="import" href="/components/content-panel.html" />
+
+<dom-module id="signup-element">
+	<style>
+		/* TODO(polyup): For speed, consider reworking these styles with .classes
+						 and #ids rather than [attributes].
+		*/
+		[layout] {
+			@apply(--layout);
+		}
+
+			[layout][horizontal] {
+				@apply(--layout-horizontal);
+			}
+	</style>
+	<style>
+		paper-toast {
+			width: 100%;
+			min-width: 0;
+			border-radius: 0;
+			margin: 0;
+		}
+
+			paper-toast[error] {
+				--paper-toast-background-color: #ff4136;
+			}
+
+		:host {
+			height: 100%;
+		}
+
+		paper-button[raised] {
+			background: #3ea346;
+			color: #fff;
+		}
+
+			paper-button[raised][disabled] {
+				background: #eaeaea;
+				color: #a8a8a8;
+			}
+
+		paper-button a {
+			color: rgb(153, 153, 153);
+			text-decoration: none;
+		}
+
+		paper-input, paper-textarea, paper-dropdown-menu, gold-email-input {
+			--paper-input-container-focus-color: #3ea346;
+		}
+		paper-checkbox {
+			--paper-checkbox-checked-color: #3ea346;
+			--paper-checkbox-checked-ink-color: #3ea346;
+		}
+
+		paper-toggle-button {
+			--paper-toggle-button-checked-bar-color: #3ea346;
+			--paper-toggle-button-checked-button-color: #3ea346;
+			--paper-toggle-button-checked-ink-color: #3ea346;
+		}
+
+		content-panel {
+			--content-panel-width: 700px;
+		}
+
+		div.form {
+			text-align: left;
+		}
+
+		.flex-container {
+			@apply(--layout-horizontal);
+		}
+		.flex {
+			@apply(--layout-flex);
+		}
+
+		/* Mobile styles */
+		@media screen and (max-width: 35.5em) {
+		}
+	</style>
+	<template>
+		<iron-ajax auto url="/data/date" handle-as="json" last-response="{{symposiumDate}}" on-error="handleError"></iron-ajax>
+		<iron-ajax id="signup-ajax" method="PUT" url="/admin/schedule/date" handle-as="json" on-response="changeDateResponse" on-error="handleError"></iron-ajax>
+		<content-panel headtitle="Sign up">
+			<img src="/img/logo.svg" alt="WPP" />
+			<p>Welcome to the registration site for GFA's annual World Perspective Symposium. This year's symposium will be held on <b>[[symposiumDate.formatted]]</b>.</p>
+			<p><small>If you're a student, please follow the instructions sent to your GFA email address to sign up and register rather than signing up here.</small></p>
+			<div class="form">
+				<paper-input id="name" label="Name"></paper-input>
+				<gold-email-input id="email" label="Email" auto-validate ></gold-email-input>
+				<div class="flex-container">
+					<paper-dropdown-menu id="type" label="I am a..." class="flex" style="margin-right: 20px;">
+						<paper-listbox class="dropdown-content">
+							<paper-item>Parent</paper-item>
+							<paper-item>Alumnus / Alumna</paper-item>
+							<paper-item>Visitor</paper-item>
+							<paper-item>Other</paper-item>
+						</paper-listbox>
+					</paper-dropdown-menu>
+					<paper-checkbox checked style="align-self: center;">Continue to straight to registration</paper-checkbox>
+				</div>
+				<div class="flex-container">
+					<span class="flex"></span>
+					<paper-button raised style="margin-top: 20px;" on-click="signup">Sign up</paper-button>
+					<span class="flex"></span>
+				</div>
+			</div>
+		</content-panel>	
+		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
+		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
+		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>
+	</template>
+	<script>
+		Polymer({
+			is: "signup-element",
+			properties: {},
+			signup: function () {
+				if (!this.$.email.validate()) {
+					this.$.error.show("Please enter a valid email");
+					return;
+				}
+				var sendData = {
+					name: this.$.name.value,
+					email: this.$.email.value,
+					type: this.$.type.value
+				};
+				if (!sendData.name || !sendData.email || !sendData.type) {
+					this.$.error.show("Please enter missing information");
+					return;
+				}
+				sendData.name = sendData.name.trim();
+				sendData.email = sendData.email.trim();
+				if (!sendData.name || !sendData.email) {
+					this.$.error.show("Please enter missing information");
+					return;
+				}
+
+				this.$.loading.open();
+				this.$["signup-ajax"].contentType = "application/json";
+				this.$["signup-ajax"].body = sendData;
+				this.$["signup-ajax"].generateRequest();
+			},
+			handleError: function (e) {
+				this.$.loading.close();
+				this.$.error.show(e.target.lastError.error.message || "An error occurred!");
+			}
+		});
+	</script>
+</dom-module>

@@ -67,6 +67,7 @@
     <Content Include="pages\invalidcode.html" />
     <Content Include="pages\register.html" />
     <Content Include="pages\schedule.html" />
+    <Content Include="pages\signup.html" />
     <Content Include="public\components\admin-page.html" />
     <Content Include="public\components\admin\admin-emails.html" />
     <Content Include="public\components\admin\admin-schedules.html" />
@@ -78,6 +79,7 @@
     <Content Include="public\components\home-page.html" />
     <Content Include="public\components\registration-element.html" />
     <Content Include="public\components\schedule-display.html" />
+    <Content Include="public\components\signup-element.html" />
     <Content Include="public\components\table-repeat.html" />
     <Content Include="public\components\timeslot-list.html" />
     <Content Include="public\img\logo.svg" />
