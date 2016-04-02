@@ -95,7 +95,7 @@
 	</style>
 	<template>
 		<iron-ajax auto url="/data/date" handle-as="json" last-response="{{symposiumDate}}" on-error="handleError"></iron-ajax>
-		<iron-ajax id="signup-ajax" method="PUT" url="/admin/schedule/date" handle-as="json" on-response="changeDateResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="signup-ajax" method="POST" url="/user/signup" handle-as="json" on-response="signupResponse" on-error="handleError"></iron-ajax>
 		<content-panel headtitle="Sign up">
 			<img src="/img/logo.svg" alt="WPP" />
 			<p>Welcome to the registration site for GFA's annual World Perspective Symposium. This year's symposium will be held on <b>[[symposiumDate.formatted]]</b>.</p>
@@ -112,7 +112,7 @@
 							<paper-item>Other</paper-item>
 						</paper-listbox>
 					</paper-dropdown-menu>
-					<paper-checkbox checked style="align-self: center;">Continue to straight to registration</paper-checkbox>
+					<paper-checkbox id="continue" checked style="align-self: center;">Continue to straight to registration</paper-checkbox>
 				</div>
 				<div class="flex-container">
 					<span class="flex"></span>
@@ -154,6 +154,25 @@
 				this.$["signup-ajax"].contentType = "application/json";
 				this.$["signup-ajax"].body = sendData;
 				this.$["signup-ajax"].generateRequest();
+			},
+			signupResponse: function () {
+				this.$.loading.close();
+				var response = this.$["signup-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					// Sign up completed successfully
+					if (this.$.continue.checked) {
+						this.$.done.show("Thank you for signing up! You'll be directed to registration in a moment.");
+						setTimeout(function () {
+							window.location = "/register";
+						}, 2000);
+					}
+					else {
+						window.location = "/";
+					}
+				}
 			},
 			handleError: function (e) {
 				this.$.loading.close();
