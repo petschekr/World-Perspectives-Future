@@ -28,12 +28,12 @@ var testUser: any = {
 testUser.cookie = "username=s" + encodeURIComponent(":" + signCookie(testUser.username, common.keys.cookieSecret));
 function insertTestUser (registered: boolean = false, teacher: boolean = false, admin: boolean = false, done: (err?: Error) => void): void {
 	db.cypher({
-		query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
+		query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
 		params: {
 			name: testUser.name,
 			username: testUser.username,
 			registered: registered,
-			teacher: teacher,
+			type: teacher ? common.UserType.Teacher : common.UserType.Student,
 			admin: admin,
 			code: testUser.code
 		}
@@ -234,12 +234,12 @@ describe("Admin endpoints", () => {
 				expect(response.body.info.page).to.equal(1);
 				expect(response.body.data).to.be.an("array");
 				for (let item of response.body.data) {
-					expect(item).to.have.all.keys(["username", "name", "registered", "admin", "teacher"]);
+					expect(item).to.have.all.keys(["username", "name", "registered", "admin", "type"]);
 					expect(item.username).to.be.a("string");
 					expect(item.name).to.be.a("string");
 					expect(item.registered).to.be.a("boolean");
 					expect(item.admin).to.be.a("boolean");
-					expect(item.teacher).to.be.a("boolean");
+					expect(item.type).to.be.a("number");
 				}
 			})
 			.end(done);

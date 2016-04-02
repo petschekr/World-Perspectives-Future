@@ -92,7 +92,7 @@ router.route("/user")
 			}
 			db.cypherAsync({
 				queries: [{
-					query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
+					query: "MATCH (user:User) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.type AS type ORDER BY last(split(user.name, \" \")) SKIP {skip} LIMIT {limit}",
 					params: {
 						skip: page * usersPerPage,
 						limit: usersPerPage
@@ -147,12 +147,12 @@ router.route("/user")
 				continue;
 			var code = crypto.randomBytes(16).toString("hex");
 			queries.push({
-				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
+				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
 				params: {
 					name: `${firstName} ${lastName}`,
 					username: emailParsed[1],
 					registered: false,
-					teacher: false,
+					type: common.UserType.Student,
 					admin: false,
 					code: code
 				}
@@ -176,12 +176,12 @@ router.route("/user")
 				continue;
 			var code = crypto.randomBytes(16).toString("hex");
 			queries.push({
-				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
+				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
 				params: {
 					name: `${firstName} ${lastName}`,
 					username: emailParsed[1],
 					registered: false,
-					teacher: true,
+					type: common.UserType.Teacher,
 					admin: false,
 					code: code
 				}
@@ -205,7 +205,7 @@ router.route("/user/:username")
 	.get(function (request, response) {
 		var username = request.params.username;
 		db.cypherAsync({
-			query: "MATCH (user:User {username: {username}}) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.teacher AS teacher",
+			query: "MATCH (user:User {username: {username}}) RETURN user.username AS username, user.name AS name, user.registered AS registered, user.admin AS admin, user.type AS type",
 			params: {
 				username: username
 			}
@@ -237,12 +237,12 @@ router.route("/user/:username")
 		var isTeacher = !!request.body.teacher;
 		var isAdmin = !!request.body.admin;
 		db.cypherAsync({
-			query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, teacher: {teacher}, admin: {admin}, code: {code}})",
+			query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
 			params: {
 				name: name,
 				username: username,
 				registered: false,
-				teacher: isTeacher,
+				type: isTeacher ? common.UserType.Teacher : common.UserType.Student,
 				admin: isAdmin,
 				code: code
 			}
