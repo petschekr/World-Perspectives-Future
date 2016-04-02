@@ -326,22 +326,26 @@
 			},
 			nextUserList: function (e) {
 				var currentPage = this.userListParams.page;
+				var currentFilter = this.userListParams.filter;
 				currentPage++;
 				if (currentPage >= this.users.info.totalPages) {
 					currentPage--;
 				}
 				this.userListParams = {
-					page: currentPage
+					page: currentPage,
+					filter: currentFilter
 				};
 			},
 			previousUserList: function (e) {
 				var currentPage = this.userListParams.page;
+				var currentFilter = this.userListParams.filter;
 				currentPage--;
 				if (currentPage < 0) {
 					currentPage = 0;
 				}
 				this.userListParams = {
-					page: currentPage
+					page: currentPage,
+					filter: currentFilter
 				};
 			},
 			refreshUserList: function () {
