@@ -2,8 +2,13 @@
 var fs = Promise.promisifyAll(require("fs"));
 import common = require("../common");
 var db = common.db;
+var neo4j = require("neo4j");
 import express = require("express");
+import bodyParser = require("body-parser");
+var postParser = bodyParser.json();
 var router = express.Router();
+import crypto = require("crypto");
+var slugMaker = require("slug");
 
 interface User extends common.User { };
 
@@ -24,13 +29,53 @@ router.route("/").get(common.authenticateMiddleware, function (request, response
 		return;
 	}
 });
-router.route("/signup").get(function (request, response) {
-	fs.readFileAsync("pages/signup.html", "utf8")
-		.then(function (html: string) {
-			response.send(html);
-		})
-		.catch(common.handleError.bind(response));
-});
+router.route("/signup")
+	.get(function (request, response) {
+		fs.readFileAsync("pages/signup.html", "utf8")
+			.then(function (html: string) {
+				response.send(html);
+			})
+			.catch(common.handleError.bind(response));
+	})
+	.post(postParser, function (request, response) {
+		var code = crypto.randomBytes(16).toString("hex");
+		var name = request.body.name;
+		var email = request.body.email;
+		var type = request.body.type;
+		if (!name || !email || !type) {
+			response.json({ "success": false, "message": "Please enter missing information" });
+			return;
+		}
+		name = name.toString().trim();
+		email = email.toString().trim();
+		type = type.toString().trim();
+		if (!name || !email || !type) {
+			response.json({ "success": false, "message": "Please enter missing information" });
+			return;
+		}
+		var username = slugMaker(name, { "lower": true });
+		db.cypherAsync({
+			query: "CREATE (user:User {name: {name}, username: {username}, email: {email}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
+			params: {
+				name: name,
+				username: username,
+				email: email,
+				registered: false,
+				type: common.getUserType(type),
+				admin: false,
+				code: code
+			}
+		}).then(function (results) {
+			// Set authentication cookie
+			response.clearCookie("username");
+			response.cookie("username", username, common.cookieOptions);
+			// Send them an email with their login link
+
+			response.json({ "success": true, "message": "Account successfully created" });
+		}).catch(neo4j.ClientError, function () {
+			response.json({ "success": false, "message": "A user with that name or email already exists" });
+		}).catch(common.handleError.bind(response));
+	});
 router.route("/login/:code").get(function (request, response) {
 	response.clearCookie("username");
 	var code = request.params.code.toString();
