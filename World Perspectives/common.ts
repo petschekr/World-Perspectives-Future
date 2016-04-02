@@ -4,12 +4,41 @@ import Promise = require("bluebird");
 import moment = require("moment");
 var neo4j = require("neo4j");
 
+export enum UserType {
+	Student,
+	Teacher,
+	Parent,
+	Alum,
+	Visitor,
+	Other
+};
+export var getUserType = function (userTypeString: string): UserType {
+	switch (userTypeString.toLowerCase().trim()) {
+		case "student":
+			return UserType.Student;
+		case "teacher":
+		case "faculty":
+			return UserType.Teacher;
+		case "parent":
+			return UserType.Parent;
+		case "alum":
+		case "alumnus / alumna":
+			return UserType.Alum;
+		case "visitor":
+		case "guest":
+			return UserType.Visitor;
+		default:
+			return UserType.Other;
+	}
+};
+
 export interface User {
 	"code": String;
 	"name": String;
 	"username": String;
 	"registered": Boolean;
 	"admin": Boolean;
+	"type": UserType;
 }
 export var keys: {
 	"orchestrate": string;
