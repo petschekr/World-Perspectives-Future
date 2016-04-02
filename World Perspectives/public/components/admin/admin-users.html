@@ -132,8 +132,8 @@
 					<template is="dom-if" if="[[item.admin]]">
 						<div class="info">Admin</div>
 					</template>
-					<template is="dom-if" if="[[item.teacher]]">
-						<div class="info">Teacher</div>
+					<template is="dom-if" if="[[_shouldShowLabel(item)]]">
+						<div class="info">[[_getLabelFromType(item)]]</div>
 					</template>
 					<paper-icon-button icon="clear" on-click="deleteUser"></paper-icon-button>
 				</paper-item>
@@ -190,6 +190,35 @@
 					value: function () {
 						return { page: 0 };
 					}
+				}
+			},
+			_shouldShowLabel: function (item) {
+				return item.type > 0;
+			},
+			_getLabelFromType: function (item) {
+				/* common.ts:
+				enum UserType {
+					Student,
+					Teacher,
+					Parent,
+					Alum,
+					Visitor,
+					Other
+				};
+				*/
+				switch (item.type) {
+					case 0:
+						return "Student";
+					case 1:
+						return "Teacher";
+					case 2:
+						return "Parent";
+					case 3:
+						return "Alumnus / Alumna";
+					case 4:
+						return "Visitor";
+					case 5:
+						return "Other";
 				}
 			},
 			updateUsername: function () {
