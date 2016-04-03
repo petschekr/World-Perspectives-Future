@@ -68,6 +68,9 @@
 			font-size: 60%;
 			margin: 5px 0;
 		}
+		paper-dialog paper-button[dialog-dismiss] {
+			color: black;
+		}
 		paper-dialog paper-toggle-button {
 			margin-top: 10px;
 			justify-content: center;
@@ -115,6 +118,7 @@
 
 			<iron-ajax auto method="GET" url="/admin/schedule/date" handle-as="json" last-response="{{date}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="change-date-ajax" method="PATCH" url="/admin/schedule/date" handle-as="json" on-response="changeDateResponse" on-error="handleError"></iron-ajax>
+			<iron-ajax id="save-period-ajax" method="PATCH" url="/admin/schedule" handle-as="json" on-response="savePeriodResponse" on-error="handleError"></iron-ajax>
 			<div class="flex-container">
 				<paper-input id="date" label="Symposium date (applied to newly created sessions)" value="[[date.formatted]]" auto-validate pattern="^(January|February|March|April|May|June|July|August|September|October|November|December) ([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-1]){1,2}(th|st|nd|rd)?,? [0-9]{4}$" error-message="Invalid date" style="width: 80%;"></paper-input>
 				<span class="flex"></span>
@@ -179,7 +183,7 @@
 					<paper-toggle-button id="customizable">Customizable</paper-toggle-button>
 				</paper-dialog-scrollable>
 				<div class="buttons">
-					<paper-button id="update" dialog-dismiss>Update</paper-button>
+					<paper-button dialog-dismiss on-click="savePeriod">Update</paper-button>
 					<paper-button dialog-dismiss autofocus>Cancel</paper-button>
 				</div>
 			</paper-dialog>
@@ -188,6 +192,7 @@
 			<h2>Attendee Schedules</h2>
 		</content-section>
 		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
+		<paper-toast id="saving" text="Saving..." duration="0"></paper-toast>
 		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
 		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>
 	</template>
@@ -241,7 +246,7 @@
 				var endTime = new Date(this.selectedPeriod.time.end.raw);
 				var duration = Math.abs(Math.round((endTime - startTime) / 1000 / 60));
 				this.$.duration.value = duration.toString();
-				this.$.customizable.checked = this.selectedPeriod.editable;
+				this.$.customizable.checked = !!this.selectedPeriod.editable;
 				// Don't ask me why this hack is necessary
 				// I think it has something to do with the fact that Polymer doesn't think adding properties consists of an update to the object
 				var temp = this.selectedPeriod;
@@ -249,6 +254,58 @@
 				this.selectedPeriod = temp;
 
 				this.$["schedule-detail"].open();
+			},
+			savePeriod: function () {
+				if (!this.$.time.validate()) {
+					this.$.error.show("Please enter valid start time");
+					return;
+				}
+				var sendData = {
+					id: this.selectedPeriod.id,
+					title: this.$.title.value,
+					startTime: this.$.time.value,
+					duration: this.$.duration.value,
+					location: this.$.location.value,
+					customizable: this.$.customizable.checked
+				};
+				if (!sendData.title || !sendData.startTime || !sendData.duration) {
+					this.$.error.show("Please enter missing information");
+					return;
+				}
+				sendData.title = sendData.title.trim();
+				sendData.startTime = sendData.startTime.trim();
+				sendData.duration = parseInt(sendData.duration.trim(), 10);
+				if (sendData.location) {
+					sendData.location = sendData.location.trim();
+				}
+				else {
+					sendData.location = null;
+				}
+				if (!sendData.title || !sendData.startTime) {
+					this.$.error.show("Please enter missing information");
+					return;
+				}
+				if (isNaN(sendData.duration) || sendData.duration < 1) {
+					this.$.error.show("Please enter a valid duration");
+					return;
+				}
+
+				this.$.saving.open();
+				this.$["save-period-ajax"].contentType = "application/json";
+				this.$["save-period-ajax"].body = sendData;
+				this.$["save-period-ajax"].generateRequest();
+			},
+			savePeriodResponse: function () {
+				this.$.saving.close();
+				var response = this.$["save-period-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				// Refresh list
+				this.$["schedule-ajax"].generateRequest();
 			},
 			handleError: function (e) {
 				this.$.loading.close();

@@ -606,6 +606,71 @@ router.route("/schedule")
 				return item;
 			}));
 		}).catch(common.handleError.bind(response));
+	})
+	.patch(postParser, function (request, response) {
+		function isInteger(value: any): boolean {
+			return typeof value === "number" &&
+				isFinite(value) &&
+				Math.floor(value) === value;
+		}
+		var { id, title, startTime, duration, location, customizable }: { id: string, title: string, startTime: string, duration: number, location: string, customizable: boolean } = request.body;
+		if (!id) {
+			response.json({ "success": false, "message": "Missing ID" });
+			return;
+		}
+		if (!title || !startTime || !duration || typeof customizable !== "boolean") {
+			response.json({ "success": false, "message": "Please enter missing information" });
+			return;
+		}
+		title = title.toString().trim();
+		startTime = startTime.toString().trim();
+		if (location) {
+			location = location.toString().trim();
+		}
+		else {
+			location = null;
+		}
+		if (!isInteger(duration) || duration < 1) {
+			response.json({ "success": false, "message": "Please enter a valid duration" });
+			return;
+		}
+		common.getSymposiumDate().then(function (date: moment.Moment) {
+			var start = moment(startTime, timeFormat);
+			start.set("year", date.get("year"));
+			start.set("month", date.get("month"));
+			start.set("date", date.get("date"));
+			var end = start.clone().add(duration, "minutes");
+
+			if (!start.isValid() || !end.isValid()) {
+				response.json({ "success": false, "message": "Invalid start time or duration" });
+				return Promise.reject(new IgnoreError());
+			}
+
+			var debug = {
+				id: id,
+				title: title,
+				startTime: start.format(),
+				endTime: end.format(),
+				location: location,
+				customizable: customizable
+			};
+
+			return db.cypherAsync({
+				query: "MATCH (item:ScheduleItem {id: {id}}) SET item.title = {title}, item.start = {startTime}, item.end = {endTime}, item.location = {location}, item.editable = {customizable}",
+				params: {
+					id: id,
+					title: title,
+					startTime: start.format(),
+					endTime: end.format(),
+					location: location,
+					customizable: customizable
+				}
+			});
+		}).catch(IgnoreError, function () {
+			// Response has already been handled if this error is thrown
+		}).then(function (results) {
+			response.json({ "success": true, "message": "Updated successfully" });
+		}).catch(common.handleError.bind(response));
 	});
 router.route("/schedule/date")
 	.get(function (request, response) {
