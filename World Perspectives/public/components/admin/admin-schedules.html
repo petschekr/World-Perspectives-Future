@@ -119,6 +119,7 @@
 			<iron-ajax auto method="GET" url="/admin/schedule/date" handle-as="json" last-response="{{date}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="change-date-ajax" method="PATCH" url="/admin/schedule/date" handle-as="json" on-response="changeDateResponse" on-error="handleError"></iron-ajax>
 			<iron-ajax id="save-period-ajax" method="PATCH" url="/admin/schedule" handle-as="json" on-response="savePeriodResponse" on-error="handleError"></iron-ajax>
+			<iron-ajax id="switch-period-ajax" method="PATCH" url="/admin/schedule/switch" handle-as="json" on-response="switchPeriodResponse" on-error="handleError"></iron-ajax>
 			<div class="flex-container">
 				<paper-input id="date" label="Symposium date (applied to newly created sessions)" value="[[date.formatted]]" auto-validate pattern="^(January|February|March|April|May|June|July|August|September|October|November|December) ([0-9]|0[0-9]|1[0-9]|2[0-9]|3[0-1]){1,2}(th|st|nd|rd)?,? [0-9]{4}$" error-message="Invalid date" style="width: 80%;"></paper-input>
 				<span class="flex"></span>
@@ -147,14 +148,14 @@
 						</div>
 					</paper-item-body>
 					<paper-button time="[[item.time.start.raw]]" on-click="openDetail">Edit</paper-button>
-					<paper-icon-button icon="arrow-upward"></paper-icon-button>
-					<paper-icon-button icon="arrow-downward"></paper-icon-button>
-					<paper-icon-button icon="clear"></paper-icon-button>
+					<paper-icon-button data-id="[[item.id]]" icon="arrow-upward" on-click="moveUp"></paper-icon-button>
+					<paper-icon-button data-id="[[item.id]]" icon="arrow-downward" on-click="moveDown"></paper-icon-button>
+					<paper-icon-button data-id="[[item.id]]" icon="clear"></paper-icon-button>
 				</paper-item>
 			</template>
 			<div class="flex-container">
 				<span class="flex"></span>
-				<paper-button raised>Add period</paper-button>
+				<paper-button raised on-click="addPeriod">Add period</paper-button>
 				<span class="flex"></span>
 			</div>
 			<paper-dialog id="schedule-detail" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
@@ -306,6 +307,18 @@
 				}
 				// Refresh list
 				this.$["schedule-ajax"].generateRequest();
+			},
+			moveUp: function (e) {
+				this.$.done.show("Work in progress...");
+			},
+			moveDown: function (e) {
+				this.$.done.show("Work in progress...");
+			},
+			switchPeriodResponse: function () {
+
+			},
+			addPeriod: function () {
+				this.$.done.show("Work in progress...");
 			},
 			handleError: function (e) {
 				this.$.loading.close();

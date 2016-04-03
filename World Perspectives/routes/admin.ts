@@ -663,6 +663,25 @@ router.route("/schedule")
 			response.json({ "success": true, "message": "Updated successfully" });
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/schedule/switch").patch(postParser, function (request, response) {
+	var {id1, id2}: { id1: string, id2: string } = request.body;
+	if (!id1 || !id2) {
+		response.json({ "success": false, "message": "Missing IDs" });
+		return;
+	}
+	Promise.map([id1, id2], function (id) {
+		return db.cypherAsync({
+			query: "MATCH (item:ScheduleItem {id: {id}}) RETURN item.id AS id, item.start AS start, item.end AS end",
+			params: {
+				id: id
+			}
+		});
+	}).spread(function (item1, item2) {
+		if (!item1 || !item2) {
+
+		}
+	});
+});
 router.route("/schedule/date")
 	.get(function (request, response) {
 		common.getSymposiumDate().then(function (date: moment.Moment) {
