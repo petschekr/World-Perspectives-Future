@@ -9,8 +9,12 @@ var postParser = bodyParser.json();
 var router = express.Router();
 import crypto = require("crypto");
 var slugMaker = require("slug");
+var sendgrid = Promise.promisifyAll(require("sendgrid")(common.keys.sendgrid));
 
 interface User extends common.User { };
+
+const timeFormat: string = "h:mm A";
+const dateFormat: string = "MMMM Do, YYYY";
 
 router.route("/").get(common.authenticateMiddleware, function (request, response) {
     if (response.locals.authenticated) {
@@ -69,8 +73,30 @@ router.route("/signup")
 			// Set authentication cookie
 			response.clearCookie("username");
 			response.cookie("username", username, common.cookieOptions);
+			// Get information on the event
+			return common.getSymposiumDate();
+		}).then(function (date: moment.Moment) {
 			// Send them an email with their login link
+			var emailToSend = new sendgrid.Email({
+				to: email,
+				from: "registration@wppsymposium.org",
+				fromname: "GFA World Perspectives Symposium",
+				subject: "Thank you for signing up!",
+				text: 
+`Hi ${name},
 
+Thanks for signing up for the GFA World Perspectives Symposium on ${date.format(dateFormat)}! Be sure to register for symposium presentations soon before they fill up. If you are ever logged out, just click the following link to log in again:
+
+https://wppsymposium.org/user/login/${code}
+
+Feel free to reply to this email if you're having any problems.
+
+Thanks,
+The GFA World Perspectives Team
+`
+			});
+			return sendgrid.sendAsync(emailToSend);
+		}).then(function () {
 			response.json({ "success": true, "message": "Account successfully created" });
 		}).catch(neo4j.ClientError, function () {
 			response.json({ "success": false, "message": "A user with that name or email already exists" });

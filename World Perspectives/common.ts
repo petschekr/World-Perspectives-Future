@@ -48,10 +48,7 @@ export var keys: {
 		"server": string;
 	};
 	"pushbullet": string;
-	"sendgrid": {
-		"username": string;
-		"password": string;
-	};
+	"sendgrid": string;
 	"cookieSecret": string;
 } = JSON.parse(fs.readFileSync("keys.json").toString("utf8"));
 export var cookieOptions = {

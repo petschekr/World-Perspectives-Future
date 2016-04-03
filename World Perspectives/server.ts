@@ -12,8 +12,6 @@ var keys = common.keys;
 var db = common.db;
 import moment = require("moment");
 var csv = require("csv");
-import SendGrid = require("sendgrid");
-var sendgrid = SendGrid(keys.sendgrid.username, keys.sendgrid.password);
 import cheerio = require("cheerio");
 // Set up the Express server
 import express = require("express");
