@@ -164,6 +164,9 @@
 					<div class="info">[[item.type]]</div>
 				</paper-item>
 			</template>
+			<template is="dom-if" if="[[!sessions.length]]">
+				<p style="text-align: center;"><i>No sessions found.</i></p>
+			</template>
 		</content-section>
 		<paper-dialog id="session-detail" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
 			<div class="flex-container" style="max-height: 80px;">
