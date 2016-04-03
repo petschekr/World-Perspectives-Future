@@ -229,6 +229,8 @@
 				else {
 					this.$.done.show(response.message);
 				}
+				// Refresh session list. (The dates of the sessions were updated as well)
+				window.refreshSessionList();
 			},
 			openDetail: function (e) {
 				var time = e.currentTarget.time;

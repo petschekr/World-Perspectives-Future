@@ -315,6 +315,8 @@
 						return undefined;
 					};
 				}
+				// For refreshing after the symposium date is changed
+				window.refreshSessionList = this.refreshSessionList.bind(this);
 			},
 			openDetail: function (e) {
 				var slug = e.currentTarget.slug;
@@ -365,6 +367,9 @@
 					this.multiplePresenters = false;
 					this.presenters = this.presenters.splice(0, 1);
 				}
+			},
+			refreshSessionList: function () {
+				this.$["sessions-ajax"].generateRequest();
 			},
 			addSession: function () {
 				var addPresenterName = this.$.presenter.getOption().text.trim();
@@ -453,7 +458,7 @@
 					}
 				}
 				// Refresh list
-				this.$["sessions-ajax"].generateRequest();
+				this.refreshSessionList();
 			},
 			deleteSession: function () {
 				var message = "Are you sure that you want to delete the session titled \"" + this.selectedSession.title.formatted + "\"?";
@@ -477,7 +482,7 @@
 					this.$.done.show(response.message);
 				}
 				// Refresh list
-				this.$["sessions-ajax"].generateRequest();
+				this.refreshSessionList();
 			},
 			handleError: function (e) {
 				this.$.loading.close();
