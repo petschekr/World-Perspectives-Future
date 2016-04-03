@@ -75,6 +75,9 @@ app.route("/print").get(function (request, response) {
 		})
 		.catch(common.handleError.bind(response));
 });
+app.route("/favicon.ico").get(function (request, response) {
+	fs.createReadStream("public/img/favicon.ico").pipe(response);
+});
 
 // 404 page
 app.use(common.authenticateMiddleware, function (request, response, next) {
