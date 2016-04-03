@@ -775,5 +775,31 @@ router.route("/schedule/date")
 			response.json({ "success": true, "message": "Symposium date changed successfully" });
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/registration/open")
+	.get(function(request, response) {
+		db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.registrationOpen IS NOT NULL RETURN c"
+		}).then(function (result) {
+			var registrationOpen: boolean = result[0].c.properties.registrationOpen;
+			response.json({
+				"open": registrationOpen
+			});
+		}).catch(common.handleError.bind(response));
+	})
+	.put(postParser, function (request, response) {
+		var {open}: { open: boolean } = request.body;
+		if (typeof open !== "boolean") {
+			response.json({ "success": false, "message": "Invalid open value" });
+			return;
+		}
+		db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.registrationOpen IS NOT NULL SET c.registrationOpen = {open} RETURN c",
+			params: {
+				open: open
+			}
+		}).then(function (result) {
+			response.json({ "success": true, "message": `Registration is now ${open ? "open" : "closed"}` });
+		}).catch(common.handleError.bind(response));
+	});
 
 export = router;

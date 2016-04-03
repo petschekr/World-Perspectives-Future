@@ -66,6 +66,11 @@
 			@apply(--layout-flex);
 		}
 
+		content-section p, content-section paper-toggle-button {
+			text-align: center;
+			margin: 10px;
+		}
+
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
 
@@ -73,12 +78,60 @@
 	</style>
 	<template>
 		<content-section>
-			<h2>Send Emails</h2>
+			<h2>Registration Settings</h2>
+			<iron-ajax id="registration-open-ajax" auto url="/admin/registration/open" handle-as="json" last-response="{{registrationOpen}}" on-error="handleError"></iron-ajax>
+			<iron-ajax id="registration-open-set-ajax" url="/admin/registration/open" method="PUT" handle-as="json" on-response="updateRegistrationOpenResponse" on-error="handleError"></iron-ajax>
+			<paper-toggle-button id="open" checked="[[registrationOpen.open]]" on-change="updateRegistrationOpen" style="width: 184px; margin: 20px auto;">
+				<template is="dom-if" if="[[registrationOpen.open]]">
+					Registration open
+				</template>
+				<template is="dom-if" if="[[!registrationOpen.open]]">
+					Registration closed
+				</template>
+			</paper-toggle-button>
 		</content-section>
+		<content-section>
+			<h2>Send Emails</h2>
+			<p>Send registration emails to all GFA students and teachers that have been imported or added in the <code>Users</code> tab.</p>
+			<p><small>Last run: April 2nd, 2016 at 8:00 AM</small></p>
+			<div class="flex-container">
+				<span class="flex"></span>
+				<!--style="background-color: #ff4136"-->
+				<paper-button raised on-click="">Send registration emails</paper-button>
+				<span class="flex"></span>
+			</div>
+		</content-section>
+		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
+		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
+		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>
 	</template>
 	<script>
 		Polymer({
-			is: "admin-emails"
+			is: "admin-emails",
+			updateRegistrationOpen: function () {
+				var currentValue = this.$.open.checked;
+				this.$.loading.open();
+				this.$["registration-open-set-ajax"].contentType = "application/json";
+				this.$["registration-open-set-ajax"].body = {
+					"open": currentValue
+				};
+				this.$["registration-open-set-ajax"].generateRequest();
+			},
+			updateRegistrationOpenResponse: function () {
+				this.$.loading.close();
+				var response = this.$["registration-open-set-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				this.$["registration-open-ajax"].generateRequest();
+			},
+			handleError: function (e) {
+				this.$.loading.close();
+				this.$.error.show(e.target.lastError.error.message || "An error occurred!");
+			}
 		});
 	</script>
 </dom-module>
