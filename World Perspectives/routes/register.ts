@@ -22,11 +22,19 @@ const timeFormat: string = "h:mm A";
 const dateFormat: string = "MMMM Do, YYYY";
 
 router.route("/").get(function (request, response) {
-    fs.readFileAsync("pages/register.html", "utf8")
-		.then(function (html: string) {
-			response.send(html);
-		})
-		.catch(common.handleError.bind(response));
+	db.cypherAsync({
+		query: "MATCH (c:Constant) WHERE c.registrationOpen IS NOT NULL RETURN c"
+	}).then(function (result) {
+		var registrationOpen: boolean = result[0].c.properties.registrationOpen;
+		if (registrationOpen) {
+			return fs.readFileAsync("pages/register.html", "utf8");
+		}
+		else {
+			return fs.readFileAsync("pages/registrationclosed.html", "utf8");
+		}
+	}).then(function (html: string) {
+		response.send(html);
+	}).catch(common.handleError.bind(response));
 });
 router.route("/sessions").get(function (request, response) {
     db.cypherAsync({
