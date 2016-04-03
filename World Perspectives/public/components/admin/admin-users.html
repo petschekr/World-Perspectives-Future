@@ -155,7 +155,7 @@
 						<template is="dom-if" if="[[_shouldShowLabel(item)]]">
 							<div class="info">[[_getLabelFromType(item)]]</div>
 						</template>
-						<paper-icon-button icon="clear" on-click="deleteUser"></paper-icon-button>
+						<paper-icon-button icon="clear" on-click="deleteUser" username="[[item.username]]"></paper-icon-button>
 					</paper-item>
 				</template>
 				<div class="list-info">Page [[users.info.page]] of [[users.info.totalPages]]</div>
@@ -358,7 +358,7 @@
 				this.$["users-ajax"].generateRequest();
 			},
 			deleteUser: function (e) {
-				var username = Polymer.dom(e.currentTarget).parentNode.querySelector("span").textContent;
+				var username = e.currentTarget.username;
 				var message = "Are you sure that you want to delete the user \"" + username + "\"?";
 				if (!confirm(message))
 					return;
