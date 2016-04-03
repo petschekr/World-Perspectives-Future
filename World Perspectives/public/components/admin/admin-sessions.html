@@ -216,7 +216,7 @@
 			</div>
 
 			<div class="flex-container">
-				<paper-dropdown-menu id="type" label="Session type" style="width: 33%;" on-iron-select="updateMultiplePresenters">
+				<paper-dropdown-menu id="type" label="Session type" style="width: 49%;" on-iron-select="updateMultiplePresenters">
 					<paper-listbox class="dropdown-content">
 						<paper-item>Global session</paper-item>
 						<paper-item>Science session</paper-item>
@@ -224,11 +224,16 @@
 					</paper-listbox>
 				</paper-dropdown-menu>
 				<span class="flex"></span>
-				<paper-input id="time" label="Start time" value="12:00 PM" style="width: 30%;" auto-validate pattern="^([1-9]|0[1-9]|1[0-2]):[0-5][0-9] (AM|PM|am|pm)$" error-message="Invalid time"></paper-input>
-				<span class="flex"></span>
-				<paper-input id="duration" label="Duration" type="number" value="50" step="5" min="5" style="width: 33%;">
-					<div suffix>minutes</div>
-				</paper-input>
+				<paper-dropdown-menu id="period" label="Schedule period" style="width: 49%;">
+					<paper-listbox class="dropdown-content">
+						<iron-ajax id="schedule-ajax" auto url="/admin/schedule" handle-as="json" last-response="{{schedule}}" on-error="handleError"></iron-ajax>
+						<template is="dom-repeat" items="[[schedule]]">
+							<template is="dom-if" if="[[item.editable]]">
+								<paper-item data-id="[[item.id]]">[[item.title]]</paper-item>
+							</template>
+						</template>
+					</paper-listbox>
+				</paper-dropdown-menu>
 			</div>
 
 			<template is="dom-if" if="[[arePresenters]]">
@@ -369,6 +374,7 @@
 				}
 			},
 			refreshSessionList: function () {
+				this.$["schedule-ajax"].generateRequest();
 				this.$["sessions-ajax"].generateRequest();
 			},
 			addSession: function () {
@@ -384,10 +390,6 @@
 					this.$.presenter.clear();
 				}
 
-				if (!this.$.time.validate()) {
-					this.$.error.show("Please enter a valid time");
-					return;
-				}
 				if (this.presenters.length < 1) {
 					this.$.error.show("Please add a presenter");
 					return;
@@ -396,18 +398,21 @@
 					this.$.error.show("Please add a moderator");
 					return;
 				}
+				if (!this.$.period.selectedItem) {
+					this.$.error.show("Please select a schedule period");
+					return;
+				}
 				var sendData = {
 					title: this.$.title.value,
 					description: this.$.description.value,
 					location: this.$.location.value,
 					capacity: parseInt(this.$.capacity.value, 10),
 					type: this.$.type.value,
-					startTime: this.$.time.value,
-					duration: parseInt(this.$.duration.value, 10),
+					periodID: this.$.period.selectedItem.dataId,
 					presenters: this.presenters,
 					moderator: (this.multiplePresenters) ? this.$$("#moderator").getOption().text.trim() : null
 				};
-				if (!sendData.title || !sendData.description || !sendData.location || !sendData.type || !sendData.startTime) {
+				if (!sendData.title || !sendData.description || !sendData.location || !sendData.type) {
 					this.$.error.show("Please enter missing information");
 					return;
 				}
@@ -420,10 +425,6 @@
 				}
 				if (isNaN(sendData.capacity) || sendData.capacity < 1) {
 					this.$.error.show("Please enter a valid capacity");
-					return;
-				}
-				if (isNaN(sendData.duration) || sendData.duration < 1) {
-					this.$.error.show("Please enter a valid duration");
 					return;
 				}
 
@@ -448,8 +449,8 @@
 					// First set the dropdown to a session to hide the moderator field then set to null
 					this.$.type.querySelector("paper-listbox").selected = 0;
 					this.$.type.querySelector("paper-listbox").selected = null;
-					this.$.time.value = "12:00 PM";
-					this.$.duration.value = "50";
+					this.$.period.querySelector("paper-listbox").selected = 0;
+					this.$.period.querySelector("paper-listbox").selected = null;
 					this.presenters = [];
 					this.arePresenters = false;
 					if (this.multiplePresenters) {

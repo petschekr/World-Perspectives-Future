@@ -360,7 +360,7 @@ router.route("/session")
 		var location = request.body.location;
 		var capacity = request.body.capacity;
 		var sessionType = request.body.type;
-		var duration = request.body.duration;
+		var periodID = request.body.periodID;
 		var presenters = request.body.presenters;
 		var moderator = request.body.moderator;
 		function isInteger(value: any): boolean {
@@ -368,7 +368,7 @@ router.route("/session")
 				isFinite(value) &&
 				Math.floor(value) === value;
 		}
-		if (!title || !description || !location || !sessionType) {
+		if (!title || !description || !location || !sessionType || !periodID) {
 			response.json({ "success": false, "message": "Please enter missing information" });
 			return;
 		}
@@ -376,16 +376,13 @@ router.route("/session")
 		description = description.toString().trim();
 		location = location.toString().trim();
 		sessionType = sessionType.toString().trim();
+		periodID = periodID.toString().trim();
 		if (!title || !description || !location || !sessionType) {
 			response.json({ "success": false, "message": "Please enter missing information" });
 			return;
 		}
 		if (!isInteger(capacity) || capacity < 1) {
 			response.json({ "success": false, "message": "Please enter a valid capacity" });
-			return;
-		}
-		if (!isInteger(duration) || duration < 1) {
-			response.json({ "success": false, "message": "Please enter a valid duration" });
 			return;
 		}
 		if (moderator) {
@@ -429,13 +426,17 @@ router.route("/session")
 				return Promise.reject(new IgnoreError());
 			}
 
-			return common.getSymposiumDate();
-		}).then(function (date: moment.Moment) {
-			var startTime = moment(request.body.startTime, timeFormat);
-			startTime.set("year", date.get("year"));
-			startTime.set("month", date.get("month"));
-			startTime.set("date", date.get("date"));
-			var endTime = startTime.clone().add(duration, "minutes");
+			return db.cypherAsync({
+				query: "MATCH (item:ScheduleItem {id: {id}, editable: true}) RETURN item.id AS id, item.start AS start, item.end AS end",
+				params: {
+					id: periodID
+				}
+			});
+		}).then(function (period) {
+			if (period.length !== 1) {
+				response.json({ "success": false, "message": "A customizable period with that ID could not be found" });
+				return Promise.reject(new IgnoreError());
+			}
 
 			tx = Promise.promisifyAll(db.beginTransaction());
 			return tx.cypherAsync({
@@ -458,8 +459,8 @@ router.route("/session")
 					capacity: capacity,
 					attendees: 0,
 					type: sessionType,
-					startTime: startTime.format(),
-					endTime: endTime.format()
+					startTime: period[0].start,
+					endTime: period[0].end
 				}
 			});
 		}).then(function (results) {
@@ -677,9 +678,9 @@ router.route("/schedule/switch").patch(postParser, function (request, response) 
 			}
 		});
 	}).spread(function (item1, item2) {
-		if (!item1 || !item2) {
+		/*if (item1.length !== 1 || !item2.length !== 1) {
 
-		}
+		}*/
 	});
 });
 router.route("/schedule/date")
