@@ -646,15 +646,6 @@ router.route("/schedule")
 				return Promise.reject(new IgnoreError());
 			}
 
-			var debug = {
-				id: id,
-				title: title,
-				startTime: start.format(),
-				endTime: end.format(),
-				location: location,
-				customizable: customizable
-			};
-
 			return db.cypherAsync({
 				query: "MATCH (item:ScheduleItem {id: {id}}) SET item.title = {title}, item.start = {startTime}, item.end = {endTime}, item.location = {location}, item.editable = {customizable}",
 				params: {
