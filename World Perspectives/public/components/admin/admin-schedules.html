@@ -10,6 +10,7 @@
 <link rel="import" href="/bower_components/paper-input/paper-textarea.html" />
 <link rel="import" href="/bower_components/paper-toggle-button/paper-toggle-button.html" />
 <link rel="import" href="/bower_components/paper-dialog/paper-dialog.html" />
+<link rel="import" href="/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html" />
 <link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
 <link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
 <link rel="import" href="/components/content-section.html" />
@@ -52,6 +53,24 @@
 		paper-button a {
 			color: rgb(153, 153, 153);
 			text-decoration: none;
+		}
+
+		paper-dialog {
+			width: 80%;
+		}
+		paper-dialog h1 {
+			font-size: 2em;
+			margin-bottom: 0;
+		}
+		paper-dialog h1 small {
+			float: left;
+			opacity: 0.65;
+			font-size: 60%;
+			margin: 5px 0;
+		}
+		paper-dialog paper-toggle-button {
+			margin-top: 10px;
+			justify-content: center;
 		}
 
 		paper-input, paper-textarea, paper-dropdown-menu {
@@ -123,23 +142,50 @@
 							</template>
 						</div>
 					</paper-item-body>
-					<paper-button>Edit</paper-button>
+					<paper-button time="[[item.time.start.raw]]" on-click="openDetail">Edit</paper-button>
 					<paper-icon-button icon="arrow-upward"></paper-icon-button>
 					<paper-icon-button icon="arrow-downward"></paper-icon-button>
 					<paper-icon-button icon="clear"></paper-icon-button>
 				</paper-item>
 			</template>
+			<div class="flex-container">
+				<span class="flex"></span>
+				<paper-button raised>Add period</paper-button>
+				<span class="flex"></span>
+			</div>
 			<paper-dialog id="schedule-detail" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
+				<div class="flex-container">
+					<h1>
+						[[selectedPeriod.title]]
+						<br />
+						<small>
+							[[selectedPeriod.time.start.formatted]] to [[selectedPeriod.time.end.formatted]]
+							<template is="dom-if" if="[[selectedPeriod.location]]">
+								—&nbsp;[[selectedPeriod.location]]
+							</template>
+						 </small>
+					</h1>
+				</div>
+				<paper-dialog-scrollable>
+					<paper-input id="title" label="Title"></paper-input>
+					<div class="flex-container">
+						<paper-input id="time" label="Start time" value="12:00 PM" style="width: 49%;" auto-validate pattern="^([1-9]|0[1-9]|1[0-2]):[0-5][0-9] (AM|PM|am|pm)$" error-message="Invalid time"></paper-input>
+						<span class="flex"></span>
+						<paper-input id="duration" label="Duration" type="number" value="50" step="5" min="5" style="width: 49%;">
+							<div suffix>minutes</div>
+						</paper-input>
+					</div>
+					<paper-input id="location" label="Location (optional)"></paper-input>
+					<paper-toggle-button id="customizable">Customizable</paper-toggle-button>
+				</paper-dialog-scrollable>
 				<div class="buttons">
-					<paper-button dialog-dismiss autofocus>Close</paper-button>
+					<paper-button id="update" dialog-dismiss>Update</paper-button>
+					<paper-button dialog-dismiss autofocus>Cancel</paper-button>
 				</div>
 			</paper-dialog>
 		</content-section>
 		<content-section>
-			<h2>Student Schedules</h2>
-		</content-section>
-		<content-section>
-			<h2>Teacher Schedules</h2>
+			<h2>Attendee Schedules</h2>
 		</content-section>
 		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
 		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
@@ -148,7 +194,14 @@
 	<script>
 		Polymer({
 			is: "admin-schedules",
-			properties: {},
+			properties: {
+				"selectedPeriod": {
+					type: Object,
+					value: function () {
+						return {};
+					}
+				}
+			},
 			showDateDialog: function () {
 				this.$.symposiumDateDialog.toggle();
 			},
@@ -156,7 +209,6 @@
 				// Remove st, nd, rd, and th from the date if they are there
 				var date = this.$.date.value.trim().replace(/(\d+)(st|nd|rd|th)/i, "$1");
 				var sendData = { date: date };
-				console.log(sendData);
 				this.$.loading.open();
 				this.$["change-date-ajax"].contentType = "application/json";
 				this.$["change-date-ajax"].body = sendData;
@@ -171,6 +223,32 @@
 				else {
 					this.$.done.show(response.message);
 				}
+			},
+			openDetail: function (e) {
+				var time = e.currentTarget.time;
+				this.selectedPeriod = this.schedule.find(function (period) {
+					return period.time.start.raw === time;
+				});
+				this.$.title.value = this.selectedPeriod.title;
+				this.$.time.value = this.selectedPeriod.time.start.formatted;
+				if (this.selectedPeriod.location) {
+					this.$.location.value = this.selectedPeriod.location;
+				}
+				else {
+					this.$.location.value = "";
+				}
+				var startTime = new Date(this.selectedPeriod.time.start.raw);
+				var endTime = new Date(this.selectedPeriod.time.end.raw);
+				var duration = Math.abs(Math.round((endTime - startTime) / 1000 / 60));
+				this.$.duration.value = duration.toString();
+				this.$.customizable.checked = this.selectedPeriod.editable;
+				// Don't ask me why this hack is necessary
+				// I think it has something to do with the fact that Polymer doesn't think adding properties consists of an update to the object
+				var temp = this.selectedPeriod;
+				this.selectedPeriod = {};
+				this.selectedPeriod = temp;
+
+				this.$["schedule-detail"].open();
 			},
 			handleError: function (e) {
 				this.$.loading.close();
