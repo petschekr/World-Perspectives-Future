@@ -688,11 +688,69 @@ router.route("/schedule/date")
 			return;
 		}
 
-		return db.cypherAsync({
-			query: "MATCH (c:Constant) WHERE c.date IS NOT NULL SET c.date = { date } RETURN c",
-			params: {
-				date: date.format("YYYY-MM-DD")
-			}
+		// Get all schedule items and sessions
+		db.cypherAsync({
+			queries: [{
+				query: "MATCH (item:ScheduleItem) RETURN item.id AS id, item.start AS start, item.end AS end"
+			}, {
+				query: "MATCH (s:Session) RETURN s.slug AS slug, s.startTime AS start, s.endTime AS end"
+			}]
+		}).spread(function (scheduleItems: any[], sessions: any[]) {
+			scheduleItems.map(function (item) {
+				var start = moment(item.start);
+				var end = moment(item.end);
+				start.set("year", date.get("year"));
+				start.set("month", date.get("month"));
+				start.set("date", date.get("date"));
+				end.set("year", date.get("year"));
+				end.set("month", date.get("month"));
+				end.set("date", date.get("date"));
+				item.start = start;
+				item.end = end;
+				return item;
+			});
+			sessions.map(function (session) {
+				var start = moment(session.start);
+				var end = moment(session.end);
+				start.set("year", date.get("year"));
+				start.set("month", date.get("month"));
+				start.set("date", date.get("date"));
+				end.set("year", date.get("year"));
+				end.set("month", date.get("month"));
+				end.set("date", date.get("date"));
+				session.start = start.format();
+				session.end = end.format();
+				return session;
+			});
+			var queries: any[] = [{
+				query: "MATCH (c:Constant) WHERE c.date IS NOT NULL SET c.date = { date } RETURN c",
+				params: {
+					date: date.format("YYYY-MM-DD")
+				}
+			}];
+			queries = queries.concat(scheduleItems.map(function (item) {
+				return {
+					query: "MATCH (item:ScheduleItem {id: {id}}) SET item.start = {start}, item.end = {end}",
+					params: {
+						id: item.id,
+						start: item.start,
+						end: item.end
+					}
+				};
+			}));
+			queries = queries.concat(sessions.map(function (session) {
+				return {
+					query: "MATCH (s:Session {slug: {slug}}) SET s.startTime = {start}, s.endTime = {end}",
+					params: {
+						slug: session.slug,
+						start: session.start,
+						end: session.end
+					}
+				};
+			}));
+			return db.cypherAsync({
+				queries: queries
+			});
 		}).then(function (results) {
 			response.json({ "success": true, "message": "Symposium date changed successfully" });
 		}).catch(common.handleError.bind(response));
