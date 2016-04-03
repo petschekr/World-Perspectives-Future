@@ -283,7 +283,7 @@ describe("Admin endpoints", () => {
 				expect(response.body).to.be.an("array");
 				expect(response.body).to.have.length.above(0);
 				for (let item of response.body) {
-					expect(item).to.have.all.keys(["title", "time", "location", "editable"]);
+					expect(item).to.have.all.keys(["title", "time", "location", "editable", "id"]);
 				}
 			})
 			.end(done);
