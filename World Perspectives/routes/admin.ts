@@ -586,7 +586,7 @@ router.route("/session/:slug")
 router.route("/schedule")
 	.get(function (request, response) {
 		db.cypherAsync({
-			query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
+			query: "MATCH (item:ScheduleItem) RETURN item.id AS id, item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable ORDER BY item.start"
 		}).then(function (results) {
 			response.json(results.map(function (item) {
 				var startTime = item.start;
