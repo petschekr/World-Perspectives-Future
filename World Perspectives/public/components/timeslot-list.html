@@ -70,6 +70,7 @@
 
 		paper-dialog {
 			width: 80%;
+			text-align: left;
 		}
 			paper-dialog h1 {
 				font-size: 2em;
@@ -154,12 +155,12 @@
 				</paper-item>
 			</template>
 		</div>
-		<paper-dialog id="details" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
+		<paper-dialog id="session-detail" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
 			<div class="flex-container" style="max-height: 80px;">
 				<h1>
 					<span>[[selectedSession.title.formatted]]</span>
 					<br />
-					<small>[[selectedSession.time.start.formatted]] to [[selectedSession.time.end.formatted]] on [[selectedSession.time.date]] — [[selectedSession.location]] ([[selectedSession.capacity.filled]] / [[selectedSession.capacity.total]])</small>
+					<small>[[selectedSession.time.start.formatted]] to [[selectedSession.time.end.formatted]] — [[selectedSession.location]] ([[selectedSession.capacity.filled]] / [[selectedSession.capacity.total]])</small>
 				</h1>
 			</div>
 			<paper-dialog-scrollable class="line-breaks" style="margin-top: 0">
@@ -181,16 +182,8 @@
 				</template>
 			</p>
 			<div class="buttons">
-				<!--
-					<paper-button affirmative type="cancel" on-tap="dialogButtonHandler">
-						Cancel
-					</paper-button>
-					<paper-button affirmative autofocus type="select" on-tap="dialogButtonHandler" style="color: #4285f4;">
-						Select
-					</paper-button>
-				-->
-				<paper-button dialog-dismiss autofocus>Close</paper-button>
-				<paper-button dialog-dismiss autofocus style="color: #4285f4;">Select</paper-button>
+				<paper-button dialog-dismiss>Close</paper-button>
+				<paper-button dialog-dismiss style="color: #4285f4;">Select</paper-button>
 			</div>
 		</paper-dialog>
 	</template>
@@ -203,10 +196,6 @@
 					value: "0",
 					notify: true
 				},
-				panel: {
-					type: Boolean,
-					value: false
-				},
 				url: {
 					type: String,
 					notify: true
@@ -218,6 +207,18 @@
 				end: {
 					type: Object,
 					notify: true
+				},
+				selectedSession: {
+					type: Object,
+					value: function () {
+						return {};
+					}
+				},
+				previousSelectedSession: {
+					type: Object,
+					value: function () {
+						return {};
+					}
 				}
 			},
 			_ifGlobalSession: function (session) {
@@ -250,6 +251,29 @@
 					}*/
 				}.bind(this));
 				//this.forwardButton = Polymer.dom(this.parentElement).querySelector("paper-button#" + "forward-" + this.index);
+				// Polyfill until ES6 is widely supported
+				if (!Array.prototype.find) {
+					Array.prototype.find = function (predicate) {
+						if (this === null) {
+							throw new TypeError('Array.prototype.find called on null or undefined');
+						}
+						if (typeof predicate !== 'function') {
+							throw new TypeError('predicate must be a function');
+						}
+						var list = Object(this);
+						var length = list.length >>> 0;
+						var thisArg = arguments[1];
+						var value;
+
+						for (var i = 0; i < length; i++) {
+							value = list[i];
+							if (predicate.call(thisArg, value, i, list)) {
+								return value;
+							}
+						}
+						return undefined;
+					};
+				}
 			},
 			loaded: function () {
 				// Make a copy of the loaded data
@@ -261,17 +285,27 @@
 				//}
 			},
 			showDetails: function (e) {
-				var targetID = e.currentTarget.id;
+				var slug = e.currentTarget.slug;
 				this.previousSelectedSession = this.selectedSession;
-				this.selectedSession = this.sessionsLookup[targetID.slice(2)];
-				// .slice() to removed "id" at the beginning of the id
-				// Format the times
-				this.set("selectedSession.time.startFormat", moment(new Date(this.selectedSession.time.start)).format("h:mm A"));
-				this.set("selectedSession.time.endFormat", moment(new Date(this.selectedSession.time.end)).format("h:mm A"));
-				this.panel = !this.selectedSession.type;
-				this.async(function () {
-					this.$.details.open();
+				this.selectedSession = this.sessions.find(function (session) {
+					return session.title.slug === slug;
 				});
+				if (!this.selectedSession)
+					return;
+				this.selectedSession.presentersString = this.selectedSession.presenters.map(function (presenter) {
+					return presenter.name;
+				}).join(", ");
+				this.selectedSession.isPanel = !!this.selectedSession.moderator;
+				if (this.selectedSession.moderator) {
+					this.selectedSession.moderatorString = this.selectedSession.moderator.name;
+				}
+				// Don't ask me why this hack is necessary
+				// I think it has something to do with the fact that Polymer doesn't think adding properties consists of an update to the object
+				var temp = this.selectedSession;
+				this.selectedSession = {};
+				this.selectedSession = temp;
+
+				this.$["session-detail"].open();
 			},
 			dialogButtonHandler: function (e) {
 				var initiatorAction = e.currentTarget.attributes.type.value;
