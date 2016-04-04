@@ -10,6 +10,7 @@ var router = express.Router();
 var neo4j = require("neo4j");
 import moment = require("moment");
 var slugMaker = require("slug");
+var sendgrid = Promise.promisifyAll(require("sendgrid")(common.keys.sendgrid));
 var multer = require("multer");
 var uploadHandler = multer({
 	"storage": multer.memoryStorage(),
@@ -773,6 +774,63 @@ router.route("/schedule/date")
 			});
 		}).then(function (results) {
 			response.json({ "success": true, "message": "Symposium date changed successfully" });
+		}).catch(common.handleError.bind(response));
+	});
+router.route("/registration/email")
+	.get(function (request, response) {
+		db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL RETURN c"
+		}).then(function (result) {
+			var registrationEmailTime: boolean = result[0].c.properties.registrationEmailTime;
+			response.json({
+				"raw": registrationEmailTime,
+				"formatted": `${moment(registrationEmailTime).format(dateFormat)} at ${moment(registrationEmailTime).format(timeFormat)}`
+			});
+		}).catch(common.handleError.bind(response));
+	})
+	.post(function (request, response) {
+		var totalRecipients = 0;
+		// Get emails to send to
+		Promise.all([
+			db.cypherAsync({
+				"query": "MATCH (u:User) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code"
+			}),
+			common.getSymposiumDate()
+		]).spread(function (results, date: moment.Moment) {
+			totalRecipients = results.length;
+			return Promise.mapSeries(results, function (user: any) {
+				var email = (!!user.email) ? user.email : `${user.username}@gfacademy.org`;
+				var emailToSend = new sendgrid.Email({
+					to: email,
+					from: "registration@wppsymposium.org",
+					fromname: "GFA World Perspectives Symposium",
+					subject: "GFA WPP Symposium Registration",
+					text:
+					`Hi ${user.name},
+
+This year's World Perspectives Symposium will take place on ${date.format(dateFormat)}. To login and register for presentations, visit the following link:
+
+https://wppsymposium.org/user/login/${user.code}
+
+Be sure to register for presentations soon before they fill up. You can visit the link at any time after you've registered to view your schedule. If you miss the registration cut-off date, your schedule will be automatically generated based on availability.
+
+Feel free to reply to this email if you're having any problems.
+
+Thanks,
+The GFA World Perspectives Team
+`
+				});
+				return sendgrid.sendAsync(emailToSend);
+			});
+		}).then(function (results) {
+			return db.cypherAsync({
+				query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL SET c.registrationEmailTime = {time} RETURN c",
+				params: {
+					time: moment().format()
+				}
+			});
+		}).then(function (results) {
+			response.json({ "success": true, "message": `Sent registration emails to ${totalRecipients} recipients` });
 		}).catch(common.handleError.bind(response));
 	});
 router.route("/registration/open")

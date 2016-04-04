@@ -66,6 +66,7 @@
     <Content Include="pages\index.html" />
     <Content Include="pages\invalidcode.html" />
     <Content Include="pages\register.html" />
+    <Content Include="pages\registrationclosed.html" />
     <Content Include="pages\schedule.html" />
     <Content Include="pages\signup.html" />
     <Content Include="public\components\admin-page.html" />

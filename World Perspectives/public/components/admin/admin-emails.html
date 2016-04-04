@@ -81,6 +81,8 @@
 			<h2>Registration Settings</h2>
 			<iron-ajax id="registration-open-ajax" auto url="/admin/registration/open" handle-as="json" last-response="{{registrationOpen}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="registration-open-set-ajax" url="/admin/registration/open" method="PUT" handle-as="json" on-response="updateRegistrationOpenResponse" on-error="handleError"></iron-ajax>
+			<iron-ajax id="get-registration-emails-ajax" auto url="/admin/registration/email" handle-as="json" last-response="{{registrationEmailStatus}}" on-error="handleError"></iron-ajax>
+			<iron-ajax id="send-registration-emails-ajax" url="/admin/registration/email" method="POST" handle-as="json" on-response="sendRegistrationEmailsResponse" on-error="handleError"></iron-ajax>
 			<paper-toggle-button id="open" checked="[[registrationOpen.open]]" on-change="updateRegistrationOpen" style="width: 184px; margin: 20px auto;">
 				<template is="dom-if" if="[[registrationOpen.open]]">
 					Registration open
@@ -92,12 +94,12 @@
 		</content-section>
 		<content-section>
 			<h2>Send Emails</h2>
-			<p>Send registration emails to all GFA students and teachers that have been imported or added in the <code>Users</code> tab.</p>
-			<p><small>Last run: April 2nd, 2016 at 8:00 AM</small></p>
+			<p>Send registration emails to all GFA students and teachers that have been imported or added in the <code>Users</code> tab. This can a minute or two to complete</p>
+			<p><small>Last run on [[registrationEmailStatus.formatted]]</small></p>
 			<div class="flex-container">
 				<span class="flex"></span>
 				<!--style="background-color: #ff4136"-->
-				<paper-button raised on-click="">Send registration emails</paper-button>
+				<paper-button raised on-click="sendRegistrationEmails">Send registration emails</paper-button>
 				<span class="flex"></span>
 			</div>
 		</content-section>
@@ -108,6 +110,23 @@
 	<script>
 		Polymer({
 			is: "admin-emails",
+			sendRegistrationEmails: function () {
+				var message = "Are you sure that you want to send out registration emails? Make sure that registration is open!";
+				if (!confirm(message))
+					return;
+				this.$["send-registration-emails-ajax"].generateRequest();
+			},
+			sendRegistrationEmailsResponse: function () {
+				this.$.loading.close();
+				var response = this.$["send-registration-emails-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				this.$["get-registration-emails-ajax"].generateRequest();
+			},
 			updateRegistrationOpen: function () {
 				var currentValue = this.$.open.checked;
 				this.$.loading.open();
