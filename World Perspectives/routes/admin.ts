@@ -257,7 +257,7 @@ router.route("/user/:username")
 			return;
 		}
 		name = name.toString().trim();
-		username = name.toString().toLowerCase().trim();
+		username = username.toString().toLowerCase().trim();
 		if (!name || !username) {
 			response.json({ "success": false, "message": "Please enter both the user's name and username" });
 			return;
