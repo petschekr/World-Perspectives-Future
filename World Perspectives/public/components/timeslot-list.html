@@ -12,8 +12,18 @@
 <dom-module id="timeslot-list">
 	<style>
 		paper-item {
-			margin-top: 20px;
-			margin-bottom: 20px;
+			margin-top: 5px;
+			margin-bottom: 5px;
+			padding-top: 10px;
+			padding-bottom: 10px;
+			cursor: pointer;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+			--paper-item-focused-before: {
+				opacity: 0;
+			}
 		}
 		paper-item > span, paper-item > .button-content > span {
 			color: #555;
@@ -113,7 +123,7 @@
 				<p style="font-size: 1.4em;">Loading...</p>
 			</template>
 			<template is="dom-repeat" items="[[sessions]]" as="session">
-				<paper-item on-tap="showDetails" slug="[[session.title.slug]]">
+				<paper-item on-click="showDetails" slug="[[session.title.slug]]">
 					<paper-ripple></paper-ripple>
 					<span><iron-icon icon="radio-button-unchecked"></iron-icon></span>
 					<h2>
