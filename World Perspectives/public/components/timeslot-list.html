@@ -1,47 +1,20 @@
-﻿<link rel="import" href="/bower_components/polymer/polymer.html">
-<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html">
-<link rel="import" href="/bower_components/paper-material/paper-material.html">
-<link rel="import" href="/bower_components/paper-item/paper-item.html">
-<link rel="import" href="/bower_components/paper-dialog/paper-dialog.html">
-<link rel="import" href="/bower_components/paper-toast/paper-toast.html">
-<script src="/bower_components/moment/moment.js"></script>
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/paper-material/paper-material.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/paper-dialog/paper-dialog.html" />
+<link rel="import" href="/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html" />
+<link rel="import" href="/bower_components/paper-ripple/paper-ripple.html" />
+<link rel="import" href="/bower_components/paper-toast/paper-toast.html" />
 <script src="/socket.io/socket.io.js"></script>
-
-<!-- This can be replaced with the code from admin-sessions -->
-<style>
-	body /deep/ paper-dialog h1 {
-		font-size: 2em;
-	}
-		body /deep/ paper-dialog h1 small {
-			float: left;
-			opacity: 0.65;
-			font-size: 60%;
-			margin: 5px 0;
-		}
-
-	body /deep/ paper-dialog p.lead {
-		font-size: 1.1em;
-		clear: both;
-	}
-	/* For browsers that don't support shadow DOM */
-	paper-dialog h1 {
-		font-size: 2em;
-	}
-		paper-dialog h1 small {
-			float: left;
-			opacity: 0.65;
-			font-size: 60%;
-			margin: 5px 0;
-		}
-
-	paper-dialog p.lead {
-		font-size: 1.1em;
-		clear: both;
-	}
-</style>
 
 <dom-module id="timeslot-list">
 	<style>
+		paper-item {
+			margin-top: 20px;
+			margin-bottom: 20px;
+		}
 		paper-item > span, paper-item > .button-content > span {
 			color: #555;
 			width: 24px;
@@ -61,35 +34,64 @@
 			margin: 0;
 			text-align: left;
 			font-size: 1.4em;
-			width: 476px; /* 500px - 24px */
 		}
-
-		paper-item {
-			padding-right: 30px;
-			width: 500px;
+		paper-item h2 > small {
+			color: #4F4F4F;
+			font-weight: lighter;
+			font-size: 75%;
+			display: block;
+			text-decoration: none !important;
 		}
-			paper-item h2 > small {
-				color: #4F4F4F;
-				font-weight: lighter;
-				font-size: 75%;
-				display: block;
-				text-decoration: none !important;
+			paper-item h2 > small > .session-type {
+				font-weight: bold;
 			}
-				paper-item h2 > small > span.session-type {
-					font-weight: bold;
-				}
-				paper-item h2 > small > span.panelist::after {
-					content: ",";
-				}
-				paper-item h2 > small > span.panelist:last-child::after {
-					content: "";
-				}
+			paper-item h2 > small > .panelist::after {
+				content: ",";
+			}
+			paper-item h2 > small > .panelist:last-of-type::after {
+				content: "";
+			}
 
 		:host > p {
 			font-size: 1.2em;
 			margin-bottom: 0.5em;
 			margin-top: 0;
 		}
+
+		paper-dialog {
+			width: 80%;
+		}
+			paper-dialog h1 {
+				font-size: 2em;
+			}
+				paper-dialog h1 small {
+					float: left;
+					opacity: 0.65;
+					font-size: 60%;
+					margin: 5px 0;
+				}
+		paper-dialog-scrollable {
+			font-size: 1.1em;
+			clear: both;
+		}
+		paper-dialog paper-button[dialog-dismiss] {
+			color: black;
+		}
+
+		.flex-container {
+			padding-top: 5px;
+			@apply(--layout-horizontal);
+		}
+		.flex {
+			@apply(--layout-flex);
+		}
+		.fade {
+			opacity: 0.6;
+		}
+		.line-breaks {
+			white-space: pre-line;
+		}
+
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
 			paper-item > span {
@@ -102,76 +104,84 @@
 		}
 	</style>
 	<template>
-		<iron-ajax id="getSessions" auto url="{{url}}" on-core-response="loaded" handle-as="json"></iron-ajax>
-		<iron-ajax id="postSession" method="POST" url="{{url}}" on-core-response="finishSelection" on-core-error="handleError" handle-as="json"></iron-ajax>
-		<p>Please choose a panel, global studies session, or science session to fill the <b>{{startTimeFormat}}</b> to <b>{{endTimeFormat}}</b> period</p>
+		<iron-ajax id="user-ajax" auto url="/user" handle-as="json" last-response="{{user}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
+		<iron-ajax id="get-sessions-ajax" auto url="{{url}}" last-response="{{sessions}}" handle-as="json"></iron-ajax>
+		<!--<iron-ajax id="postSession" method="POST" url="{{url}}" on-core-response="finishSelection" on-core-error="handleError" handle-as="json"></iron-ajax>-->
+		<p>Please choose a panel, global studies session, or science session to fill the <b>[[start.formatted]]</b> to <b>[[end.formatted]]</b> period</p>
 		<div id="itemcontainer">
-			<template is="dom-if" if="{{_computeIf(sessions)}}">
+			<template is="dom-if" if="[[!sessions.length]]">
 				<p style="font-size: 1.4em;">Loading...</p>
 			</template>
-			<template is="dom-repeat" items="{{sessions}}" as="session">
-				<paper-item on-tap="showDetails" id="{{_computeId(session)}}">
-					<span><iron-icon icon="radio-button-off"></iron-icon></span>
+			<template is="dom-repeat" items="[[sessions]]" as="session">
+				<paper-item on-tap="showDetails" slug="[[session.title.slug]]">
+					<paper-ripple></paper-ripple>
+					<span><iron-icon icon="radio-button-unchecked"></iron-icon></span>
 					<h2>
-						<span>{{session.name}}</span>
-						<template is="dom-if" if="{{!session.type}}">
+						<span>[[session.title.formatted]]</span>
+						<template is="dom-if" if="[[session.moderator]]">
 							<small>
 								<span class="session-type">Panel</span> –
-								<template is="dom-repeat" items="{{session.panelists}}" as="panelist">
-									<span class="panelist">{{panelist}}</span>
+								<template is="dom-repeat" items="[[session.presenters]]" as="presenter">
+									<span class="panelist">[[presenter.name]]</span>
 								</template>
 							</small>
 						</template>
-						<template is="dom-if" if="{{!!session.type}}">
+						<template is="dom-if" if="[[!session.moderator]]">
 							<small>
-								<template is="dom-if" if="{{_computeIf2(session)}}">
+								<template is="dom-if" if="[[_ifGlobalSession(session)]]">
 									<span class="session-type">Global Session</span> –
 								</template>
-								<template is="dom-if" if="{{_computeIf3(session)}}">
+								<template is="dom-if" if="[[!_ifGlobalSession(session)]]">
 									<span class="session-type">Science Session</span> –
 								</template>
-								<span>{{session.presenter}}</span>
+								<template is="dom-repeat" items="[[session.presenters]]" as="presenter">
+									<!-- There should only be one presenter but this repeat destructures the array and future-proofs -->
+									<span>[[presenter.name]]</span>
+								</template>
 							</small>
 						</template>
 					</h2>
 				</paper-item>
 			</template>
 		</div>
-		<paper-dialog id="details" backdrop layered="true" transition="core-transition-center" style="max-width: 1500px;">
-			<h1>
-				<span>{{selectedSession.name}}</span>
-				<br>
-				<small><span>{{selectedSession.time.startFormat}}</span> to <span>{{selectedSession.time.endFormat}}</span> — <span>{{selectedSession.location}}</span> (<span>{{selectedSession.capacity.taken}}</span>/<span>{{selectedSession.capacity.total}}</span>)</small>
-			</h1>
-			<p class="lead">{{selectedSession.description}}</p>
+		<paper-dialog id="details" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
+			<div class="flex-container" style="max-height: 80px;">
+				<h1>
+					<span>[[selectedSession.title.formatted]]</span>
+					<br />
+					<small>[[selectedSession.time.start.formatted]] to [[selectedSession.time.end.formatted]] on [[selectedSession.time.date]] — [[selectedSession.location]] ([[selectedSession.capacity.filled]] / [[selectedSession.capacity.total]])</small>
+				</h1>
+			</div>
+			<paper-dialog-scrollable class="line-breaks" style="margin-top: 0">
+				[[selectedSession.description]]
+			</paper-dialog-scrollable>
 			<p>
 				<!-- For panels -->
-				<template is="dom-if" if="{{panel}}">
+				<template is="dom-if" if="[[selectedSession.isPanel]]">
 					<b>Panelists:</b>
-					<template is="dom-repeat" items="{{selectedSession.panelists}}" as="panelist" index-as="index">
-						<template is="dom-if" if="{{_computeIf4(index, selectedSession)}}">
-							<span>{{panelist}}</span>,
-						</template>
-						<template is="dom-if" if="{{_computeIf5(index, selectedSession)}}">
-							<span>{{panelist}}</span>
-						</template>
-					</template>
-					<br>
+					[[selectedSession.presentersString]]
+					<br />
 					<b>Moderator:</b>
-					<span>{{selectedSession.moderator}}</span>
+					[[selectedSession.moderatorString]]
 				</template>
 				<!-- For regular sessions -->
-				<template is="dom-if" if="{{!panel}}">
+				<template is="dom-if" if="[[!selectedSession.isPanel]]">
 					<b>Presenter:</b>
-					<span>{{selectedSession.presenter}}</span>
+					[[selectedSession.presentersString]]
 				</template>
 			</p>
-			<paper-button affirmative type="cancel" on-tap="dialogButtonHandler">
-				Cancel
-			</paper-button>
-			<paper-button affirmative autofocus type="select" on-tap="dialogButtonHandler" style="color: #4285f4;">
-				Select
-			</paper-button>
+			<div class="buttons">
+				<!--
+					<paper-button affirmative type="cancel" on-tap="dialogButtonHandler">
+						Cancel
+					</paper-button>
+					<paper-button affirmative autofocus type="select" on-tap="dialogButtonHandler" style="color: #4285f4;">
+						Select
+					</paper-button>
+				-->
+				<paper-button dialog-dismiss autofocus>Close</paper-button>
+				<paper-button dialog-dismiss autofocus style="color: #4285f4;">Select</paper-button>
+			</div>
 		</paper-dialog>
 	</template>
 	<script>
@@ -187,8 +197,23 @@
 					type: Boolean,
 					value: false
 				},
-				url: { notify: true }
+				url: {
+					type: String,
+					notify: true
+				},
+				start: {
+					type: Object,
+					notify: true
+				},
+				end: {
+					type: Object,
+					notify: true
+				}
 			},
+			_ifGlobalSession: function (session) {
+				return session.type == "Global session";
+			},
+			/*
 			created: function () {
 				this.sessions = [];
 				this.sessionsLookup = {};
@@ -200,29 +225,30 @@
 				this.startTimeFormat = null;
 				this.endTimeFormat = null;
 			},
+			*/
 			ready: function () {
 				// WebSocket connection to update session availability in real-time
 				var socket = io.connect("/");
 				socket.on("availability", function (data) {
-					if (this.sessionsLookup[data.session]) {
+					/*if (this.sessionsLookup[data.session]) {
 						// Relevent to this session-list
 						this.sessionsLookup[data.session].capacity.taken = data.taken;
 						// Update any open dialog's data
 						if (this.selectedSession && this.selectedSession.id === data.session) {
 							this.selectedSession.capacity.taken = data.taken;
 						}
-					}
+					}*/
 				}.bind(this));
-				this.forwardButton = Polymer.dom(this.parentElement).querySelector("paper-button#" + "forward-" + this.index);
+				//this.forwardButton = Polymer.dom(this.parentElement).querySelector("paper-button#" + "forward-" + this.index);
 			},
 			loaded: function () {
 				// Make a copy of the loaded data
-				this.sessions = this.$.getSessions.response.sessions.slice(0);
-				this.startTimeFormat = this.$.getSessions.response.start;
-				this.endTimeFormat = this.$.getSessions.response.end;
-				for (var i = 0, len = this.sessions.length; i < len; i++) {
-					this.set("sessionsLookup" + ("." + this.sessions[i].id), this.sessions[i]);
-				}
+				//this.sessions = this.$.getSessions.response.sessions.slice(0);
+				//this.startTimeFormat = this.$.getSessions.response.start;
+				//this.endTimeFormat = this.$.getSessions.response.end;
+				//for (var i = 0, len = this.sessions.length; i < len; i++) {
+					//this.set("sessionsLookup" + ("." + this.sessions[i].id), this.sessions[i]);
+				//}
 			},
 			showDetails: function (e) {
 				var targetID = e.currentTarget.id;
@@ -247,7 +273,6 @@
 						var sendData = { "session": this.selectedSession.id };
 						this.$.postSession.params = JSON.stringify(sendData);
 						this.$.postSession.go();
-						console.time("Session selection");
 						// Show a loading indicator
 						window.loadingToast.show();
 					}
@@ -295,7 +320,6 @@
 				}.bind(this), 1);
 			},
 			handleError: function (e) {
-				console.timeEnd("Session selection");
 				window.loadingToast.dismiss();
 				window.notifierToast.text = e.detail.response.response.error || "An error occurred!";
 				window.notifierToast.show();
@@ -309,24 +333,6 @@
 				for (var i = 0; i < titles.length; i++) {
 					titles[i].style.opacity = "1";
 				}
-			},
-			_computeIf: function (sessions) {
-				return sessions.length == 0;
-			},
-			_computeId: function (session) {
-				return "id" + session.id;
-			},
-			_computeIf2: function (session) {
-				return session.type == "wpp";
-			},
-			_computeIf3: function (session) {
-				return session.type == "science";
-			},
-			_computeIf4: function (index, selectedSession) {
-				return index != selectedSession.panelists.length - 1;
-			},
-			_computeIf5: function (index, selectedSession) {
-				return index == selectedSession.panelists.length - 1;
 			}
 		});
 	</script>

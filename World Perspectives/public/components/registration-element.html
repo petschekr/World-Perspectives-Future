@@ -49,6 +49,10 @@
 				--paper-toast-background-color: #ff4136;
 			}
 
+		.large {
+			--content-panel-width: 580px;
+		}
+
 		.flex-container {
 			padding-top: 5px;
 			@apply(--layout-horizontal);
@@ -108,8 +112,8 @@
 			</content-panel>
 
 			<template is="dom-repeat" items="[[sessionTimes]]">
-				<content-panel headtitle="Choose Session">
-					<timeslot-list url="[[item.start.url]]"></timeslot-list>
+				<content-panel headtitle="Choose Session" class="large">
+					<timeslot-list url="[[item.start.url]]" start="[[item.start]]" end="[[item.end]]"></timeslot-list>
 					<footer>
 						<div class="flex-container">
 							<paper-button backward on-click="handleButton">
@@ -298,6 +302,7 @@
 					this.goForward();
 				}
 			},
+			/*
 			handleExit: function () {
 				this.$["complete-ajax"].go();
 				// Show a loading indicator
@@ -312,6 +317,7 @@
 				window.notifierToast.text = e.detail.response.response.error || "An error occurred!";
 				window.notifierToast.show();
 			},
+			*/
 			goBackward: function () {
 				if (this.transitioning)
 					return;
