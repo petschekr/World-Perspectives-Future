@@ -234,7 +234,7 @@ describe("Admin endpoints", () => {
 				expect(response.body.info.page).to.equal(1);
 				expect(response.body.data).to.be.an("array");
 				for (let item of response.body.data) {
-					expect(item).to.have.all.keys(["username", "name", "email", "registered", "admin", "type"]);
+					expect(item).to.have.all.keys(["username", "name", "email", "registered", "admin", "type", "code"]);
 					expect(item.username).to.be.a("string");
 					expect(item.name).to.be.a("string");
 					expect(item.email).to.be.a("string");
