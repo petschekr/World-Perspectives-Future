@@ -155,6 +155,7 @@
 						<template is="dom-if" if="[[_shouldShowLabel(item)]]">
 							<div class="info">[[_getLabelFromType(item)]]</div>
 						</template>
+						<paper-icon-button icon="link" on-click="copyLink" code="[[item.code]]"></paper-icon-button>
 						<paper-icon-button icon="clear" on-click="deleteUser" username="[[item.username]]"></paper-icon-button>
 					</paper-item>
 				</template>
@@ -356,6 +357,11 @@
 					this.userListParams.page = 0;
 				}
 				this.$["users-ajax"].generateRequest();
+			},
+			copyLink: function (e) {
+				var code = e.currentTarget.code;
+				var link = "https://wppsymposium.org/user/login/" + code;
+				window.prompt("To copy this user's login link to the clipboard press Ctrl+C (or Cmd+C)", link);
 			},
 			deleteUser: function (e) {
 				var username = e.currentTarget.username;

@@ -108,7 +108,7 @@ router.route("/user")
 			}
 			db.cypherAsync({
 				queries: [{
-					query: `MATCH (user:User {${criteria}}) RETURN user.username AS username, user.name AS name, user.email AS email, user.registered AS registered, user.admin AS admin, user.type AS type ORDER BY last(split(user.name, " ")) SKIP {skip} LIMIT {limit}`,
+					query: `MATCH (user:User {${criteria}}) RETURN user.username AS username, user.name AS name, user.email AS email, user.registered AS registered, user.admin AS admin, user.type AS type, user.code AS code ORDER BY last(split(user.name, " ")) SKIP {skip} LIMIT {limit}`,
 					params: {
 						skip: page * usersPerPage,
 						limit: usersPerPage,
@@ -230,7 +230,7 @@ router.route("/user/:username")
 	.get(function (request, response) {
 		var username = request.params.username;
 		db.cypherAsync({
-			query: "MATCH (user:User {username: {username}}) RETURN user.username AS username, user.name AS name, user.email AS email, user.registered AS registered, user.admin AS admin, user.type AS type",
+			query: "MATCH (user:User {username: {username}}) RETURN user.username AS username, user.name AS name, user.email AS email, user.registered AS registered, user.admin AS admin, user.type AS type, user.code AS code",
 			params: {
 				username: username
 			}
