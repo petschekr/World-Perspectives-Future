@@ -38,23 +38,11 @@ router.route("/").get(function (request, response) {
 });
 router.route("/sessions").get(function (request, response) {
     db.cypherAsync({
-		query: "MATCH (item:ScheduleItem) RETURN item.start AS start, item.end AS end, item.editable AS editable ORDER BY item.start"
-	}).then(function (results) {
-		// Get and return unique times
-		var times = [];
-		for (var item of results) {
-			if (!item.editable)
-				continue;
-			let alreadyExists: boolean = false;
-			for (var previousInsertion of times) {
-				if (previousInsertion.start.raw === item.start) {
-					alreadyExists = true;
-					break;
-				}
-			}
-			if (alreadyExists)
-				continue;
-			times.push({
+		query: "MATCH (item:ScheduleItem {editable: true}) RETURN item.title AS title, item.start AS start, item.end AS end ORDER BY item.start"
+	}).then(function (results: any[]) {
+		results = results.map(function (item) {
+			return {
+				"title": item.title,
 				"start": {
 					"raw": item.start,
 					"formatted": moment(item.start).format(timeFormat),
@@ -65,9 +53,9 @@ router.route("/sessions").get(function (request, response) {
 					"formatted": moment(item.end).format(timeFormat),
 					"url": `/register/sessions/${encodeURIComponent(item.end)}`
 				}
-			});
-		}
-		response.json(times);
+			};
+		});
+		response.json(results);
 	}).catch(common.handleError.bind(response));
 });
 router.route("/sessions/:time").get(function (request, response) {
