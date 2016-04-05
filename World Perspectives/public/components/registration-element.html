@@ -335,7 +335,9 @@
 			goForward: function () {
 				if (this.transitioning)
 					return;
-				
+				if (document.getElementsByTagName("content-panel")[this.$.progressController.selected].querySelector("paper-button[forward]").hasAttribute("disabled"))
+					return;
+
 				window.scrollTo(0, 0);
 				this.entryAnimation = "slide-from-right-animation";
 				this.exitAnimation = "slide-left-animation";
