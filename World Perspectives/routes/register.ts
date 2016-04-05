@@ -11,8 +11,21 @@ import moment = require("moment");
 
 var authenticateCheck = common.authenticateMiddleware;
 var registeredCheck = function (request: express.Request, response: express.Response, next: express.NextFunction): void {
-	if (!response.locals.authenticated || response.locals.user.registered) {
-		response.redirect("/");
+	if (!response.locals.authenticated) {
+		if (request.method === "GET") {
+			response.redirect("/");
+		}
+		else {
+			response.status(403).send("You must be logged in to register");
+		}
+	}
+	else if (response.locals.user.registered) {
+		if (request.method === "GET") {
+			response.redirect("/");
+		}
+		else {
+			response.status(409).send("You have already registered");
+		}
 	}
 	else {
 		next();
