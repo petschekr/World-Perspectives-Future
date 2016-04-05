@@ -111,6 +111,68 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 		}).catch(common.handleError.bind(response));
 	}
 });
+router.route("/sessions").get(function (request, response) {
+	db.cypherAsync({
+		query: `MATCH (s:Session) RETURN
+			s.title AS title,
+			s.slug AS slug,
+			s.description AS description,
+			s.type AS type,
+			s.location AS location,
+			s.capacity AS capacity,
+			s.attendees AS attendees,
+			s.startTime AS startTime,
+			s.endTime AS endTime
+			ORDER BY s.startTime, lower(s.title)`
+	}).then(function (results) {
+		return Promise.map(results, function (session: any) {
+			return db.cypherAsync({
+				queries: [{
+					query: "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name ORDER BY last(split(user.name, \" \"))",
+					params: {
+						slug: session.slug
+					}
+				}, {
+					query: "MATCH (user:User)-[r:MODERATES]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name",
+					params: {
+						slug: session.slug
+					}
+				}]
+			}).then(function (sessionRelationships) {
+				return {
+					"title": {
+						"formatted": session.title,
+						"slug": session.slug
+					},
+					"description": session.description,
+					"type": session.type,
+					"location": session.location,
+					"capacity": {
+						"total": session.capacity,
+						"filled": session.attendees
+					},
+					"time": {
+						"start": {
+							"raw": session.startTime,
+							"formatted": moment(session.startTime).format(timeFormat)
+						},
+						"end": {
+							"raw": session.endTime,
+							"formatted": moment(session.endTime).format(timeFormat)
+						},
+						"date": moment(session.startTime).format(dateFormat)
+					},
+					"presenters": sessionRelationships[0],
+					"moderator": (sessionRelationships[1].length !== 0) ? sessionRelationships[1][0] : null
+				};
+			});
+		});
+	})
+	.then(function (sessions) {
+		response.json(sessions);
+	})
+	.catch(common.handleError.bind(response));
+});
 router.route("/date").get(function (request, response) {
     common.getSymposiumDate().then(function (date: moment.Moment) {
 		response.json({

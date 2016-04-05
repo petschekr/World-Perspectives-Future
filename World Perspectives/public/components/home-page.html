@@ -1,11 +1,13 @@
 ﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
-
 <link rel="import" href="/bower_components/paper-toolbar/paper-toolbar.html" />
 <link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html" />
 <link rel="import" href="/bower_components/paper-menu/paper-menu.html" />
 <link rel="import" href="/bower_components/paper-item/paper-item.html" />
 <link rel="import" href="/bower_components/paper-item/paper-item-body.html" />
 <link rel="import" href="/bower_components/paper-ripple/paper-ripple.html" />
+<link rel="import" href="/bower_components/paper-dialog/paper-dialog.html" />
+<link rel="import" href="/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html" />
 <link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
 <link rel="import" href="/bower_components/paper-button/paper-button.html" />
 <link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
@@ -145,6 +147,36 @@
 				border-style: dashed;
 				margin: 4px 0 20px;
 			}
+
+			paper-dialog {
+				width: 80%;
+			}
+			paper-dialog h1 {
+				line-height: 1em;
+				font-size: 2em;
+			}
+			paper-dialog h1 small {
+				float: left;
+				opacity: 0.65;
+				font-size: 60%;
+				margin: 5px 0;
+			}
+			paper-dialog-scrollable {
+				font-size: 1.1em;
+				clear: both;
+			}
+			paper-dialog paper-button[dialog-dismiss] {
+				color: black;
+			}
+		
+			.flex-container {
+				padding-top: 5px;
+				@apply(--layout-horizontal);
+			}
+			.flex {
+				@apply(--layout-flex);
+			}
+
 			/* Mobile styles */
 			@media screen and (max-width: 35.5em) {
 				#schedule table td:last-child {
@@ -177,6 +209,7 @@
 		<iron-ajax id="user-ajax" auto url="/user" handleAs="json" on-response="userResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax auto url="/data/date" handle-as="json" last-response="{{date}}" on-error="handleError"></iron-ajax>
 		<iron-ajax id="schedule-ajax" auto url="/data/schedule" handle-as="json" on-response="scheduleResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax auto url="/data/sessions" handle-as="json" last-response="{{sessions}}" on-error="handleError"></iron-ajax>
 
 		<paper-toolbar>
 			<paper-icon-button icon="menu" on-tap="toggleMenu"></paper-icon-button>
@@ -233,7 +266,7 @@
 			</template>
 			<template is="dom-if" if="[[scheduleLoaded]]">
 				<template is="dom-repeat" items="[[schedule]]">
-					<paper-item>
+					<paper-item slug="[[item.slug]]" on-click="openDetail">
 						<paper-ripple></paper-ripple>
 						<template is="dom-if" if="[[!item.description]]">
 							<paper-item-body two-line>
@@ -283,6 +316,37 @@
 				</template>
 			</template>
 		</content-section>
+		<paper-dialog id="session-detail" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
+			<div class="flex-container">
+				<h1>
+					<span>[[selectedSession.title.formatted]]</span>
+					<br />
+					<small>[[selectedSession.time.start.formatted]] to [[selectedSession.time.end.formatted]] on [[selectedSession.time.date]] — [[selectedSession.location]] ([[selectedSession.capacity.filled]] / [[selectedSession.capacity.total]])</small>
+				</h1>
+				<span class="flex"></span>
+			</div>
+			<paper-dialog-scrollable class="line-breaks" style="margin-top: 0">
+				[[selectedSession.description]]
+			</paper-dialog-scrollable>
+			<p>
+				<!-- For panels -->
+				<template is="dom-if" if="[[selectedSession.isPanel]]">
+					<b>Panelists:</b>
+					[[selectedSession.presentersString]]
+					<br />
+					<b>Moderator:</b>
+					[[selectedSession.moderatorString]]
+				</template>
+				<!-- For regular sessions -->
+				<template is="dom-if" if="[[!selectedSession.isPanel]]">
+					<b>Presenter:</b>
+					[[selectedSession.presentersString]]
+				</template>
+			</p>
+			<div class="buttons">
+				<paper-button dialog-dismiss autofocus>Close</paper-button>
+			</div>
+		</paper-dialog>
 	</template>
 	<script>
 		Polymer({
@@ -308,7 +372,60 @@
 						};
 					},
 					notify: true
+				},
+				"selectedSession": {
+					type: Object,
+					value: function () {
+						return {};
+					}
 				}
+			},
+			ready: function () {
+				if (!Array.prototype.find) {
+					Array.prototype.find = function (predicate) {
+						if (this === null) {
+							throw new TypeError('Array.prototype.find called on null or undefined');
+						}
+						if (typeof predicate !== 'function') {
+							throw new TypeError('predicate must be a function');
+						}
+						var list = Object(this);
+						var length = list.length >>> 0;
+						var thisArg = arguments[1];
+						var value;
+
+						for (var i = 0; i < length; i++) {
+							value = list[i];
+							if (predicate.call(thisArg, value, i, list)) {
+								return value;
+							}
+						}
+						return undefined;
+					};
+				}
+			},
+			openDetail: function (e) {
+				var slug = e.currentTarget.slug;
+				if (!slug)
+					return;
+				console.log(slug);
+				this.selectedSession = this.sessions.find(function (session) {
+					return session.title.slug === slug;
+				});
+				this.selectedSession.presentersString = this.selectedSession.presenters.map(function (presenter) {
+					return presenter.name;
+				}).join(", ");
+				this.selectedSession.isPanel = !!this.selectedSession.moderator;
+				if (this.selectedSession.moderator) {
+					this.selectedSession.moderatorString = this.selectedSession.moderator.name;
+				}
+				// Don't ask me why this hack is necessary
+				// I think it has something to do with the fact that Polymer doesn't think adding properties consists of an update to the object
+				var temp = this.selectedSession;
+				this.selectedSession = {};
+				this.selectedSession = temp;
+
+				this.$["session-detail"].open();
 			},
 			toggleMenu: function() {
 				this.menuOpened = !this.menuOpened;
@@ -337,14 +454,7 @@
 				this.scheduleLoaded = true;
 			},
 			handleError: function (e) {
-				var errorMessage = e.target.lastError.request.xhr.response;
-				if (e.target.lastError.request.xhr.status === 403) {
-					// User not logged in
-					this.$.errorSection.style.display = "block";
-					this.user = {
-						name: "Schedule"
-					};
-				}
+				console.error(e.target.lastError.error);
 			},
 			print: function() {
 				window.location = "/print";
