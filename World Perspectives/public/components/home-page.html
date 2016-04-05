@@ -186,6 +186,11 @@
 				paper-toolbar span.shorttitle {
 					display: inline;
 				}
+				paper-toolbar paper-icon-button[icon="print"] {
+					right: 15px;
+					top: 8px;
+					position: absolute;
+				}
 			}
 		</style>
 
@@ -196,7 +201,7 @@
 		<paper-toolbar>
 			<paper-icon-button icon="menu" on-tap="toggleMenu"></paper-icon-button>
 			<span class="title longtitle">GFA World Perspectives Symposium</span>
-			<!--<span flex class="shorttitle">GFA WPP Symposium</span>-->
+			<span flex class="shorttitle">GFA WPP Symposium</span>
 			<paper-icon-button icon="print" on-tap="print"></paper-icon-button>
 		</paper-toolbar>
 		<section id="sidepanel" class="hidden">
