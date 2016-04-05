@@ -11,6 +11,17 @@
 
 <dom-module id="timeslot-list">
 	<style>
+		paper-toast {
+			width: 100%;
+			min-width: 0;
+			border-radius: 0;
+			margin: 0;
+			text-align: left;
+		}
+			paper-toast[error] {
+				--paper-toast-background-color: #ff4136;
+			}
+
 		paper-item {
 			margin-top: 5px;
 			margin-bottom: 5px;
@@ -116,15 +127,15 @@
 	</style>
 	<template>
 		<iron-ajax id="user-ajax" auto url="/user" handle-as="json" last-response="{{user}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
-		<iron-ajax id="get-sessions-ajax" auto url="{{url}}" last-response="{{sessions}}" handle-as="json"></iron-ajax>
-		<!--<iron-ajax id="postSession" method="POST" url="{{url}}" on-core-response="finishSelection" on-core-error="handleError" handle-as="json"></iron-ajax>-->
+		<iron-ajax id="get-sessions-ajax" auto url="{{url}}" handle-as="json" last-response="{{sessions}}" on-error="handleError"></iron-ajax>
+		<iron-ajax id="choose-session-ajax" method="POST" url="{{url}}" handle-as="json" on-response="finishSelection" on-error="handleError"></iron-ajax>
 		<p>Please choose a panel, global studies session, or science session to fill the <b>[[start.formatted]]</b> to <b>[[end.formatted]]</b> period</p>
 		<div id="itemcontainer">
 			<template is="dom-if" if="[[!sessions.length]]">
 				<p style="font-size: 1.4em;">Loading...</p>
 			</template>
 			<template is="dom-repeat" items="[[sessions]]" as="session">
-				<paper-item on-click="showDetails" slug="[[session.title.slug]]">
+				<paper-item on-click="showDetails" id="[[session.title.slug]]">
 					<paper-ripple></paper-ripple>
 					<span><iron-icon icon="radio-button-unchecked"></iron-icon></span>
 					<h2>
@@ -183,9 +194,12 @@
 			</p>
 			<div class="buttons">
 				<paper-button dialog-dismiss>Close</paper-button>
-				<paper-button dialog-dismiss style="color: #4285f4;">Select</paper-button>
+				<paper-button dialog-dismiss on-click="sessionSelect" style="color: #4285f4;">Select</paper-button>
 			</div>
 		</paper-dialog>
+		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
+		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
+		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>
 	</template>
 	<script>
 		Polymer({
@@ -208,6 +222,10 @@
 					type: Object,
 					notify: true
 				},
+				index: {
+					type: Number,
+					notify: true
+				},
 				selectedSession: {
 					type: Object,
 					value: function () {
@@ -216,27 +234,12 @@
 				},
 				previousSelectedSession: {
 					type: Object,
-					value: function () {
-						return {};
-					}
+					value: null
 				}
 			},
 			_ifGlobalSession: function (session) {
 				return session.type == "Global session";
 			},
-			/*
-			created: function () {
-				this.sessions = [];
-				this.sessionsLookup = {};
-				this.selectedSession = null;
-				this.previousSelectedSession = null;
-				this.forwardButton = null;
-				this.checkmark = '<core-icon icon="radio-button-on"></core-icon>';
-				this.dash = '<core-icon icon="radio-button-off"></core-icon>';
-				this.startTimeFormat = null;
-				this.endTimeFormat = null;
-			},
-			*/
 			ready: function () {
 				// WebSocket connection to update session availability in real-time
 				var socket = io.connect("/");
@@ -250,7 +253,7 @@
 						}
 					}*/
 				}.bind(this));
-				//this.forwardButton = Polymer.dom(this.parentElement).querySelector("paper-button#" + "forward-" + this.index);
+
 				// Polyfill until ES6 is widely supported
 				if (!Array.prototype.find) {
 					Array.prototype.find = function (predicate) {
@@ -275,17 +278,8 @@
 					};
 				}
 			},
-			loaded: function () {
-				// Make a copy of the loaded data
-				//this.sessions = this.$.getSessions.response.sessions.slice(0);
-				//this.startTimeFormat = this.$.getSessions.response.start;
-				//this.endTimeFormat = this.$.getSessions.response.end;
-				//for (var i = 0, len = this.sessions.length; i < len; i++) {
-					//this.set("sessionsLookup" + ("." + this.sessions[i].id), this.sessions[i]);
-				//}
-			},
 			showDetails: function (e) {
-				var slug = e.currentTarget.slug;
+				var slug = e.currentTarget.id;
 				this.previousSelectedSession = this.selectedSession;
 				this.selectedSession = this.sessions.find(function (session) {
 					return session.title.slug === slug;
@@ -307,73 +301,54 @@
 
 				this.$["session-detail"].open();
 			},
-			dialogButtonHandler: function (e) {
-				var initiatorAction = e.currentTarget.attributes.type.value;
-				this.$.details.close();
-				var uponDialogClose = function () {
-					document.removeEventListener("core-overlay-close-completed", uponDialogClose);
-					if (initiatorAction === "select") {
-						// Register this with the server
-						var sendData = { "session": this.selectedSession.id };
-						this.$.postSession.params = JSON.stringify(sendData);
-						this.$.postSession.go();
-						// Show a loading indicator
-						window.loadingToast.show();
-					}
+			sessionSelect: function (e) {
+				this.$["session-detail"].close();
+				// Register this with the server
+				var sendData = {
+					"slug": this.selectedSession.title.slug
 				};
-				uponDialogClose = uponDialogClose.bind(this);
-				document.addEventListener("core-overlay-close-completed", uponDialogClose);
+				this.$.loading.open();
+				this.$["choose-session-ajax"].contentType = "application/json";
+				this.$["choose-session-ajax"].body = sendData;
+				this.$["choose-session-ajax"].generateRequest();
 			},
 			finishSelection: function () {
-				console.timeEnd("Session selection");
-				window.loadingToast.dismiss();
-				switch (this.startTimeFormat) {
-					case "9:00 AM":
-						window.selections.first = this.selectedSession;
-						break;
-					case "9:55 AM":
-						window.selections.second = this.selectedSession;
-						break;
-					case "11:30 AM":
-						window.selections.third = this.selectedSession;
-						break;
-					case "12:25 PM":
-						window.selections.fourth = this.selectedSession;
-						break;
-					case "1:20 PM":
-						window.selections.fifth = this.selectedSession;
-						break;
-				}
+				this.$.loading.close();
 				// Unselect the previous choice
-				if (this.previousSelectedSession) {
-					Polymer.dom(Polymer.dom(this.$.itemcontainer).querySelector("#id" + this.previousSelectedSession.id + " span")).innerHTML = this.dash;
+				if (this.previousSelectedSession && this.previousSelectedSession.title) {
+					document.getElementById(this.previousSelectedSession.title.slug).querySelector("iron-icon").icon = "radio-button-unchecked";
 				}
 				// Turn the item's dash into a checkmark
-				Polymer.dom(Polymer.dom(this.$.itemcontainer).querySelector("#id" + this.selectedSession.id + " span")).innerHTML = this.checkmark;
+				document.getElementById(this.selectedSession.title.slug).querySelector("iron-icon").icon = "radio-button-checked";
 				// Dim the other items
-				var titles = Polymer.dom(this.$.itemcontainer).querySelectorAll("h2");
+				var titles = this.getElementsByTagName("h2");
 				for (var i = 0; i < titles.length; i++) {
 					titles[i].style.opacity = "0.5";
 				}
-				Polymer.dom(this.$.itemcontainer).querySelector("#id" + this.selectedSession.id + " h2").style.opacity = "1";
+				document.getElementById(this.selectedSession.title.slug).querySelector("h2").style.opacity = "1";
 				// Proceed
-				Polymer.dom(this.forwardButton).removeAttribute("disabled");
-				// Dirty hack for visual glitch in Google Chrome
-				setTimeout(function () {
-					this.forwardButton.click();
-				}.bind(this), 1);
+				var buttons = document.getElementsByTagName("paper-button");
+				var button = null;
+				for (var i = 0; i < buttons.length; i++) {
+					if (buttons[i].index === this.index && buttons[i].hasAttribute("forward")) {
+						button = buttons[i];
+						break;
+					}
+				}
+				this.toggleAttribute("disabled", false, button);
+				button.click();
 			},
 			handleError: function (e) {
-				window.loadingToast.dismiss();
-				window.notifierToast.text = e.detail.response.response.error || "An error occurred!";
-				window.notifierToast.show();
+				this.$.loading.close();
+				this.$.error.show(e.target.lastError.error.message || "An error occurred!");
+
 				// Failed requests will still deregister any previous registrations for that session type
 				// Unselect the previous choice
-				if (this.previousSelectedSession) {
-					Polymer.dom(Polymer.dom(this.$.itemcontainer).querySelector("#id" + this.previousSelectedSession.id + " span")).innerHTML = this.dash;
+				if (this.previousSelectedSession && this.previousSelectedSession.title) {
+					document.getElementById(this.previousSelectedSession.title.slug).querySelector("iron-icon").icon = "radio-button-unchecked";
 				}
 				// Undim all other items
-				var titles = Polymer.dom(this.$.itemcontainer).querySelectorAll("h2");
+				var titles = this.getElementsByTagName("h2");
 				for (var i = 0; i < titles.length; i++) {
 					titles[i].style.opacity = "1";
 				}

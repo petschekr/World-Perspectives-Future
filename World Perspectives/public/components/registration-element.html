@@ -67,8 +67,8 @@
 		<iron-a11y-keys target="{{rootDocument}}" keys="right pageup" on-keys-pressed="goForward"></iron-a11y-keys>
 		<!-- AJAX for loading the user's data -->
 		<iron-ajax auto url="/user" handle-as="json" last-response="{{user}}" on-error="handleError"></iron-ajax>
-		<iron-ajax auto url="/register/sessions" handle-as="json" last-response="{{sessionTimes}}" on-error="handleError"></iron-ajax>
-		<iron-ajax id="complete-ajax" method="POST" url="/register/done" handle-as="json" on-core-response="handleExitDone" on-core-error="handleExitFailed"></iron-ajax>
+		<iron-ajax auto url="/register/sessions" handle-as="json" last-response="{{sessionTimes}}" on-response="loaded" on-error="handleError"></iron-ajax>
+		<!--<iron-ajax id="complete-ajax" method="POST" url="/register/done" handle-as="json" on-core-response="handleExitDone" on-core-error="handleExitFailed"></iron-ajax>-->
 		<neon-animated-pages id="progressController" selected="0" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
 			<content-panel headtitle="Welcome">
 				<img src="/img/logo.svg" alt="WPP" />
@@ -81,7 +81,7 @@
 				<footer>
 					<div class="flex-container">
 						<span class="flex"></span>
-						<paper-button forward id="forward-0" on-click="handleButton">
+						<paper-button forward on-click="handleButton">
 							Next
 							<iron-icon icon="arrow-forward"></iron-icon>
 						</paper-button>
@@ -98,12 +98,12 @@
 				<p><em>You must choose at least one panel and one session</em></p>
 				<footer>
 					<div class="flex-container">
-						<paper-button backward id="backward-1" on-click="handleButton">
+						<paper-button backward on-click="handleButton">
 							<iron-icon icon="arrow-back"></iron-icon>
 							Back
 						</paper-button>
 						<span class="flex"></span>
-						<paper-button forward id="forward-1" on-click="handleButton">
+						<paper-button forward on-click="handleButton">
 							Next
 							<iron-icon icon="arrow-forward"></iron-icon>
 						</paper-button>
@@ -113,7 +113,7 @@
 
 			<template is="dom-repeat" items="[[sessionTimes]]">
 				<content-panel headtitle="Choose Session" class="large">
-					<timeslot-list url="[[item.start.url]]" start="[[item.start]]" end="[[item.end]]"></timeslot-list>
+					<timeslot-list url="[[item.start.url]]" start="[[item.start]]" end="[[item.end]]" index="[[index]]"></timeslot-list>
 					<footer>
 						<div class="flex-container">
 							<paper-button backward on-click="handleButton">
@@ -121,7 +121,7 @@
 								Back
 							</paper-button>
 							<span class="flex"></span>
-							<paper-button forward disabled on-click="handleButton">
+							<paper-button forward disabled index="[[index]]" on-click="handleButton">
 								Next
 								<iron-icon icon="arrow-forward"></iron-icon>
 							</paper-button>
@@ -294,11 +294,17 @@
 				window.loadingToast = this.$.loading;
 				window.notifierToast = this.$.notifier;
 			},
+			loaded: function () {
+				this.panelCount += this.sessionTimes.length;
+			},
 			handleButton: function (e) {
 				var element = e.target || e.srcElement;
 				if (element.attributes.backward || element.parentElement.attributes.backward) {
 					this.goBackward();
 				} else if (element.attributes.forward || element.parentElement.attributes.forward) {
+					// Check if progression is allowed
+					if (e.srcElement.hasAttribute("disabled"))
+						return;
 					this.goForward();
 				}
 			},
@@ -329,13 +335,11 @@
 			goForward: function () {
 				if (this.transitioning)
 					return;
-				// Check if progression is allowed
-				if (!this.$["forward-" + this.$.progressController.selected].disabled) {
-					window.scrollTo(0, 0);
-					this.entryAnimation = "slide-from-right-animation";
-					this.exitAnimation = "slide-left-animation";
-					this.checkBoundsAndExecute(true);
-				}
+				
+				window.scrollTo(0, 0);
+				this.entryAnimation = "slide-from-right-animation";
+				this.exitAnimation = "slide-left-animation";
+				this.checkBoundsAndExecute(true);
 			},
 			checkBoundsAndExecute: function (forward) {
 				if (this.$.progressController.selected <= 0 && !forward) {
