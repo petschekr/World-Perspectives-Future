@@ -344,6 +344,8 @@
 						}
 					}
 					this.toggleAttribute("disabled", false, button);
+					// Update final selection list
+					window.triggerSelectionUpdate(this.selectedSession);
 					setTimeout(function () {
 						button.click();
 					}, 250);

@@ -244,5 +244,57 @@ router.route("/sessions/:time")
 			// Response has already been handled if this error is thrown
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/done").post(function (request, response) {
+	// 1: Get all registered sessions
+	// 2: Get the number of editable periods to ensure that all have been customized
+	Promise.all([
+		db.cypherAsync({
+			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.type AS type",
+			"params": {
+				username: response.locals.user.username
+			}
+		}),
+		db.cypherAsync({
+			"query": "MATCH (item:ScheduleItem {editable: true}) RETURN count(item) AS periods",
+		})
+	]).spread(function (results, periods) {
+		periods = periods[0].periods;
+		var hasSelectedPanel = false;
+		var hasSelectedSession = false;
+		for (let result of results) {
+			if (result.type === "Global session" || result.type === "Science session") {
+				hasSelectedSession = true;
+				continue;
+			}
+			if (result.type === "Panel") {
+				hasSelectedPanel = true;
+				continue;
+			}
+		}
+		if (!hasSelectedPanel) {
+			response.json({ "success": false, "message": "You must select at least one panel" });
+			return Promise.reject(new IgnoreError());
+		}
+		if (!hasSelectedSession) {
+			response.json({ "success": false, "message": "You must select at least one global studies or science session" });
+			return Promise.reject(new IgnoreError());
+		}
+		if (results.length !== periods) {
+			response.json({ "success": false, "message": "Your registration isn't yet completed" });
+			return Promise.reject(new IgnoreError());
+		}
+
+		return db.cypherAsync({
+			"query": "MATCH (user:User {username: {username}}) SET user.registered = true",
+			"params": {
+				username: response.locals.user.username
+			}
+		});
+	}).then(function (results) {
+		response.json({ "success": true, "message": "Registration completed successfully" });
+	}).catch(IgnoreError, function () {
+		// Response has already been handled if this error is thrown
+	}).catch(common.handleError.bind(response));
+});
 
 export = router;

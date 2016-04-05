@@ -68,7 +68,7 @@
 		<!-- AJAX for loading the user's data -->
 		<iron-ajax auto url="/user" handle-as="json" last-response="{{user}}" on-error="handleError"></iron-ajax>
 		<iron-ajax auto url="/register/sessions" handle-as="json" last-response="{{sessionTimes}}" on-response="loaded" on-error="handleError"></iron-ajax>
-		<!--<iron-ajax id="complete-ajax" method="POST" url="/register/done" handle-as="json" on-core-response="handleExitDone" on-core-error="handleExitFailed"></iron-ajax>-->
+		<iron-ajax id="complete-ajax" method="POST" url="/register/done" handle-as="json" on-response="handleExitDone" on-error="handleExitFailed"></iron-ajax>
 		<neon-animated-pages id="progressController" selected="0" entry-animation="[[entryAnimation]]" exit-animation="[[exitAnimation]]">
 			<content-panel headtitle="Welcome">
 				<img src="/img/logo.svg" alt="WPP" />
@@ -129,21 +129,19 @@
 					</footer>
 				</content-panel>
 			</template>
-			<content-panel headtitle="Finished">
+			<content-panel headtitle="Finished" class="large">
 				<p class="no-margin">Here are the sessions that you've selected and been placed in. Please note that they are subject to change before the symposium.</p>
-				<p style="font-size: 1.4em;">9:00 AM - 9:55 AM: <b>{{selections.first.name}}</b></p>
-				<p style="font-size: 1.4em;">9:55 AM - 10:45 AM: <b>{{selections.second.name}}</b></p>
-				<p style="font-size: 1.4em;">11:30 AM - 12:20 PM: <b>{{selections.third.name}}</b></p>
-				<p style="font-size: 1.4em;">12:25 AM - 1:15 PM: <b>{{selections.fourth.name}}</b></p>
-				<p style="font-size: 1.4em;">1:20 AM - 2:10 PM: <b>{{selections.fifth.name}}</b></p>
+				<template is="dom-repeat" items="[[selections]]">
+					<p style="font-size: 1.4em;">[[item.time.start.formatted]] – [[item.time.end.formatted]]: <b>[[item.title.formatted]]</b></p>
+				</template>
 				<footer>
 					<div class="flex-container">
-						<paper-button backward id="backward-7" on-click="handleButton">
+						<paper-button backward on-click="handleButton">
 							<iron-icon icon="arrow-back"></iron-icon>
 							Back
 						</paper-button>
 						<span class="flex"></span>
-						<paper-button forward id="forward-7" on-click="handleExit">
+						<paper-button forward on-click="handleExit">
 							<iron-icon icon="done-all" style="margin-left: 0; margin-right: 4px;"></iron-icon>
 							Done
 						</paper-button>
@@ -152,19 +150,11 @@
 			</content-panel>
 		</neon-animated-pages>
 		<paper-progress id="progress" class="transiting"></paper-progress>
-		<paper-toast id="loading" text="Loading..." duration="9999999" swipedisabled autoclosedisabled></paper-toast>
-		<paper-toast id="notifier" error text="Something happened" duration="5000"></paper-toast>
+		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
+		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
+		<paper-toast id="error" error text="Something happened" duration="5000"></paper-toast>
 	</template>
 	<script>
-		window.selections = {
-			"first": null,
-			"second": null,
-			"third": null,
-			"fourth": null,
-			"fifth": null
-		};
-		this.selections = window.selections;
-
 		Polymer({
 			is: "registration-element",
 			properties: {
@@ -199,6 +189,12 @@
 					value: function () {
 						return { "name": "Loading..." };
 					}
+				},
+				selections: {
+					type: Array,
+					value: function () {
+						return [];
+					}
 				}
 			},
 			ready: function () {
@@ -209,11 +205,21 @@
 				this.$.progressController.addEventListener("neon-animation-finish", function () {
 					this.transitioning = false;
 				}.bind(this));
-				window.loadingToast = this.$.loading;
-				window.notifierToast = this.$.notifier;
+				window.triggerSelectionUpdate = this.triggerSelectionUpdate.bind(this);
 			},
 			loaded: function () {
 				this.panelCount += this.sessionTimes.length;
+			},
+			triggerSelectionUpdate: function (selection) {
+				for (var i = 0; i < this.selections.length; i++) {
+					if (this.selections[i].time.start.raw === selection.time.start.raw) {
+						this.selections.splice(i, 1);
+						break;
+					}
+				}
+				this.selections = this.selections.concat(selection).sort(function (a, b) {
+					return new Date(a.time.start.raw) - new Date(b.time.start.raw);
+				});
 			},
 			handleButton: function (e) {
 				var element = e.target || e.srcElement;
@@ -226,22 +232,24 @@
 					this.goForward();
 				}
 			},
-			/*
 			handleExit: function () {
-				this.$["complete-ajax"].go();
-				// Show a loading indicator
-				window.loadingToast.show();
+				this.$["complete-ajax"].generateRequest();
+				this.$.loading.open();
 			},
 			handleExitDone: function () {
-				window.loadingToast.dismiss();
-				window.location = "/";
+				this.$.loading.close();
+				var response = this.$["complete-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					window.location = "/";
+				}
 			},
 			handleExitFailed: function (e) {
-				window.loadingToast.dismiss();
-				window.notifierToast.text = e.detail.response.response.error || "An error occurred!";
-				window.notifierToast.show();
+				this.$.loading.close();
+				this.$.error.show(e.target.lastError.error.message || "An error occurred!");
 			},
-			*/
 			goBackward: function () {
 				if (this.transitioning)
 					return;
