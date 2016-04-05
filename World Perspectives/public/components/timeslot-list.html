@@ -344,7 +344,9 @@
 						}
 					}
 					this.toggleAttribute("disabled", false, button);
-					button.click();
+					setTimeout(function () {
+						button.click();
+					}, 250);
 				}
 			},
 			handleError: function (e) {
