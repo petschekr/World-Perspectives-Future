@@ -36,6 +36,20 @@ router.use(authenticateCheck, registeredCheck);
 const timeFormat: string = "h:mm A";
 const dateFormat: string = "MMMM Do, YYYY";
 
+function IgnoreError() {
+    var temp = Error.apply(this, arguments);
+    temp.name = this.name = "IgnoreError";
+    this.stack = temp.stack;
+    this.message = temp.message;
+}
+IgnoreError.prototype = Object.create(Error.prototype, {
+    constructor: {
+        value: IgnoreError,
+        writable: true,
+        configurable: true
+    }
+});
+
 router.route("/").get(function (request, response) {
 	db.cypherAsync({
 		query: "MATCH (c:Constant) WHERE c.registrationOpen IS NOT NULL RETURN c"
@@ -142,8 +156,67 @@ router.route("/sessions/:time")
 	})
 	.post(postParser, function (request, response) {
 		var {slug}: { slug: string } = request.body;
-		console.log(slug, response.locals.user.username);
-		response.json({ "success": true, "message": "Successfully registered for that session" });
+		var {time}: { time: string } = request.params;
+		var intendedSession = null;
+		// Get this specific session and check for existance, time, and capacity
+		db.cypherAsync({
+			"query": "MATCH (s:Session {slug: {slug}, startTime: {time}}) RETURN s.startTime AS start, s.capacity AS capacity, s.attendees AS attendees",
+			"params": {
+				slug: slug,
+				time: time
+			}
+		}).then(function (results) {
+			if (results.length !== 1) {
+				response.json({ "success": false, "message": "Invalid session ID" });
+				return Promise.reject(new IgnoreError());
+			}
+			var session = results[0];
+			intendedSession = session;
+			if (session.start !== time) {
+				response.json({ "success": false, "message": "Session has mismatching start time" });
+				return Promise.reject(new IgnoreError());
+			}
+			if (session.attendees >= session.capacity) {
+				response.json({ "success": false, "message": "There are too many people in that session. Please choose another." });
+				return Promise.reject(new IgnoreError());
+			}
+			// Now check if deregistration needs to happen and remove the relationship and decrement the number of attendees (the user selected a different session previously and has changed their mind)
+			return db.cypherAsync({
+				"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session {startTime: {time}}) SET s.attendees = s.attendees - 1 DELETE r RETURN s.slug AS slug, s.attendees AS attendees",
+				"params": {
+					username: response.locals.user.username,
+					time: time
+				}
+			});
+		}).then(function (results: {slug: string, attendees: number}[]) {
+			// Notify via WebSocket of newly available spaces
+			results.forEach(function (deletedSession) {
+				common.io.emit("availability", {
+					"slug": deletedSession.slug,
+					"attendees": deletedSession.attendees
+				});
+			});
+			// Notify via WebSocket of the intention to register
+			common.io.emit("availability", {
+				"slug": slug,
+				"attendees": intendedSession.attendees + 1
+			});
+			return db.cypherAsync({
+				query: `
+						MATCH (user:User {username: {username}})
+						MATCH (session:Session {slug: {slug}})
+						CREATE (user)-[r:ATTENDS]->(session)
+						SET session.attendees = session.attendees + 1`,
+				params: {
+					username: response.locals.user.username,
+					slug: slug
+				}
+			});
+		}).then(function () {
+			response.json({ "success": true, "message": "Successfully registered for session" });
+		}).catch(IgnoreError, function () {
+			// Response has already been handled if this error is thrown
+		}).catch(common.handleError.bind(response));
 	});
 
 export = router;

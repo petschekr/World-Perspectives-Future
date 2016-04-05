@@ -58,6 +58,7 @@ export var cookieOptions = {
 	"httpOnly": true,
 	"signed": true
 };
+export var io: any = null;
 
 var dbRaw = new neo4j.GraphDatabase(`http://${keys.neo4j.username}:${keys.neo4j.password}@${keys.neo4j.server}:7474`);
 export var db = Promise.promisifyAll(dbRaw);

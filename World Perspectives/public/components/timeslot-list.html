@@ -235,19 +235,30 @@
 			_ifGlobalSession: function (session) {
 				return session.type == "Global session";
 			},
+			forceSelectedSessionUpdate: function () {
+				// Don't ask me why this hack is necessary
+				// I think it has something to do with the fact that Polymer doesn't think adding properties consists of an update to the object
+				var temp = this.selectedSession;
+				this.selectedSession = {};
+				this.selectedSession = temp;
+			},
 			ready: function () {
 				// WebSocket connection to update session availability in real-time
 				var socket = io.connect("/");
-				socket.on("availability", function (data) {
-					/*if (this.sessionsLookup[data.session]) {
-						// Relevent to this session-list
-						this.sessionsLookup[data.session].capacity.taken = data.taken;
-						// Update any open dialog's data
-						if (this.selectedSession && this.selectedSession.id === data.session) {
-							this.selectedSession.capacity.taken = data.taken;
+				socket.on("availability", (function (data) {
+					// Update selected session
+					if (this.selectedSession && this.selectedSession.title && this.selectedSession.title.slug === data.slug) {
+						this.selectedSession.capacity.filled = data.attendees;
+						this.forceSelectedSessionUpdate();
+					}
+					// Update all session data
+					this.sessions = this.sessions.map(function (session) {
+						if (session.title.slug === data.slug) {
+							session.capacity.filled = data.attendees;
 						}
-					}*/
-				}.bind(this));
+						return session;
+					});
+				}.bind(this)));
 
 				// Polyfill until ES6 is widely supported
 				if (!Array.prototype.find) {
@@ -288,11 +299,7 @@
 				if (this.selectedSession.moderator) {
 					this.selectedSession.moderatorString = this.selectedSession.moderator.name;
 				}
-				// Don't ask me why this hack is necessary
-				// I think it has something to do with the fact that Polymer doesn't think adding properties consists of an update to the object
-				var temp = this.selectedSession;
-				this.selectedSession = {};
-				this.selectedSession = temp;
+				this.forceSelectedSessionUpdate();
 
 				this.$["session-detail"].open();
 			},
