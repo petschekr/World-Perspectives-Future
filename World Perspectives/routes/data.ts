@@ -37,7 +37,7 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 	}
 	else {
 		db.cypherAsync({
-			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, true AS editable",
+			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, s.description AS description, true AS editable",
 			"params": {
 				username: response.locals.user.username
 			}

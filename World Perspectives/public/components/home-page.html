@@ -4,6 +4,8 @@
 <link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
 <link rel="import" href="/bower_components/paper-menu/paper-menu.html" />
 <link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item-body.html" />
+<link rel="import" href="/bower_components/paper-ripple/paper-ripple.html" />
 <link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
 <link rel="import" href="/bower_components/paper-button/paper-button.html" />
 <link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
@@ -123,47 +125,23 @@
 				clear: both;
 			}
 
-			#schedule table {
-				width: 100%;
-				border-spacing: 0;
-				border-collapse: collapse;
-				text-align: center;
-			}
-
-				#schedule table th {
-					vertical-align: bottom;
-					border-bottom: 2px solid #ddd;
-					padding: 8px;
-					line-height: 1.42857143;
-				}
-
-				#schedule table td {
-					font-weight: lighter;
-					padding: 8px;
-					line-height: 1.42857143;
-					vertical-align: top;
-					border-top: 1px solid #ddd;
-				}
-
-					#schedule table td:first-child {
-						width: 152px;
-					}
-
-					#schedule table td:nth-child(2) {
-						font-weight: normal;
-					}
-
-					#schedule table td:last-child {
-						width: 118px;
-					}
-
-					#schedule table td.shorttime {
-						display: none;
-						white-space: pre;
-					}
-
 			paper-toolbar span.shorttitle {
 				display: none;
+			}
+
+			paper-item .schedule-title {
+				font-size: 120%;
+			}
+			paper-item-body div[secondary]:nth-of-type(2) {
+				font-size: 95%;
+			}
+			paper-item {
+				margin-bottom: 5px;
+			}
+			hr {
+				border-color: #ddd;
+				border-style: dashed;
+				margin: 4px 0 20px;
 			}
 			/* Mobile styles */
 			@media screen and (max-width: 35.5em) {
@@ -247,42 +225,54 @@
 			<h2 class="name">[[user.name]]</h2>
 			<h2 class="time">[[date.formatted]]</h2>
 			<div class="clear"></div>
-
+			<hr />
 			<template is="dom-if" if="[[!scheduleLoaded]]">
 				<strong>Loading schedule...</strong>
 			</template>
 			<template is="dom-if" if="[[scheduleLoaded]]">
-				<table-repeat rows="[[schedule]]">
-					<table>
-						<thead>
-							<tr>
-								<th>Time</th>
-								<th>Event</th>
-								<th>Location</th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-					<template is="dom-template" class="row-template">
-						<table>
-							<tr>
-								<td class="longtime">[[item.time.start.formatted]] – [[item.time.end.formatted]]</td>
-								<td class="shorttime">[[item.shortTime]]</td>
-								<td>
-									<template is="dom-if" if="[[!item.editable]]">
-										[[item.title]]
-									</template>
+				<template is="dom-repeat" items="[[schedule]]">
+					<paper-item>
+						<paper-ripple></paper-ripple>
+						<template is="dom-if" if="[[!item.description]]">
+							<paper-item-body two-line>
+								<template is="dom-if" if="[[!item.type]]">
 									<template is="dom-if" if="[[item.editable]]">
-										<b>[[item.title]]</b>
-										<br />
-										<i>[[item.people]]</i>
+										<div class="schedule-title"><b>[[item.title]]</b></div>
 									</template>
-								</td>
-								<td>[[item.location]]</td>
-							</tr>
-						</table>
-					</template>
-				</table-repeat>
+									<template is="dom-if" if="[[!item.editable]]">
+										<div class="schedule-title">[[item.title]]</div>
+									</template>
+								</template>
+								<template is="dom-if" if="[[item.type]]">
+									<div class="schedule-title"><b>[[item.title]]</b> ([[item.type]])</div>
+								</template>
+								<template is="dom-if" if="[[item.location]]">
+									<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]] – <i>[[item.location]]</i></div>
+								</template>
+								<template is="dom-if" if="[[!item.location]]">
+									<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]]</div>
+								</template>
+							</paper-item-body>
+						</template>
+						<template is="dom-if" if="[[item.description]]">
+							<paper-item-body three-line>
+								<template is="dom-if" if="[[!item.type]]">
+									<div class="schedule-title">[[item.title]]</div>
+								</template>
+								<template is="dom-if" if="[[item.type]]">
+									<div class="schedule-title"><b>[[item.title]]</b> ([[item.type]])</div>
+								</template>
+								<template is="dom-if" if="[[item.location]]">
+									<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]] – <i>[[item.location]]</i></div>
+								</template>
+								<template is="dom-if" if="[[!item.location]]">
+									<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]]</div>
+								</template>
+								<div secondary>[[item.description]]</div>
+							</paper-item-body>
+						</template>
+					</paper-item>
+				</template>
 			</template>
 		</content-section>
 	</template>
