@@ -238,15 +238,15 @@
 			<h2 style="margin: 0; font-style: italic; font-weight: lighter;">You haven't finished registering yet. Please <a href="/register">register</a> to see your completed schedule.</h2>
 		</content-section>
 		<content-section id="schedule">
-			<h2 class="name">{{user.name}}</h2>
+			<h2 class="name">[[user.name]]</h2>
 			<h2 class="time">[[date.formatted]]</h2>
 			<div class="clear"></div>
 
-			<template is="dom-if" if="{{!scheduleLoaded}}">
+			<template is="dom-if" if="[[!scheduleLoaded]]">
 				<strong>Loading schedule...</strong>
 			</template>
-			<template is="dom-if" if="{{scheduleLoaded}}">
-				<table-repeat rows="{{schedule}}">
+			<template is="dom-if" if="[[scheduleLoaded]]">
+				<table-repeat rows="[[schedule]]">
 					<table>
 						<thead>
 							<tr>
@@ -261,18 +261,18 @@
 						<table>
 							<tr>
 								<td class="longtime">[[item.time.start.formatted]] – [[item.time.end.formatted]]</td>
-								<td class="shorttime">{{item.shortTime}}</td>
+								<td class="shorttime">[[item.shortTime]]</td>
 								<td>
-									<template is="dom-if" if="{{!item.editable}}">
-										{{item.title}}
+									<template is="dom-if" if="[[!item.editable]]">
+										[[item.title]]
 									</template>
-									<template is="dom-if" if="{{item.editable}}">
-										<b>{{item.title}}</b>
+									<template is="dom-if" if="[[item.editable]]">
+										<b>[[item.title]]</b>
 										<br />
-										<i>{{item.people}}</i>
+										<i>[[item.people]]</i>
 									</template>
 								</td>
-								<td>{{item.location}}</td>
+								<td>[[item.location]]</td>
 							</tr>
 						</table>
 					</template>
