@@ -416,14 +416,16 @@
 					presenters: this.presenters,
 					moderator: (this.multiplePresenters) ? this.$$("#moderator").getOption().text.trim() : null
 				};
-				if (!sendData.title || !sendData.description || !sendData.location || !sendData.type) {
+				if (!sendData.title || !sendData.location || !sendData.type) {
 					this.$.error.show("Please enter missing information");
 					return;
 				}
 				sendData.title = sendData.title.trim();
-				sendData.description = sendData.description.trim();
+				if (sendData.description) {
+					sendData.description = sendData.description.trim();
+				}
 				sendData.location = sendData.location.trim();
-				if (!sendData.title || !sendData.description || !sendData.location) {
+				if (!sendData.title || !sendData.location) {
 					this.$.error.show("Please enter missing information");
 					return;
 				}

@@ -369,16 +369,21 @@ router.route("/session")
 				isFinite(value) &&
 				Math.floor(value) === value;
 		}
-		if (!title || !description || !location || !sessionType || !periodID) {
+		if (!title || !location || !sessionType || !periodID) {
 			response.json({ "success": false, "message": "Please enter missing information" });
 			return;
 		}
 		title = title.toString().trim();
-		description = description.toString().trim();
+		if (description) {
+			description = description.toString().trim();
+		}
+		else {
+			description = null;
+		}
 		location = location.toString().trim();
 		sessionType = sessionType.toString().trim();
 		periodID = periodID.toString().trim();
-		if (!title || !description || !location || !sessionType) {
+		if (!title || !location || !sessionType) {
 			response.json({ "success": false, "message": "Please enter missing information" });
 			return;
 		}
