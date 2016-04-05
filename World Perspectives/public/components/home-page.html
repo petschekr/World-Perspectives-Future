@@ -248,12 +248,15 @@
 								<template is="dom-if" if="[[item.type]]">
 									<div class="schedule-title"><b>[[item.title]]</b> ([[item.type]])</div>
 								</template>
-								<template is="dom-if" if="[[item.location]]">
-									<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]] – <i>[[item.location]]</i></div>
-								</template>
-								<template is="dom-if" if="[[!item.location]]">
-									<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]]</div>
-								</template>
+								<div secondary>
+									[[item.time.start.formatted]] to [[item.time.end.formatted]]
+									<template is="dom-if" if="[[item.location]]">
+										– <i>[[item.location]]</i>
+									</template>
+									<template is="dom-if" if="[[item.people]]">
+										– [[item.people]]
+									</template>
+								</div>
 							</paper-item-body>
 						</template>
 						<template is="dom-if" if="[[item.description]]">
@@ -264,12 +267,15 @@
 								<template is="dom-if" if="[[item.type]]">
 									<div class="schedule-title"><b>[[item.title]]</b> ([[item.type]])</div>
 								</template>
-								<template is="dom-if" if="[[item.location]]">
-									<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]] – <i>[[item.location]]</i></div>
-								</template>
-								<template is="dom-if" if="[[!item.location]]">
-									<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]]</div>
-								</template>
+								<div secondary>
+									[[item.time.start.formatted]] to [[item.time.end.formatted]]
+									<template is="dom-if" if="[[item.location]]">
+										– <i>[[item.location]]</i>
+									</template>
+									<template is="dom-if" if="[[item.people]]">
+										– [[item.people]]
+									</template>
+								</div>
 								<div secondary>[[item.description]]</div>
 							</paper-item-body>
 						</template>
