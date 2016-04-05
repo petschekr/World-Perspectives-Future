@@ -37,7 +37,7 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 	}
 	else {
 		db.cypherAsync({
-			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, true AS editable",
+			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, true AS editable",
 			"params": {
 				username: response.locals.user.username
 			}
@@ -99,6 +99,9 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 								return 0;
 							});
 							items[i].people = people.join(", ");
+							// Return type of form "Global" or "Science" instead of including "session" at the end
+							if (items[i].type)
+								items[i].type = items[i].type.split(" ")[0];
 							break;
 						}
 					}
