@@ -36,17 +36,27 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 		}).catch(common.handleError.bind(response));
 	}
 	else {
-		Promise.all([
-			db.cypherAsync({
-				query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
-			}),
-			db.cypherAsync({
-				"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.startTime AS start, s.endTime AS end, s.location AS location, true AS editable",
-				"params": {
-					username: response.locals.user.username
-				}
-			})
-		]).spread(function (items, sessions) {
+		db.cypherAsync({
+			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, true AS editable",
+			"params": {
+				username: response.locals.user.username
+			}
+		}).then(function (attendingSessions: any[]) {
+			return Promise.map(attendingSessions, function (attendingSession) {
+				return db.cypherAsync({
+					"query": "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.name AS name, s.slug AS slug",
+						"params": {
+							slug: attendingSession.slug
+						}
+				});
+			}).then(function (sessionsWithNames) {
+				return db.cypherAsync({
+					query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
+				}).then(function (items) {
+					return Promise.resolve([items, attendingSessions, sessionsWithNames]);
+				});
+			});
+		}).spread(function (items, sessions, sessionsWithNames) {
 			function formatter (item) {
 				var startTime = item.start;
 				delete item.start;
@@ -64,12 +74,31 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 				};
 				return item;
 			}
+			// Flatten array
+			sessionsWithNames = [].concat.apply([], sessionsWithNames);
 			for (let i = 0; i < items.length; i++) {
 				// Insert registration choices into schedule at editable periods
 				if (items[i].editable) {
 					for (let j = 0; j < sessions.length; j++) {
 						if (sessions[j].start === items[i].start) {
 							items[i] = sessions[j];
+							let people = [];
+							for (let k = 0; k < sessionsWithNames.length; k++) {
+								if (sessionsWithNames[k].slug === sessions[j].slug) {
+									people.push(sessionsWithNames[k].name);
+								}
+							}
+							// Sort people by last name
+							people = people.sort(function (a, b) {
+								var aSplit = a.toLowerCase().split(" ");
+								var bSplit = b.toLowerCase().split(" ");
+								a = aSplit[aSplit.length - 1];
+								b = bSplit[bSplit.length - 1];
+								if (a < b) return -1;
+								if (a > b) return 1;
+								return 0;
+							});
+							items[i].people = people.join(", ");
 							break;
 						}
 					}
