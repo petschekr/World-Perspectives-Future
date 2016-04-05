@@ -158,22 +158,48 @@ router.route("/sessions/:time")
 		var {slug}: { slug: string } = request.body;
 		var {time}: { time: string } = request.params;
 		var intendedSession = null;
-		// Get this specific session and check for existance, time, and capacity
-		db.cypherAsync({
-			"query": "MATCH (s:Session {slug: {slug}, startTime: {time}}) RETURN s.startTime AS start, s.capacity AS capacity, s.attendees AS attendees",
-			"params": {
-				slug: slug,
-				time: time
-			}
-		}).then(function (results) {
-			if (results.length !== 1) {
+		// 1: Get this specific session and check for existance, time, and capacity
+		// 2: Determine if this user presents a session at this time. If so, they must register for it.
+		// 3: Determine if this user moderates a session at this time. If so, they must register for it.
+		Promise.all([
+			db.cypherAsync({
+				"query": "MATCH (s:Session {slug: {slug}, startTime: {time}}) RETURN s.startTime AS start, s.capacity AS capacity, s.attendees AS attendees",
+				"params": {
+					slug: slug,
+					time: time
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH (user:User {username: {username}})-[r:PRESENTS]->(s:Session {startTime: {time}}) RETURN s.slug AS slug, s.title AS title",
+				"params": {
+					username: response.locals.user.username,
+					time: time
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH (user:User {username: {username}})-[r:MODERATES]->(s:Session {startTime: {time}}) RETURN s.slug AS slug, s.title AS title",
+				"params": {
+					username: response.locals.user.username,
+					time: time
+				}
+			})
+		]).spread(function (sessions, presentations, moderations) {
+			if (sessions.length !== 1) {
 				response.json({ "success": false, "message": "Invalid session ID" });
 				return Promise.reject(new IgnoreError());
 			}
-			var session = results[0];
+			var session = sessions[0];
 			intendedSession = session;
 			if (session.start !== time) {
 				response.json({ "success": false, "message": "Session has mismatching start time" });
+				return Promise.reject(new IgnoreError());
+			}
+			if (presentations.length > 0 && presentations[0].slug !== slug) {
+				response.json({ "success": false, "message": `You must select the session that you are presenting during this time period: "${presentations[0].title}"` });
+				return Promise.reject(new IgnoreError());
+			}
+			if (moderations.length > 0 && moderations[0].slug !== slug) {
+				response.json({ "success": false, "message": `You must select the session that you are moderating during this time period: "${moderations[0].title}"` });
 				return Promise.reject(new IgnoreError());
 			}
 			if (session.attendees >= session.capacity) {

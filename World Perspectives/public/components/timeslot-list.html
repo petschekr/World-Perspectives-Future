@@ -316,29 +316,35 @@
 			},
 			finishSelection: function () {
 				this.$.loading.close();
-				// Unselect the previous choice
-				if (this.previousSelectedSession && this.previousSelectedSession.title) {
-					document.getElementById(this.previousSelectedSession.title.slug).querySelector("iron-icon").icon = "radio-button-unchecked";
+				var response = this.$["choose-session-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
 				}
-				// Turn the item's dash into a checkmark
-				document.getElementById(this.selectedSession.title.slug).querySelector("iron-icon").icon = "radio-button-checked";
-				// Dim the other items
-				var titles = this.getElementsByTagName("h2");
-				for (var i = 0; i < titles.length; i++) {
-					titles[i].style.opacity = "0.5";
-				}
-				document.getElementById(this.selectedSession.title.slug).querySelector("h2").style.opacity = "1";
-				// Proceed
-				var buttons = document.getElementsByTagName("paper-button");
-				var button = null;
-				for (var i = 0; i < buttons.length; i++) {
-					if (buttons[i].index === this.index && buttons[i].hasAttribute("forward")) {
-						button = buttons[i];
-						break;
+				else {
+					// Unselect the previous choice
+					if (this.previousSelectedSession && this.previousSelectedSession.title) {
+						document.getElementById(this.previousSelectedSession.title.slug).querySelector("iron-icon").icon = "radio-button-unchecked";
 					}
+					// Turn the item's dash into a checkmark
+					document.getElementById(this.selectedSession.title.slug).querySelector("iron-icon").icon = "radio-button-checked";
+					// Dim the other items
+					var titles = this.getElementsByTagName("h2");
+					for (var i = 0; i < titles.length; i++) {
+						titles[i].style.opacity = "0.5";
+					}
+					document.getElementById(this.selectedSession.title.slug).querySelector("h2").style.opacity = "1";
+					// Proceed
+					var buttons = document.getElementsByTagName("paper-button");
+					var button = null;
+					for (var i = 0; i < buttons.length; i++) {
+						if (buttons[i].index === this.index && buttons[i].hasAttribute("forward")) {
+							button = buttons[i];
+							break;
+						}
+					}
+					this.toggleAttribute("disabled", false, button);
+					button.click();
 				}
-				this.toggleAttribute("disabled", false, button);
-				button.click();
 			},
 			handleError: function (e) {
 				this.$.loading.close();
