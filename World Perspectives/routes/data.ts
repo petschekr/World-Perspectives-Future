@@ -79,9 +79,11 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 			for (let i = 0; i < items.length; i++) {
 				// Insert registration choices into schedule at editable periods
 				if (items[i].editable) {
+					let set = false;
 					for (let j = 0; j < sessions.length; j++) {
 						if (sessions[j].start === items[i].start) {
 							items[i] = sessions[j];
+							set = true;
 							let people = [];
 							for (let k = 0; k < sessionsWithNames.length; k++) {
 								if (sessionsWithNames[k].slug === sessions[j].slug) {
@@ -104,6 +106,10 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 								items[i].type = items[i].type.split(" ")[0];
 							break;
 						}
+					}
+					if (!set) {
+						// Couldn't find registered session for this editable time so it must be a free
+						items[i].title = "Free";
 					}
 				}
 			}
