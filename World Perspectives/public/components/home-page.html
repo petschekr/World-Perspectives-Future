@@ -457,7 +457,16 @@
 				this.scheduleLoaded = true;
 			},
 			handleError: function (e) {
-				console.error(e.target.lastError.error);
+				if (e.target.lastError.request.xhr.status === 403) {
+					// User not logged in
+					this.$.errorSection.style.display = "block";
+					this.user = {
+						name: "Schedule"
+					};
+				}
+				else {
+					console.error(e.target.lastError.error);
+				}
 			},
 			print: function() {
 				window.location = "/print";
