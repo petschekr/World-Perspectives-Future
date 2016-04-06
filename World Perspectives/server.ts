@@ -63,7 +63,6 @@ app.route("/about").get(function (request, response) {
 	]).then(function ([aboutHTML, version, commit]) {
 		// Dynamically update the version field to represent the current version from the package.json
 		var $ = cheerio.load(aboutHTML);
-		console.log(commit);
 		$("b#app-version").text(version + "@" + commit.shortHash);
 		$("b#node-version").text(process.version);
 		response.send($.html());
