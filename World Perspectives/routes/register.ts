@@ -182,18 +182,15 @@ router.route("/sessions/:time")
 					username: response.locals.user.username,
 					time: time
 				}
+			}),
+			db.cypherAsync({
+				query: "MATCH (user:User {username: {username}}) RETURN user.hasFree AS hasFree, user.timeOfFree AS timeOfFree",
+				params: {
+					username: response.locals.user.username
+				}
 			})
-		]).spread(function (sessions, presentations, moderations) {
-			if (sessions.length !== 1) {
-				response.json({ "success": false, "message": "Invalid session ID" });
-				return Promise.reject(new IgnoreError());
-			}
-			var session = sessions[0];
-			intendedSession = session;
-			if (session.start !== time) {
-				response.json({ "success": false, "message": "Session has mismatching start time" });
-				return Promise.reject(new IgnoreError());
-			}
+		]).spread(function (sessions, presentations, moderations, userFreeInfo) {
+			userFreeInfo = userFreeInfo[0];
 			if (presentations.length > 0 && presentations[0].slug !== slug) {
 				response.json({ "success": false, "message": `You must select the session that you are presenting during this time period: "${presentations[0].title}"` });
 				return Promise.reject(new IgnoreError());
@@ -202,10 +199,44 @@ router.route("/sessions/:time")
 				response.json({ "success": false, "message": `You must select the session that you are moderating during this time period: "${moderations[0].title}"` });
 				return Promise.reject(new IgnoreError());
 			}
-			if (session.attendees >= session.capacity) {
-				response.json({ "success": false, "message": "There are too many people in that session. Please choose another." });
-				return Promise.reject(new IgnoreError());
+
+			if (slug !== "free") {
+				if (sessions.length !== 1) {
+					response.json({ "success": false, "message": "Invalid session ID" });
+					return Promise.reject(new IgnoreError());
+				}
+				var session = sessions[0];
+				intendedSession = session;
+				if (session.start !== time) {
+					response.json({ "success": false, "message": "Session has mismatching start time" });
+					return Promise.reject(new IgnoreError());
+				}
+				if (session.attendees >= session.capacity) {
+					response.json({ "success": false, "message": "There are too many people in that session. Please choose another." });
+					return Promise.reject(new IgnoreError());
+				}
+				if (userFreeInfo.hasFree && userFreeInfo.timeOfFree === time) {
+					return db.cypherAsync({
+						"query": "MATCH (user:User {username: {username}}) REMOVE user.hasFree, user.timeOfFree",
+						"params": {
+							username: response.locals.user.username
+						}
+					});
+				}
+				else {
+					return Promise.resolve();
+				}
 			}
+			else {
+				if (userFreeInfo.hasFree && userFreeInfo.timeOfFree !== time) {
+					response.json({ "success": false, "message": "You may select only one free" });
+					return Promise.reject(new IgnoreError());
+				}
+				else {
+					return Promise.resolve();
+				}
+			}
+		}).then(function () {
 			// Now check if deregistration needs to happen and remove the relationship and decrement the number of attendees (the user selected a different session previously and has changed their mind)
 			return db.cypherAsync({
 				"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session {startTime: {time}}) SET s.attendees = s.attendees - 1 DELETE r RETURN s.slug AS slug, s.attendees AS attendees",
@@ -222,22 +253,34 @@ router.route("/sessions/:time")
 					"attendees": deletedSession.attendees
 				});
 			});
-			// Notify via WebSocket of the intention to register
-			common.io.emit("availability", {
-				"slug": slug,
-				"attendees": intendedSession.attendees + 1
-			});
-			return db.cypherAsync({
-				query: `
-						MATCH (user:User {username: {username}})
-						MATCH (session:Session {slug: {slug}})
-						CREATE (user)-[r:ATTENDS]->(session)
-						SET session.attendees = session.attendees + 1`,
-				params: {
-					username: response.locals.user.username,
-					slug: slug
-				}
-			});
+			if (intendedSession !== null) {
+				// Notify via WebSocket of the intention to register
+				common.io.emit("availability", {
+					"slug": slug,
+					"attendees": intendedSession.attendees + 1
+				});
+				return db.cypherAsync({
+					query: `
+							MATCH (user:User {username: {username}})
+							MATCH (session:Session {slug: {slug}})
+							CREATE (user)-[r:ATTENDS]->(session)
+							SET session.attendees = session.attendees + 1`,
+					params: {
+						username: response.locals.user.username,
+						slug: slug
+					}
+				});
+			}
+			else {
+				// Register for a free
+				return db.cypherAsync({
+					query: "MATCH (user:User {username: {username}}) SET user.hasFree = true, user.timeOfFree = {time}",
+					params: {
+						username: response.locals.user.username,
+						time: time
+					}
+				});
+			}
 		}).then(function () {
 			response.json({ "success": true, "message": "Successfully registered for session" });
 		}).catch(IgnoreError, function () {
@@ -247,6 +290,7 @@ router.route("/sessions/:time")
 router.route("/done").post(function (request, response) {
 	// 1: Get all registered sessions
 	// 2: Get the number of editable periods to ensure that all have been customized
+	// 3: Get the user's free period data
 	Promise.all([
 		db.cypherAsync({
 			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.type AS type",
@@ -256,9 +300,16 @@ router.route("/done").post(function (request, response) {
 		}),
 		db.cypherAsync({
 			"query": "MATCH (item:ScheduleItem {editable: true}) RETURN count(item) AS periods",
+		}),
+		db.cypherAsync({
+			query: "MATCH (user:User {username: {username}}) RETURN user.hasFree AS hasFree, user.timeOfFree AS timeOfFree",
+			params: {
+				username: response.locals.user.username
+			}
 		})
-	]).spread(function (results, periods) {
+	]).spread(function (results, periods, userFreeInfo) {
 		periods = periods[0].periods;
+		userFreeInfo = userFreeInfo[0];
 		var hasSelectedPanel = false;
 		var hasSelectedSession = false;
 		for (let result of results) {
@@ -279,7 +330,10 @@ router.route("/done").post(function (request, response) {
 			response.json({ "success": false, "message": "You must select at least one global studies or science session" });
 			return Promise.reject(new IgnoreError());
 		}
-		if (results.length !== periods) {
+		if (userFreeInfo.hasFree) {
+			periods--;
+		}
+		if (results.length < periods) {
 			response.json({ "success": false, "message": "Your registration isn't yet completed" });
 			return Promise.reject(new IgnoreError());
 		}

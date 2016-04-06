@@ -166,6 +166,16 @@
 					</h2>
 				</paper-item>
 			</template>
+			<paper-item on-click="freeSelect" id$="free[[start.raw]]">
+				<paper-ripple></paper-ripple>
+				<span><iron-icon icon="radio-button-unchecked"></iron-icon></span>
+				<h2>
+					<span><i>Free</i></span>
+					<small>
+						<span>You can choose up to one free</span>
+					</small>
+				</h2>
+			</paper-item>
 		</div>
 		<paper-dialog id="session-detail" entry-animation="fade-in-animation" exit-animation="fade-out-animation" with-backdrop>
 			<div class="flex-container">
@@ -303,6 +313,26 @@
 				this.forceSelectedSessionUpdate();
 
 				this.$["session-detail"].open();
+			},
+			freeSelect: function () {
+				this.previousSelectedSession = this.selectedSession;
+				this.selectedSession = {
+					title: {
+						formatted: "Free",
+						slug: "free" + this.start.raw
+					},
+					time: {
+						start: this.start,
+						end: this.end
+					}
+				};
+				var sendData = {
+					"slug": "free"
+				};
+				this.$.loading.open();
+				this.$["choose-session-ajax"].contentType = "application/json";
+				this.$["choose-session-ajax"].body = sendData;
+				this.$["choose-session-ajax"].generateRequest();
 			},
 			sessionSelect: function (e) {
 				this.$["session-detail"].close();
