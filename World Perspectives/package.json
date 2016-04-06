@@ -1,6 +1,6 @@
 {
   "name": "world-perspectives",
-  "version": "3.1.0-alpha",
+  "version": "3.1.0",
   "description": "Web app for World Perspectives Symposium day at GFA",
   "main": "server.js",
   "author": {
