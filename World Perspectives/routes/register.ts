@@ -158,6 +158,7 @@ router.route("/sessions/:time")
 		var {slug}: { slug: string } = request.body;
 		var {time}: { time: string } = request.params;
 		var intendedSession = null;
+		var isOwn = false;
 		// 1: Get this specific session and check for existance, time, and capacity
 		// 2: Determine if this user presents a session at this time. If so, they must register for it.
 		// 3: Determine if this user moderates a session at this time. If so, they must register for it.
@@ -198,6 +199,9 @@ router.route("/sessions/:time")
 			if (moderations.length > 0 && moderations[0].slug !== slug) {
 				response.json({ "success": false, "message": `You must select the session that you are moderating during this time period: "${moderations[0].title}"` });
 				return Promise.reject(new IgnoreError());
+			}
+			if ((presentations.length > 0 && presentations[0].slug === slug) || (moderations.length > 0 && moderations[0].slug === slug)) {
+				isOwn = true;
 			}
 
 			if (slug !== "free") {
@@ -253,18 +257,13 @@ router.route("/sessions/:time")
 					"attendees": deletedSession.attendees
 				});
 			});
-			if (intendedSession !== null) {
-				// Notify via WebSocket of the intention to register
-				common.io.emit("availability", {
-					"slug": slug,
-					"attendees": intendedSession.attendees + 1
-				});
+			if (isOwn) {
+				// The attendance isn't increased if the user is a presenter or moderator of the selected session
 				return db.cypherAsync({
 					query: `
 							MATCH (user:User {username: {username}})
 							MATCH (session:Session {slug: {slug}})
-							CREATE (user)-[r:ATTENDS]->(session)
-							SET session.attendees = session.attendees + 1`,
+							CREATE (user)-[r:ATTENDS]->(session)`,
 					params: {
 						username: response.locals.user.username,
 						slug: slug
@@ -272,14 +271,34 @@ router.route("/sessions/:time")
 				});
 			}
 			else {
-				// Register for a free
-				return db.cypherAsync({
-					query: "MATCH (user:User {username: {username}}) SET user.hasFree = true, user.timeOfFree = {time}",
-					params: {
-						username: response.locals.user.username,
-						time: time
-					}
-				});
+				if (intendedSession !== null) {
+					// Notify via WebSocket of the intention to register
+					common.io.emit("availability", {
+						"slug": slug,
+						"attendees": intendedSession.attendees + 1
+					});
+					return db.cypherAsync({
+						query: `
+								MATCH (user:User {username: {username}})
+								MATCH (session:Session {slug: {slug}})
+								CREATE (user)-[r:ATTENDS]->(session)
+								SET session.attendees = session.attendees + 1`,
+						params: {
+							username: response.locals.user.username,
+							slug: slug
+						}
+					});
+				}
+				else {
+					// Register for a free
+					return db.cypherAsync({
+						query: "MATCH (user:User {username: {username}}) SET user.hasFree = true, user.timeOfFree = {time}",
+						params: {
+							username: response.locals.user.username,
+							time: time
+						}
+					});
+				}
 			}
 		}).then(function () {
 			response.json({ "success": true, "message": "Successfully registered for session" });
