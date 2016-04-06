@@ -8,6 +8,7 @@
 <link rel="import" href="/bower_components/paper-ripple/paper-ripple.html" />
 <link rel="import" href="/bower_components/paper-dialog/paper-dialog.html" />
 <link rel="import" href="/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html" />
+<link rel="import" href="/bower_components/neon-animation/neon-animations.html" />
 <link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
 <link rel="import" href="/bower_components/paper-button/paper-button.html" />
 <link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html" />
@@ -411,7 +412,6 @@
 				var slug = e.currentTarget.slug;
 				if (!slug)
 					return;
-				console.log(slug);
 				this.selectedSession = this.sessions.find(function (session) {
 					return session.title.slug === slug;
 				});
