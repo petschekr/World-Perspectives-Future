@@ -13,6 +13,7 @@ var db = common.db;
 import moment = require("moment");
 var csv = require("csv");
 import cheerio = require("cheerio");
+var git = Promise.promisifyAll(require("git-last-commit"));
 // Set up the Express server
 import express = require("express");
 import serveStatic = require("serve-static");
@@ -57,11 +58,13 @@ app.route("/about").get(function (request, response) {
 		fs.readFileAsync("pages/about.html", "utf8"),
 		fs.readFileAsync("package.json", "utf8")
 			.then(JSON.parse)
-			.get("version")
-	]).then(function ([aboutHTML, version]) {
+			.get("version"),
+		git.getLastCommitAsync()
+	]).then(function ([aboutHTML, version, commit]) {
 		// Dynamically update the version field to represent the current version from the package.json
 		var $ = cheerio.load(aboutHTML);
-		$("b#app-version").text(version);
+		console.log(commit);
+		$("b#app-version").text(version + "@" + commit.shortHash);
 		$("b#node-version").text(process.version);
 		response.send($.html());
 	}).catch(common.handleError.bind(response));
