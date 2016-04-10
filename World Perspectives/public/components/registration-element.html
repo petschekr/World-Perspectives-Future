@@ -233,7 +233,7 @@
 					this.goBackward();
 				} else if (element.attributes.forward || element.parentElement.attributes.forward) {
 					// Check if progression is allowed
-					if (e.srcElement.hasAttribute("disabled"))
+					if (element.hasAttribute("disabled"))
 						return;
 					this.goForward();
 				}
