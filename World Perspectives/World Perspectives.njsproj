@@ -74,6 +74,8 @@
     <Content Include="public\components\admin\admin-schedules.html" />
     <Content Include="public\components\admin\admin-sessions.html" />
     <Content Include="public\components\admin\admin-users.html" />
+    <Content Include="public\components\admin\schedule-display.html" />
+    <Content Include="public\components\admin\schedule.html" />
     <Content Include="public\components\content-panel.html" />
     <Content Include="public\components\content-section.html" />
     <Content Include="public\components\home-page-original.html" />
