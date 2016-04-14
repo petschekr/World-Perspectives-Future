@@ -214,7 +214,7 @@
 					<paper-item filter="other">Other</paper-item>
 				</paper-listbox>
 			</paper-dropdown-menu>
-			<paper-button raised>Bulk print</paper-button>
+			<paper-button raised on-click="bulkPrintUsers">Bulk print</paper-button>
 			<br />
 			<iron-ajax auto url="/admin/user?all=true" handle-as="json" last-response="{{users}}" on-error="handleError"></iron-ajax>
 			<paper-autocomplete id="user" label="Name of user" source="[[users]]"></paper-autocomplete>
@@ -377,10 +377,16 @@
 			addPeriod: function () {
 				this.$.done.show("Work in progress...");
 			},
+			bulkPrintUsers: function () {
+				var filter = this.$.filter.selectedItem.getAttribute("filter");
+				filter = encodeURIComponent(filter);
+				window.open("/admin/schedule/" + filter, "_blank");
+			},
 			printUser: function () {
 				var name = this.$.user.getOption().text.trim();
 				name = encodeURIComponent(name);
 				window.open("/admin/schedule/user/" + name, "_blank");
+				this.$.user.clear();
 			},
 			handleError: function (e) {
 				this.$.loading.close();

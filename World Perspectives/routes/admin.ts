@@ -670,6 +670,123 @@ router.route("/schedule")
 			response.json({ "success": true, "message": "Updated successfully" });
 		}).catch(common.handleError.bind(response));
 	});
+
+// Very similar to schedule code in data.ts (keep the two roughly in sync if changes are made)
+function getScheduleForUser(user: { name: string; username: string; registered: boolean; }): Promise<{ "name": string; "schedule": any[] }> {
+	if (!user.registered) {
+		// Generalized schedule for unregistered users
+		return db.cypherAsync({
+			query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
+		}).then(function (results) {
+			results = results.map(function (item) {
+				var startTime = item.start;
+				delete item.start;
+				var endTime = item.end;
+				delete item.end;
+				item.time = {
+					"start": {
+						"raw": startTime,
+						"formatted": moment(startTime).format(timeFormat)
+					},
+					"end": {
+						"raw": endTime,
+						"formatted": moment(endTime).format(timeFormat)
+					}
+				};
+				return item;
+			});
+			return {
+				"name": user.name,
+				"schedule": results
+			};
+		});
+	}
+	else {
+		// Schedule for registered users
+		return db.cypherAsync({
+			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, s.description AS description, true AS editable",
+			"params": {
+				username: user.username
+			}
+		}).then(function (attendingSessions: any[]) {
+			return Promise.map(attendingSessions, function (attendingSession) {
+				return db.cypherAsync({
+					"query": "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.name AS name, s.slug AS slug",
+					"params": {
+						slug: attendingSession.slug
+					}
+				});
+			}).then(function (sessionsWithNames) {
+				return db.cypherAsync({
+					query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
+				}).then(function (items) {
+					return Promise.resolve([items, attendingSessions, sessionsWithNames]);
+				});
+			});
+		}).spread(function (items, sessions, sessionsWithNames) {
+			function formatter(item) {
+				var startTime = item.start;
+				delete item.start;
+				var endTime = item.end;
+				delete item.end;
+				item.time = {
+					"start": {
+						"raw": startTime,
+						"formatted": moment(startTime).format(timeFormat)
+					},
+					"end": {
+						"raw": endTime,
+						"formatted": moment(endTime).format(timeFormat)
+					}
+				};
+				return item;
+			}
+			// Flatten array
+			sessionsWithNames = [].concat.apply([], sessionsWithNames);
+			for (let i = 0; i < items.length; i++) {
+				// Insert registration choices into schedule at editable periods
+				if (items[i].editable) {
+					let set = false;
+					for (let j = 0; j < sessions.length; j++) {
+						if (sessions[j].start === items[i].start) {
+							items[i] = sessions[j];
+							set = true;
+							let people = [];
+							for (let k = 0; k < sessionsWithNames.length; k++) {
+								if (sessionsWithNames[k].slug === sessions[j].slug) {
+									people.push(sessionsWithNames[k].name);
+								}
+							}
+							// Sort people by last name
+							people = people.sort(function (a, b) {
+								var aSplit = a.toLowerCase().split(" ");
+								var bSplit = b.toLowerCase().split(" ");
+								a = aSplit[aSplit.length - 1];
+								b = bSplit[bSplit.length - 1];
+								if (a < b) return -1;
+								if (a > b) return 1;
+								return 0;
+							});
+							items[i].people = people.join(", ");
+							// Return type of form "Global" or "Science" instead of including "session" at the end
+							if (items[i].type)
+								items[i].type = items[i].type.split(" ")[0];
+							break;
+						}
+					}
+					if (!set) {
+						// Couldn't find registered session for this editable time so it must be a free
+						items[i].title = "Free";
+					}
+				}
+			}
+			return {
+				"name": user.name,
+				"schedule": items.map(formatter)
+			};
+		});
+	}
+}
 router.route("/schedule/:filter").get(function (request, response) {
 	fs.readFileAsync("public/components/admin/schedule.html", "utf8")
 		.then(function (html: string) {
@@ -697,119 +814,7 @@ router.route("/schedule/:filter/data").get(function (request, response) {
 		}
 	}).then(function (users) {
 		return Promise.map(users, function (user: { name: string; username: string; registered: boolean; }) {
-			if (!user.registered) {
-				// Generalized schedule for unregistered users
-				return db.cypherAsync({
-					query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
-				}).then(function (results) {
-					results = results.map(function (item) {
-						var startTime = item.start;
-						delete item.start;
-						var endTime = item.end;
-						delete item.end;
-						item.time = {
-							"start": {
-								"raw": startTime,
-								"formatted": moment(startTime).format(timeFormat)
-							},
-							"end": {
-								"raw": endTime,
-								"formatted": moment(endTime).format(timeFormat)
-							}
-						};
-						return item;
-					});
-					return {
-						"name": user.name,
-						"schedule": results
-					};
-				});
-			}
-			else {
-				// Schedule for registered users
-				return db.cypherAsync({
-					"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, s.description AS description, true AS editable",
-					"params": {
-						username: user.username
-					}
-				}).then(function (attendingSessions: any[]) {
-					return Promise.map(attendingSessions, function (attendingSession) {
-						return db.cypherAsync({
-							"query": "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.name AS name, s.slug AS slug",
-							"params": {
-								slug: attendingSession.slug
-							}
-						});
-					}).then(function (sessionsWithNames) {
-						return db.cypherAsync({
-							query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
-						}).then(function (items) {
-							return Promise.resolve([items, attendingSessions, sessionsWithNames]);
-						});
-					});
-				}).spread(function (items, sessions, sessionsWithNames) {
-					function formatter(item) {
-						var startTime = item.start;
-						delete item.start;
-						var endTime = item.end;
-						delete item.end;
-						item.time = {
-							"start": {
-								"raw": startTime,
-								"formatted": moment(startTime).format(timeFormat)
-							},
-							"end": {
-								"raw": endTime,
-								"formatted": moment(endTime).format(timeFormat)
-							}
-						};
-						return item;
-					}
-					// Flatten array
-					sessionsWithNames = [].concat.apply([], sessionsWithNames);
-					for (let i = 0; i < items.length; i++) {
-						// Insert registration choices into schedule at editable periods
-						if (items[i].editable) {
-							let set = false;
-							for (let j = 0; j < sessions.length; j++) {
-								if (sessions[j].start === items[i].start) {
-									items[i] = sessions[j];
-									set = true;
-									let people = [];
-									for (let k = 0; k < sessionsWithNames.length; k++) {
-										if (sessionsWithNames[k].slug === sessions[j].slug) {
-											people.push(sessionsWithNames[k].name);
-										}
-									}
-									// Sort people by last name
-									people = people.sort(function (a, b) {
-										var aSplit = a.toLowerCase().split(" ");
-										var bSplit = b.toLowerCase().split(" ");
-										a = aSplit[aSplit.length - 1];
-										b = bSplit[bSplit.length - 1];
-										if (a < b) return -1;
-										if (a > b) return 1;
-										return 0;
-									});
-									items[i].people = people.join(", ");
-									// Return type of form "Global" or "Science" instead of including "session" at the end
-									if (items[i].type)
-										items[i].type = items[i].type.split(" ")[0];
-									break;
-								}
-							}
-							if (!set) {
-								// Couldn't find registered session for this editable time so it must be a free
-								items[i].title = "Free";
-							}
-						}
-					}
-					return {
-						"name": user.name,
-						"schedule": items.map(formatter)
-					};
-				});
-			}
+			return getScheduleForUser(user);
 		});
 	}).then(function (results) {
 		response.json(results);
@@ -822,6 +827,30 @@ router.route("/schedule/user/:name").get(function (request, response) {
 			response.send(html);
 		})
 		.catch(common.handleError.bind(response));
+});
+router.route("/schedule/user/:name/data").get(function (request, response) {
+	var {name}: { name: string } = request.params;
+
+	db.cypherAsync({
+		"query": "MATCH (u:User) WHERE u.name = {name} OR u.username = {name} RETURN u.name AS name, u.username AS username, u.registered AS registered",
+		"params": {
+			name: name
+		}
+	}).then(function (user) {
+		if (user.length !== 1) {
+			return getScheduleForUser({
+				"name": "Unknown user",
+				"username": "unknown",
+				"registered": false
+			});
+		}
+		else {
+			return getScheduleForUser(user[0]);
+		}
+	}).then(function (schedule) {
+		// Wrap in an array because the schedule displayer is used for both lists of schedules and individual schedules
+		response.json([schedule]);
+	}).catch(common.handleError.bind(response));
 });
 router.route("/schedule/switch").patch(postParser, function (request, response) {
 	var {id1, id2}: { id1: string, id2: string } = request.body;
