@@ -83,7 +83,7 @@
 			font-style: italic;
 		}
 		
-		span[suffix] {
+		span[suffix], .fade {
 			opacity: 0.6;
 		}
 
@@ -154,6 +154,12 @@
 						</template>
 						<template is="dom-if" if="[[_shouldShowLabel(item)]]">
 							<div class="info">[[_getLabelFromType(item)]]</div>
+						</template>
+						<template is="dom-if" if="[[item.registered]]">
+							<paper-icon-button class="fade" icon="assignment-turned-in" on-click="explainRegistered"></paper-icon-button>
+						</template>
+						<template is="dom-if" if="[[!item.registered]]">
+							<paper-icon-button class="fade" icon="assignment-late" on-click="explainUnregistered"></paper-icon-button>
 						</template>
 						<paper-icon-button icon="link" on-click="copyLink" code="[[item.code]]"></paper-icon-button>
 						<paper-icon-button icon="clear" on-click="deleteUser" username="[[item.username]]"></paper-icon-button>
@@ -252,6 +258,12 @@
 					return "user";
 				}
 				return "users";
+			},
+			explainRegistered: function () {
+				this.$.done.show("This user has registered");
+			},
+			explainUnregistered: function () {
+				this.$.done.show("This user hasn't registered yet");
 			},
 			updateUsername: function () {
 				// Automatically fill the username field
