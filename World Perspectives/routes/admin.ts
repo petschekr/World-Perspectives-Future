@@ -682,6 +682,7 @@ router.route("/schedule/:filter/data").get(function (request, response) {
 	if (!filter) {
 		filter = "all";
 	}
+	filter = filter.toString().toLowerCase();
 	if (filter === "all") {
 		var criteria = "";
 	}
