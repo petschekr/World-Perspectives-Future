@@ -83,6 +83,7 @@
 			<iron-ajax id="registration-open-set-ajax" url="/admin/registration/open" method="PUT" handle-as="json" on-response="updateRegistrationOpenResponse" on-error="handleError"></iron-ajax>
 			<iron-ajax id="get-registration-emails-ajax" auto url="/admin/registration/email" handle-as="json" last-response="{{registrationEmailStatus}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="send-registration-emails-ajax" url="/admin/registration/email" method="POST" handle-as="json" on-response="sendRegistrationEmailsResponse" on-error="handleError"></iron-ajax>
+			<iron-ajax auto url="/admin/registration/stats" handle-as="json" last-response="{{registrationStats}}" on-error="handleError"></iron-ajax>
 			<paper-toggle-button id="open" checked="[[registrationOpen.open]]" on-change="updateRegistrationOpen" style="width: 184px; margin: 20px auto;">
 				<template is="dom-if" if="[[registrationOpen.open]]">
 					Registration open
@@ -91,6 +92,11 @@
 					Registration closed
 				</template>
 			</paper-toggle-button>
+			<p>
+				[[registrationStats.students.registered]] of [[registrationStats.students.total]] students have registered.
+				<br />
+				[[registrationStats.faculty.registered]] of [[registrationStats.faculty.total]] faculty have registered.
+			</p>
 		</content-section>
 		<content-section>
 			<h2>Send Emails</h2>

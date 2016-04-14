@@ -864,5 +864,38 @@ router.route("/registration/open")
 			response.json({ "success": true, "message": `Registration is now ${open ? "open" : "closed"}` });
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/registration/stats")
+	.get(function (request, response) {
+		db.cypherAsync({
+			query: "MATCH (u:User) WHERE u.type = 0 OR u.type = 1 RETURN u.registered AS registered, u.type AS type"
+		}).then(function (results) {
+			var registeredStudents = 0;
+			var totalStudents = 0;
+			var registeredTeachers = 0;
+			var totalTeachers = 0;
+			results.forEach(function (result) {
+				if (result.type === common.UserType.Student) {
+					totalStudents++;
+					if (result.registered)
+						registeredStudents++;
+				}
+				if (result.type === common.UserType.Teacher) {
+					totalTeachers++;
+					if (result.registered)
+						registeredTeachers++;
+				}
+			});
+			response.json({
+				"students": {
+					"total": totalStudents,
+					"registered": registeredStudents
+				},
+				"faculty": {
+					"total": totalTeachers,
+					"registered": registeredTeachers
+				}
+			});
+		}).catch(common.handleError.bind(response));
+	});
 
 export = router;
