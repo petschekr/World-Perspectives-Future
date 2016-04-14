@@ -13,6 +13,7 @@
 <link rel="import" href="/bower_components/paper-dialog-scrollable/paper-dialog-scrollable.html" />
 <link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
 <link rel="import" href="/bower_components/paper-listbox/paper-listbox.html" />
+<link rel="import" href="/bower_components/paper-autocomplete/paper-autocomplete.html" />
 <link rel="import" href="/components/content-section.html" />
 
 <dom-module id="admin-schedules">
@@ -107,6 +108,17 @@
 			margin: 10px;
 		}
 
+		#user {
+			width: 82%;
+			display: inline-block;
+			margin-right: 28px;
+			margin-top: 30px;
+		}
+
+		content-section:last-of-type {
+			--content-section-margin-bottom: 200px;
+		}
+
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
 
@@ -191,7 +203,22 @@
 		</content-section>
 		<content-section>
 			<h2>Attendee Schedules</h2>
-			<p style="text-align: center;"><i>Available soon</i></p>
+			<paper-dropdown-menu id="filter" label="Filter" style="margin-right: 15px; width: 82%;">
+				<paper-listbox class="dropdown-content" selected="0">
+					<paper-item filter="all">All</paper-item>
+					<paper-item filter="student">Students</paper-item>
+					<paper-item filter="teacher">Teachers</paper-item>
+					<paper-item filter="parent">Parents</paper-item>
+					<paper-item filter="alum">Alumni</paper-item>
+					<paper-item filter="visitor">Visitors</paper-item>
+					<paper-item filter="other">Other</paper-item>
+				</paper-listbox>
+			</paper-dropdown-menu>
+			<paper-button raised>Bulk print</paper-button>
+			<br />
+			<iron-ajax auto url="/admin/user?all=true" handle-as="json" last-response="{{users}}" on-error="handleError"></iron-ajax>
+			<paper-autocomplete id="user" label="Name of user" source="[[users]]"></paper-autocomplete>
+			<paper-button raised on-click="printUser">Print</paper-button>
 		</content-section>
 		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
 		<paper-toast id="saving" text="Saving..." duration="0"></paper-toast>
@@ -232,6 +259,9 @@
 						return undefined;
 					};
 				}
+			},
+			_getUserName: function () {
+				return this.$.user.getOption().text.trim()
 			},
 			showDateDialog: function () {
 				this.$.symposiumDateDialog.toggle();
@@ -346,6 +376,11 @@
 			},
 			addPeriod: function () {
 				this.$.done.show("Work in progress...");
+			},
+			printUser: function () {
+				var name = this.$.user.getOption().text.trim();
+				name = encodeURIComponent(name);
+				window.open("/admin/schedule/user/" + name, "_blank");
 			},
 			handleError: function (e) {
 				this.$.loading.close();
