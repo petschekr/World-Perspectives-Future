@@ -590,6 +590,33 @@ router.route("/session/:slug")
 			response.json({ "success": true, "message": "Session deleted successfully" });
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/session/:slug/attendance").get(function (request, response) {
+	fs.readFileAsync("public/components/admin/session.html", "utf8")
+		.then(function (html: string) {
+			response.send(html);
+		})
+		.catch(common.handleError.bind(response));
+});
+router.route("/session/:slug/attendance/data").get(function (request, response) {
+	var slug = request.params.slug;
+	db.cypherAsync({
+		"query": "MATCH (user:User)-[r:ATTENDS]->(s:Session {slug: {slug}}) RETURN user.username AS username, user.name AS name, user.type AS type ORDER BY last(split(user.name, \" \"))",
+		"params": {
+			slug: slug
+		}
+	}).then(function (results) {
+		var students = results.filter(function (user) {
+			return user.type === common.UserType.Student;
+		});
+		var faculty = results.filter(function (user) {
+			return user.type === common.UserType.Teacher;
+		});
+		response.json({
+			"faculty": faculty,
+			"students": students
+		});
+	}).catch(common.handleError.bind(response));
+});
 router.route("/schedule")
 	.get(function (request, response) {
 		db.cypherAsync({

@@ -1,0 +1,245 @@
+﻿<link rel="import" href="/bower_components/polymer/polymer.html" />
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html" />
+<link rel="import" href="/bower_components/paper-item/paper-item.html" />
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html" />
+<link rel="import" href="/bower_components/paper-button/paper-button.html" />
+<link rel="import" href="/components/table-repeat.html" />
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400|Raleway" />
+<dom-module id="session-display">
+	<style>
+		@media print {
+			button {
+				display: none;
+			}
+
+			.presentation {
+				page-break-after: always;
+			}
+
+				.presentation:last-of-type {
+					page-break-after: auto;
+				}
+		}
+		.presentation {
+			margin-top: 30px;
+		}
+		.presentation table:first-of-type {
+			margin-bottom: 15px;
+		}
+
+		img {
+			display: block;
+			margin: 20px auto;
+		}
+
+		button {
+			position: absolute;
+			top: 5px;
+			left: 5px;
+		}
+
+		h4 {
+			margin: 5px 10px 5px 10px;
+			font-family: "Ubuntu", sans-serif;
+			font-size: 22px;
+			margin-left: 0;
+			text-align: center;
+		}
+		h4 > span.info {
+			font-weight: normal;
+			font-size: 20px;
+		}
+
+		.clear {
+			clear: both;
+		}
+
+		hr {
+			border: 1px dashed rgba(0, 0, 0, 0.2);
+		}
+
+		table {
+			border: 1px solid #DDD;
+			width: 100%;
+			border-collapse: collapse;
+			border-spacing: 0;
+		}
+
+			table tr:nth-child(odd) > td {
+				background-color: #F9F9F9;
+			}
+
+			table td {
+				border: 1px solid #DDD;
+				padding: 5px;
+				font-family: "Raleway", sans-serif;
+				font-size: 95%;
+				text-align: left;
+			}
+			table td span {
+				position: relative;
+				top: 1px;
+				margin-left: 8px;
+			}
+
+			table tr {
+				vertical-align: top;
+			}
+			
+			table th {
+				font-family: "Ubuntu", sans-serif;
+				font-size: 16px;
+				font-weight: bold;
+				text-align: left;
+				padding: 5px;
+			}
+		.presenter::after {
+			content: ",";
+		}
+		.presenter:last-of-type::after {
+			content: "";
+		}
+		p.presenters {
+			font-family: "Ubuntu", sans-serif;
+			font-size: 16px;
+			margin: 8px 0;
+		}
+	</style>
+	<template>
+		<!--<iron-ajax auto url="/user" handle-as="json" last-response="{{user}}" on-error="handleError"></iron-ajax>-->
+		<iron-ajax auto url="[[_computeSessionURL()]]" handle-as="json" last-response="{{session}}" on-error="handleError"></iron-ajax>
+		<iron-ajax auto url="[[_computeDataURL()]]" handle-as="json" last-response="{{attendees}}" on-error="handleError"></iron-ajax>
+		<button onclick="window.print()">Print</button>
+		<!--
+		<template is="dom-repeat" items="[[data]]" as="schedule">
+			<div class="schedule">
+				<img src="/img/logo.svg">
+				<h4 class="name">[[schedule.name]]</h4>
+				<h4 class="date">[[date.formatted]]</h4>
+				<div class="clear"></div>
+				<hr />
+
+				<table-repeat rows="[[schedule.schedule]]" id="scheduleTable">
+					<table>
+						<thead></thead>
+						<tbody></tbody>
+					</table>
+					<template is="dom-template" class="row-template">
+						<table>
+							<tr>
+								<td class="longtime">[[item.time.start.formatted]] – [[item.time.end.formatted]]</td>
+								<td>
+									<template is="dom-if" if="{{!item.editable}}">
+										{{item.title}}
+									</template>
+									<template is="dom-if" if="{{item.editable}}">
+										<b>{{item.title}}</b>
+										<br />
+										<i>{{item.people}}</i>
+									</template>
+								</td>
+								<td>{{item.location}}</td>
+							</tr>
+						</table>
+					</template>
+				</table-repeat>
+			</div>
+		</template>
+		-->
+		<div class="presentation">
+			<h4>
+				{{session.title.formatted}}
+				<br />
+				<span class="info">({{session.time.start.formatted}} to {{session.time.end.formatted}} – {{session.location}})</span>
+			</h4>
+			<p class="presenters">
+				<b>[[_pluralizePresenters(session)]]</b>:
+				<template is="dom-repeat" items="[[session.presenters]]" as="presenter">
+					<span class="presenter">{{presenter.name}}</span>
+				</template>
+				<template is="dom-if" if="[[session.moderator]]">
+					<br />
+					<b>Moderator:</b>
+					[[session.moderator.name]]
+				</template>
+				<br />
+				<b>Capacity:</b>
+				[[session.capacity.filled]] of [[session.capacity.total]]
+			</p>
+			<table-repeat rows="[[attendees.faculty]]">
+				<table>
+					<thead>
+						<th>Faculty ([[attendees.faculty.length]])</th>
+					</thead>
+					<tbody></tbody>
+				</table>
+				<template is="dom-template" class="row-template">
+					<table>
+						<tr>
+							<td><iron-icon icon="check-box-outline-blank"></iron-icon><span>[[item.name]]</span></td>
+						</tr>
+					</table>
+				</template>
+			</table-repeat>
+			<table-repeat rows="[[attendees.students]]">
+				<table>
+					<thead>
+						<th>Students ([[attendees.students.length]])</th>
+					</thead>
+					<tbody></tbody>
+				</table>
+				<template is="dom-template" class="row-template">
+					<table>
+						<tr>
+							<td><iron-icon icon="check-box-outline-blank"></iron-icon><span>[[item.name]]</span></td>
+						</tr>
+					</table>
+				</template>
+			</table-repeat>
+			<!--
+			<table>
+				<tr><th>Faculty ({{session.attendees.faculty.length}})</th></tr>
+				<tr template repeat="{{attendee in session.attendees.faculty}}">
+					<td>{{attendee.name}}</td>
+				</tr>
+			</table>
+			<table>
+				<tr><th>Students ({{session.attendees.students.length}})</th></tr>
+				<tr template repeat="{{attendee in session.attendees.students}}">
+					<td>{{attendee.name}}</td>
+				</tr>
+			</table>
+			<template is="dom-repeat" items="[[attendees]]">
+			</template>-->
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: "session-display",
+			properties: {
+			},
+			ready: function () {
+			},
+			_computeSessionURL: function () {
+				var url = window.location.pathname.split("/");
+				url.pop();
+				return url.join("/");
+			},
+			_computeDataURL: function () {
+				return window.location.pathname + "/data";
+			},
+			_pluralizePresenters: function (session) {
+				if (session.presenters.length === 1) {
+					return "Presenter";
+				}
+				else {
+					return "Presenters";
+				}
+			},
+			handleError: function (e) {
+				var errorMessage = e.target.lastError.error.message || "An error occurred!";
+				console.error(errorMessage);
+			}
+		});
+	</script>
+</dom-module>
