@@ -965,8 +965,8 @@ router.route("/schedule/date")
 				end.set("year", date.get("year"));
 				end.set("month", date.get("month"));
 				end.set("date", date.get("date"));
-				item.start = start;
-				item.end = end;
+				item.start = start.format();
+				item.end = end.format();
 				return item;
 			});
 			sessions.map(function (session) {
