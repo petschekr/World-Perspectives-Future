@@ -82,7 +82,8 @@
 			<iron-ajax id="registration-open-ajax" auto url="/admin/registration/open" handle-as="json" last-response="{{registrationOpen}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="registration-open-set-ajax" url="/admin/registration/open" method="PUT" handle-as="json" on-response="updateRegistrationOpenResponse" on-error="handleError"></iron-ajax>
 			<iron-ajax id="get-emails-ajax" auto url="/admin/registration/email" handle-as="json" last-response="{{emailStatus}}" on-error="handleError"></iron-ajax>
-			<iron-ajax id="send-registration-emails-ajax" url="/admin/registration/email" method="POST" handle-as="json" on-response="sendRegistrationEmailsResponse" on-error="handleError"></iron-ajax>
+			<iron-ajax id="send-registration-emails-ajax" url="/admin/registration/email/registration" method="POST" handle-as="json" on-response="sendRegistrationEmailsResponse" on-error="handleError"></iron-ajax>
+			<iron-ajax id="send-schedule-emails-ajax" url="/admin/registration/email/schedule" method="POST" handle-as="json" on-response="sendScheduleEmailsResponse" on-error="handleError"></iron-ajax>
 			<iron-ajax auto url="/admin/registration/stats" handle-as="json" last-response="{{registrationStats}}" on-error="handleError"></iron-ajax>
 			<paper-toggle-button id="open" checked="[[registrationOpen.open]]" on-change="updateRegistrationOpen" style="width: 184px; margin: 20px auto;">
 				<template is="dom-if" if="[[registrationOpen.open]]">
@@ -108,6 +109,14 @@
 				<paper-button raised on-click="sendRegistrationEmails">Send registration emails</paper-button>
 				<span class="flex"></span>
 			</div>
+			<br />
+			<p>Send an email to each GFA student and teacher containing their personalized schedule or generalized schedule if not yet registered. This can take a few minutes to complete.</p>
+			<p><small>Last run on [[emailStatus.schedule.formatted]]</small></p>
+			<div class="flex-container">
+				<span class="flex"></span>
+				<paper-button raised on-click="sendScheduleEmails">Send schedule emails</paper-button>
+				<span class="flex"></span>
+			</div>
 		</content-section>
 		<paper-toast id="loading" text="Loading..." duration="0"></paper-toast>
 		<paper-toast id="done" text="Something happened" duration="5000"></paper-toast>
@@ -120,6 +129,7 @@
 				var message = "Are you sure that you want to send out registration emails? Make sure that registration is open!";
 				if (!confirm(message))
 					return;
+				this.$.loading.open();
 				this.$["send-registration-emails-ajax"].generateRequest();
 			},
 			sendRegistrationEmailsResponse: function () {
@@ -131,7 +141,25 @@
 				else {
 					this.$.done.show(response.message);
 				}
-				this.$["get-registration-emails-ajax"].generateRequest();
+				this.$["get-emails-ajax"].generateRequest();
+			},
+			sendScheduleEmails: function () {
+				var message = "Are you sure that you want to send out schedule emails? Make sure that all users have registered or been autoregistered!";
+				if (!confirm(message))
+					return;
+				this.$.loading.open();
+				this.$["send-schedule-emails-ajax"].generateRequest();
+			},
+			sendScheduleEmailsResponse: function () {
+				this.$.loading.close();
+				var response = this.$["send-schedule-emails-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				this.$["get-emails-ajax"].generateRequest();
 			},
 			updateRegistrationOpen: function () {
 				var currentValue = this.$.open.checked;

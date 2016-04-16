@@ -1015,49 +1015,48 @@ router.route("/schedule/date")
 			response.json({ "success": true, "message": "Symposium date changed successfully" });
 		}).catch(common.handleError.bind(response));
 	});
-router.route("/registration/email")
-	.get(function (request, response) {
-		Promise.all([
-			db.cypherAsync({
-				query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL RETURN c"
-			}),
-			db.cypherAsync({
-				query: "MATCH (c:Constant) WHERE c.scheduleEmailTime IS NOT NULL RETURN c"
-			})
-		]).spread(function (registration, schedule) {
-			var registrationEmailTime: moment.Moment = moment(registration[0].c.properties.registrationEmailTime);
-			var scheduleEmailTime: moment.Moment = moment(schedule[0].c.properties.scheduleEmailTime);
-			response.json({
-				"registration": {
-					"raw": registration[0].c.properties.registrationEmailTime,
-					"formatted": `${registrationEmailTime.format(dateFormat)} at ${registrationEmailTime.format(timeFormat)}`
-				},
-				"schedule": {
-					"raw": schedule[0].c.properties.scheduleEmailTime,
-					"formatted": `${scheduleEmailTime.format(dateFormat)} at ${scheduleEmailTime.format(timeFormat)}`
-				}
-			});
-		}).catch(common.handleError.bind(response));
-	})
-	.post(function (request, response) {
-		var totalRecipients = 0;
-		// Get emails to send to
-		Promise.all([
-			db.cypherAsync({
-				"query": "MATCH (u:User) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code"
-			}),
-			common.getSymposiumDate()
-		]).spread(function (results, date: moment.Moment) {
-			totalRecipients = results.length;
-			return Promise.mapSeries(results, function (user: any) {
-				var email = (!!user.email) ? user.email : `${user.username}@gfacademy.org`;
-				var emailToSend = new sendgrid.Email({
-					to: email,
-					from: "registration@wppsymposium.org",
-					fromname: "GFA World Perspectives Symposium",
-					subject: "GFA WPP Symposium Registration",
-					text:
-					`Hi ${user.name},
+router.route("/registration/email").get(function (request, response) {
+	Promise.all([
+		db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL RETURN c"
+		}),
+		db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.scheduleEmailTime IS NOT NULL RETURN c"
+		})
+	]).spread(function (registration, schedule) {
+		var registrationEmailTime: moment.Moment = moment(registration[0].c.properties.registrationEmailTime);
+		var scheduleEmailTime: moment.Moment = moment(schedule[0].c.properties.scheduleEmailTime);
+		response.json({
+			"registration": {
+				"raw": registration[0].c.properties.registrationEmailTime,
+				"formatted": `${registrationEmailTime.format(dateFormat)} at ${registrationEmailTime.format(timeFormat)}`
+			},
+			"schedule": {
+				"raw": schedule[0].c.properties.scheduleEmailTime,
+				"formatted": `${scheduleEmailTime.format(dateFormat)} at ${scheduleEmailTime.format(timeFormat)}`
+			}
+		});
+	}).catch(common.handleError.bind(response));
+});
+router.route("/registration/email/registration").post(function (request, response) {
+	var totalRecipients = 0;
+	// Get emails to send to
+	Promise.all([
+		db.cypherAsync({
+			"query": "MATCH (u:User {username: \"petschekr\"}) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code"
+		}),
+		common.getSymposiumDate()
+	]).spread(function (results, date: moment.Moment) {
+		totalRecipients = results.length;
+		return Promise.mapSeries(results, function (user: any) {
+			var email = (!!user.email) ? user.email : `${user.username}@gfacademy.org`;
+			var emailToSend = new sendgrid.Email({
+				to: email,
+				from: "registration@wppsymposium.org",
+				fromname: "GFA World Perspectives Symposium",
+				subject: "GFA WPP Symposium Registration",
+				text:
+				`Hi ${user.name},
 
 This year's World Perspectives Symposium will take place on ${date.format(dateFormat)}. To login and register for presentations, visit the following link:
 
@@ -1070,20 +1069,76 @@ Feel free to reply to this email if you're having any problems.
 Thanks,
 The GFA World Perspectives Team
 `
+			});
+			return sendgrid.sendAsync(emailToSend);
+		});
+	}).then(function (results) {
+		return db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL SET c.registrationEmailTime = {time} RETURN c",
+			params: {
+				time: moment().format()
+			}
+		});
+	}).then(function (results) {
+		response.json({ "success": true, "message": `Sent registration emails to ${totalRecipients} recipients` });
+	}).catch(common.handleError.bind(response));
+});
+router.route("/registration/email/schedule").post(function (request, response) {
+	var totalRecipients = 0;
+	// Get emails to send to
+	Promise.all([
+		db.cypherAsync({
+			"query": "MATCH (u:User {username: \"petschekr\"}) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code, u.registered AS registered"
+		}),
+		common.getSymposiumDate()
+	]).spread(function (results, date: moment.Moment) {
+		totalRecipients = results.length;
+		return Promise.mapSeries(results, function (user: any) {
+			return getScheduleForUser({
+				"name": user.name,
+				"username": user.username,
+				"registered": user.registered
+			}).get("schedule").then(function (schedule: any[]) {
+				// Generate schedule for email body
+				var scheduleFormatted = schedule.map(function (scheduleItem) {
+					return `${scheduleItem.time.start.formatted} to ${scheduleItem.time.end.formatted}${!!scheduleItem.location ? " in " + scheduleItem.location : ""}: ${scheduleItem.title}${!!scheduleItem.type ? ` (${scheduleItem.type})` : ""}`;
+				}).join("\n\n");
+
+				var email = (!!user.email) ? user.email : `${user.username}@gfacademy.org`;
+				var emailToSend = new sendgrid.Email({
+					to: email,
+					from: "registration@wppsymposium.org",
+					fromname: "GFA World Perspectives Symposium",
+					subject: "Your symposium schedule",
+					text:
+					`Hi ${user.name},
+
+Here is your schedule for this year's World Perspectives Symposium taking place on ${date.format("dddd")} ${date.format(dateFormat)}:
+
+${scheduleFormatted}
+
+You can also visit the following link to view and print a more detailed schedule: https://wppsymposium.org/user/login/${user.code}
+
+Feel free to reply to this email if you're having any problems.
+
+Thanks,
+The GFA World Perspectives Team
+`
 				});
 				return sendgrid.sendAsync(emailToSend);
 			});
-		}).then(function (results) {
-			return db.cypherAsync({
-				query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL SET c.registrationEmailTime = {time} RETURN c",
-				params: {
-					time: moment().format()
-				}
-			});
-		}).then(function (results) {
-			response.json({ "success": true, "message": `Sent registration emails to ${totalRecipients} recipients` });
-		}).catch(common.handleError.bind(response));
-	});
+		});
+	}).then(function (results) {
+		return db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.scheduleEmailTime IS NOT NULL SET c.scheduleEmailTime = {time} RETURN c",
+			params: {
+				time: moment().format()
+			}
+		});
+	}).then(function (results) {
+		response.json({ "success": true, "message": `Sent schedule emails to ${totalRecipients} recipients` });
+	}).catch(common.handleError.bind(response));
+});
 router.route("/registration/open")
 	.get(function(request, response) {
 		db.cypherAsync({
