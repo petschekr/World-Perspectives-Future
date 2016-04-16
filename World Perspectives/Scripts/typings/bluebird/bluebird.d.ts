@@ -353,6 +353,12 @@ interface Promise<T> extends PromiseLike<T>, Promise.Inspection<T> {
     then<U>(onFulfill: (value: T) => U | PromiseLike<U>, onReject?: (error: any) => U | PromiseLike<U>, onProgress?: (note: any) => any): Promise<U>;
     then<U>(onFulfill: (value: T) => U | PromiseLike<U>, onReject?: (error: any) => void | PromiseLike<void>, onProgress?: (note: any) => any): Promise<U>;
 
+	/**
+	 * This is a convenience method for getting a property from the value of a promise
+	 */
+	get(propertyName: string): Promise<T>;
+	get(index: number): Promise<T>;
+
     /**
      * This is a catch-all exception handler, shortcut for calling `.then(null, handler)` on this promise. Any exception happening in a `.then`-chain will propagate to nearest `.catch` handler.
      *
