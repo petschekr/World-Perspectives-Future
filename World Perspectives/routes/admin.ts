@@ -97,6 +97,18 @@ router.route("/user")
 			if (filter === "all") {
 				var criteria = "";
 			}
+			else if (filter === "freshman") {
+				var criteria = "grade: 9";
+			}
+			else if (filter === "sophomore") {
+				var criteria = "grade: 10";
+			}
+			else if (filter === "junior") {
+				var criteria = "grade: 11";
+			}
+			else if (filter === "senior") {
+				var criteria = "grade: 12";
+			}
 			else if (filter === "admin") {
 				var criteria = "admin: true";
 			}
@@ -172,14 +184,15 @@ router.route("/user")
 				continue;
 			var code = crypto.randomBytes(16).toString("hex");
 			queries.push({
-				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
+				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}, grade: {grade}})",
 				params: {
 					name: `${firstName} ${lastName}`,
 					username: emailParsed[1],
 					registered: false,
 					type: common.UserType.Student,
 					admin: false,
-					code: code
+					code: code,
+					grade: grade
 				}
 			});
 		}
@@ -829,6 +842,18 @@ router.route("/schedule/:filter/data").get(function (request, response) {
 	filter = filter.toString().toLowerCase();
 	if (filter === "all") {
 		var criteria = "";
+	}
+	else if (filter === "freshman") {
+		var criteria = "grade: 9";
+	}
+	else if (filter === "sophomore") {
+		var criteria = "grade: 10";
+	}
+	else if (filter === "junior") {
+		var criteria = "grade: 11";
+	}
+	else if (filter === "senior") {
+		var criteria = "grade: 12";
 	}
 	else {
 		var criteria = "type: {type}";
