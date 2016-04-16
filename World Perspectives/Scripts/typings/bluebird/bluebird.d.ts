@@ -356,8 +356,8 @@ interface Promise<T> extends PromiseLike<T>, Promise.Inspection<T> {
 	/**
 	 * This is a convenience method for getting a property from the value of a promise
 	 */
-	get(propertyName: string): Promise<T>;
-	get(index: number): Promise<T>;
+	get(propertyName: string): Promise<any>;
+	get(index: number): Promise<any>;
 
     /**
      * This is a catch-all exception handler, shortcut for calling `.then(null, handler)` on this promise. Any exception happening in a `.then`-chain will propagate to nearest `.catch` handler.
