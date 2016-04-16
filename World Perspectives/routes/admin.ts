@@ -788,7 +788,7 @@ function getScheduleForUser(user: { name: string; username: string; registered: 
 				if (items[i].editable) {
 					let set = false;
 					for (let j = 0; j < sessions.length; j++) {
-						if (sessions[j].start === items[i].start) {
+						if (moment(sessions[j].start).isSame(moment(items[i].start))) {
 							items[i] = sessions[j];
 							set = true;
 							let people = [];
