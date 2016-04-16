@@ -304,6 +304,102 @@ router.route("/user/:username")
 			response.json({ "success": true, "message": "User deleted successfully" });
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/move/:name")
+	.get(function (request, response) {
+		var {name}: { name: string } = request.params;
+
+		Promise.all([
+			db.cypherAsync({
+				"query": "MATCH (u:User) WHERE u.name = {name} OR u.username = {name} RETURN u.name AS name, u.username AS username, u.code AS code, u.registered AS registered",
+				"params": {
+					name: name
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH(item:ScheduleItem {editable: true }) RETURN item.title AS title, item.start AS startTime, item.end AS endTime"
+			}),
+			db.cypherAsync({
+				"query": `MATCH (u:User) WHERE u.name = {name} OR u.username = {name}
+						  MATCH (u)-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type`,
+				"params": {
+					name: name
+				}
+			}),
+			db.cypherAsync({
+				"query": `MATCH (u:User) WHERE u.name = {name} OR u.username = {name}
+						  MATCH (u)-[r:PRESENTS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type`,
+				"params": {
+					name: name
+				}
+			}),
+			db.cypherAsync({
+				"query": `MATCH (u:User) WHERE u.name = {name} OR u.username = {name}
+						  MATCH (u)-[r:MODERATES]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type`,
+				"params": {
+					name: name
+				}
+			}),
+		]).spread(function (users: User[], editablePeriods: any[], attends: any[], presents: any[], moderates: any[]) {
+			if (users.length !== 1) {
+				response.json({ "success": false, "message": "User not found" });
+				return Promise.reject(new IgnoreError());
+			}
+			var user = users[0];
+
+			function findByTime (item: any[], time: moment.Moment): any {
+				for (let i = 0; i < item.length; i++) {
+					if (time.isSame(moment(item[i].startTime))) {
+						return item[i];
+					}
+				}
+				return null;
+			}
+			function formatSession (item: any, mandatory: boolean = false): any {
+				return {
+					"title": {
+						"formatted": item.title,
+						"slug": item.slug || null
+					},
+					"time": {
+						"start": {
+							"raw": item.startTime,
+							"formatted": moment(item.startTime).format(timeFormat)
+						},
+						"end": {
+							"raw": item.endTime,
+							"formatted": moment(item.endTime).format(timeFormat)
+						}
+					},
+					"type": item.type || null,
+					"mandatory": mandatory
+				};
+			}
+
+			var periods = editablePeriods.map(function (period) {
+				var startTime = moment(period.startTime);
+				var presenting = findByTime(presents, startTime);
+				if (presenting) {
+					return formatSession(presenting, true);
+				}
+				var moderating = findByTime(moderates, startTime);
+				if (moderating) {
+					return formatSession(moderating, true);
+				}
+				var attending = findByTime(attends, startTime);
+				if (attending) {
+					return formatSession(attending);
+				}
+				period.title = "Free";
+				return formatSession(period);
+			});
+			response.json({ "success": true, "data": periods, "user": user });
+		}).catch(IgnoreError, function () {
+			// Response has already been handled if this error is thrown
+		}).catch(common.handleError.bind(response));
+	})
+	.post(postParser, function (request, response) {
+
+	});
 router.route("/session")
 	.get(function (request, response) {
 		db.cypherAsync({
