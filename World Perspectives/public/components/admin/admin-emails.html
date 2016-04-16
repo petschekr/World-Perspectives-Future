@@ -81,7 +81,7 @@
 			<h2>Registration Settings</h2>
 			<iron-ajax id="registration-open-ajax" auto url="/admin/registration/open" handle-as="json" last-response="{{registrationOpen}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="registration-open-set-ajax" url="/admin/registration/open" method="PUT" handle-as="json" on-response="updateRegistrationOpenResponse" on-error="handleError"></iron-ajax>
-			<iron-ajax id="get-registration-emails-ajax" auto url="/admin/registration/email" handle-as="json" last-response="{{registrationEmailStatus}}" on-error="handleError"></iron-ajax>
+			<iron-ajax id="get-emails-ajax" auto url="/admin/registration/email" handle-as="json" last-response="{{emailStatus}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="send-registration-emails-ajax" url="/admin/registration/email" method="POST" handle-as="json" on-response="sendRegistrationEmailsResponse" on-error="handleError"></iron-ajax>
 			<iron-ajax auto url="/admin/registration/stats" handle-as="json" last-response="{{registrationStats}}" on-error="handleError"></iron-ajax>
 			<paper-toggle-button id="open" checked="[[registrationOpen.open]]" on-change="updateRegistrationOpen" style="width: 184px; margin: 20px auto;">
@@ -101,7 +101,7 @@
 		<content-section>
 			<h2>Send Emails</h2>
 			<p>Send registration emails to all GFA students and teachers that have been imported or added in the <code>Users</code> tab. This can take a few minutes to complete.</p>
-			<p><small>Last run on [[registrationEmailStatus.formatted]]</small></p>
+			<p><small>Last run on [[emailStatus.registration.formatted]]</small></p>
 			<div class="flex-container">
 				<span class="flex"></span>
 				<!--style="background-color: #ff4136"-->

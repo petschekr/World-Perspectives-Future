@@ -1017,13 +1017,25 @@ router.route("/schedule/date")
 	});
 router.route("/registration/email")
 	.get(function (request, response) {
-		db.cypherAsync({
-			query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL RETURN c"
-		}).then(function (result) {
-			var registrationEmailTime: boolean = result[0].c.properties.registrationEmailTime;
+		Promise.all([
+			db.cypherAsync({
+				query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL RETURN c"
+			}),
+			db.cypherAsync({
+				query: "MATCH (c:Constant) WHERE c.scheduleEmailTime IS NOT NULL RETURN c"
+			})
+		]).spread(function (registration, schedule) {
+			var registrationEmailTime: moment.Moment = moment(registration[0].c.properties.registrationEmailTime);
+			var scheduleEmailTime: moment.Moment = moment(schedule[0].c.properties.scheduleEmailTime);
 			response.json({
-				"raw": registrationEmailTime,
-				"formatted": `${moment(registrationEmailTime).format(dateFormat)} at ${moment(registrationEmailTime).format(timeFormat)}`
+				"registration": {
+					"raw": registration[0].c.properties.registrationEmailTime,
+					"formatted": `${registrationEmailTime.format(dateFormat)} at ${registrationEmailTime.format(timeFormat)}`
+				},
+				"schedule": {
+					"raw": schedule[0].c.properties.scheduleEmailTime,
+					"formatted": `${scheduleEmailTime.format(dateFormat)} at ${scheduleEmailTime.format(timeFormat)}`
+				}
 			});
 		}).catch(common.handleError.bind(response));
 	})
