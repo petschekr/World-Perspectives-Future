@@ -224,7 +224,9 @@
 								<paper-listbox class="dropdown-content" selected$="[[_computeSelectedSession(item, sessions)]]">
 									<paper-item>Free</paper-item>
 									<template is="dom-repeat" items="[[sessions]]" as="session">
-										<paper-item slug="[[session.title.slug]]">[[session.title.formatted]]</paper-item>
+										<template is="dom-if" if="[[_compareTimes(session.time.start.raw, item.time.start.raw)]]">
+											<paper-item slug="[[session.title.slug]]">[[session.title.formatted]]</paper-item>
+										</template>
 									</template>
 								</paper-listbox>
 							</paper-dropdown-menu>
@@ -324,12 +326,22 @@
 			},
 			_computeSelectedSession: function (item, sessions) {
 				var slug = item.title.slug;
-				for (var i = 0; i < sessions.length; i++) {
-					if (sessions[i].title.slug === slug) {
+				var availableSessions = [];
+				var i;
+				for (i = 0; i < sessions.length; i++) {
+					if (sessions[i].time.start.raw === item.time.start.raw) {
+						availableSessions.push(sessions[i]);
+					}
+				}
+				for (i = 0; i < availableSessions.length; i++) {
+					if (availableSessions[i].title.slug === slug) {
 						return i + 1;
 					}
 				}
 				return 0;
+			},
+			_compareTimes: function (time1, time2) {
+				return time1 === time2;
 			},
 			explainRegistered: function () {
 				this.$.done.show("This user has registered");
