@@ -1043,7 +1043,7 @@ router.route("/registration/email/registration").post(function (request, respons
 	// Get emails to send to
 	Promise.all([
 		db.cypherAsync({
-			"query": "MATCH (u:User {username: \"petschekr\"}) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code"
+			"query": "MATCH (u:User) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code"
 		}),
 		common.getSymposiumDate()
 	]).spread(function (results, date: moment.Moment) {
@@ -1088,7 +1088,7 @@ router.route("/registration/email/schedule").post(function (request, response) {
 	// Get emails to send to
 	Promise.all([
 		db.cypherAsync({
-			"query": "MATCH (u:User {username: \"petschekr\"}) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code, u.registered AS registered"
+			"query": "MATCH (u:User) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code, u.registered AS registered"
 		}),
 		common.getSymposiumDate()
 	]).spread(function (results, date: moment.Moment) {
