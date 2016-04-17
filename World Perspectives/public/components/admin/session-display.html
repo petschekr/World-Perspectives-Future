@@ -110,42 +110,7 @@
 		<iron-ajax auto url="[[_computeSessionURL()]]" handle-as="json" last-response="{{session}}" on-error="handleError"></iron-ajax>
 		<iron-ajax auto url="[[_computeDataURL()]]" handle-as="json" last-response="{{attendees}}" on-error="handleError"></iron-ajax>
 		<button onclick="window.print()">Print</button>
-		<!--
-		<template is="dom-repeat" items="[[data]]" as="schedule">
-			<div class="schedule">
-				<img src="/img/logo.svg">
-				<h4 class="name">[[schedule.name]]</h4>
-				<h4 class="date">[[date.formatted]]</h4>
-				<div class="clear"></div>
-				<hr />
 
-				<table-repeat rows="[[schedule.schedule]]" id="scheduleTable">
-					<table>
-						<thead></thead>
-						<tbody></tbody>
-					</table>
-					<template is="dom-template" class="row-template">
-						<table>
-							<tr>
-								<td class="longtime">[[item.time.start.formatted]] – [[item.time.end.formatted]]</td>
-								<td>
-									<template is="dom-if" if="{{!item.editable}}">
-										{{item.title}}
-									</template>
-									<template is="dom-if" if="{{item.editable}}">
-										<b>{{item.title}}</b>
-										<br />
-										<i>{{item.people}}</i>
-									</template>
-								</td>
-								<td>{{item.location}}</td>
-							</tr>
-						</table>
-					</template>
-				</table-repeat>
-			</div>
-		</template>
-		-->
 		<div class="presentation">
 			<h4>
 				{{session.title.formatted}}
@@ -163,8 +128,8 @@
 					[[session.moderator.name]]
 				</template>
 				<br />
-				<b>Capacity:</b>
-				[[session.capacity.filled]] of [[session.capacity.total]]
+				<b>Total attendees:</b>
+				[[_computeAttendees(attendees)]]
 			</p>
 			<table-repeat rows="[[attendees.faculty]]">
 				<table>
@@ -235,6 +200,9 @@
 				else {
 					return "Presenters";
 				}
+			},
+			_computeAttendees: function (attendees) {
+				return attendees.faculty.length + attendees.students.length;
 			},
 			handleError: function (e) {
 				var errorMessage = e.target.lastError.error.message || "An error occurred!";
