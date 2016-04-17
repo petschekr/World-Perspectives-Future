@@ -127,6 +127,7 @@
 		<iron-ajax id="delete-user-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUserResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="delete-users-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUsersResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="move-user-search-ajax" url="/admin/move" handle-as="json" on-response="moveUserSearchResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="move-user-ajax" method="POST" handle-as="json" on-response="moveUserResponse" on-error="handleError"></iron-ajax>
 		<content-section>
 			<h2>Users</h2>
 			<iron-ajax id="users-ajax" auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
@@ -220,7 +221,7 @@
 								<div style="overflow: auto;">[[item.title.formatted]]</div>
 							</div>
 							<span class="flex"></span>
-							<paper-dropdown-menu label="Move to..." style="width: 49%; margin-top: -10px;" disabled$="[[item.mandatory]]">
+							<paper-dropdown-menu class="moveDropdown" label="Move to..." style="width: 49%; margin-top: -10px;" disabled$="[[item.mandatory]]">
 								<paper-listbox class="dropdown-content" selected$="[[_computeSelectedSession(item, sessions)]]">
 									<paper-item>Free</paper-item>
 									<template is="dom-repeat" items="[[sessions]]" as="session">
@@ -235,9 +236,12 @@
 				</paper-item>
 			</template>
 			<template is="dom-if" if="[[moveUserData.length]]">
+				<template is="dom-if" if="[[!moveUserInfo.registered]]">
+					<p>This user hasn't registered yet. Saving changes will mark them as registered.</p>
+				</template>
 				<div class="flex-container">
 					<span class="flex"></span>
-					<paper-button raised>Save changes</paper-button>
+					<paper-button raised on-click="moveUser">Save changes</paper-button>
 					<span class="flex"></span>
 				</div>
 			</template>
@@ -502,6 +506,35 @@
 					this.moveUserData = response.data;
 					this.moveUserInfo = response.user;
 				}
+			},
+			moveUser: function () {
+				var dropdowns = document.getElementsByClassName("moveDropdown");
+				var slugs = [];
+				for (var i = 0; i < dropdowns.length; i++) {
+					slugs.push(dropdowns[i].selectedItem.slug || null);
+				}
+				var sendData = {
+					"username": this.moveUserInfo.username,
+					"slugs": slugs
+				};
+
+				this.$.loading.open();
+				this.$["move-user-ajax"].url = "/admin/move/" + sendData.username;
+				this.$["move-user-ajax"].contentType = "application/json";
+				this.$["move-user-ajax"].body = sendData;
+				this.$["move-user-ajax"].generateRequest();
+			},
+			moveUserResponse: function () {
+				this.$.loading.close();
+				var response = this.$["move-user-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				this.$["move-user-search-ajax"].generateRequest();
+				this.refreshUserList();
 			},
 			importUsers: function () {
 				var file = this.$$('input[type="file"]');

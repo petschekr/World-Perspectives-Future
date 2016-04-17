@@ -398,7 +398,75 @@ router.route("/move/:name")
 		}).catch(common.handleError.bind(response));
 	})
 	.post(postParser, function (request, response) {
-
+		var {username, slugs}: { username: string, slugs: string[] } = request.body;
+		Promise.all([
+			db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}}) RETURN u.name AS name, u.username AS username, u.registered AS registered",
+				"params": {
+					username: username
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH(item:ScheduleItem {editable: true }) RETURN item.title AS title, item.start AS startTime, item.end AS endTime"
+			}),
+			db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type",
+				"params": {
+					username: username
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}})-[r:PRESENTS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type",
+				"params": {
+					username: username
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}})-[r:MODERATES]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type",
+				"params": {
+					username: username
+				}
+			}),
+		]).spread(function (users: User[], editablePeriods: any[], attends: any[], presents: any[], moderates: any[]) {
+			if (users.length !== 1) {
+				response.json({ "success": false, "message": "User not found" });
+				return Promise.reject(new IgnoreError());
+			}
+			var user = users[0];
+			if (editablePeriods.length !== slugs.length) {
+				response.json({ "success": false, "message": "Incorrect number of changes for editable periods" });
+				return Promise.reject(new IgnoreError());
+			}
+			// Remove from already registered sessions
+			return db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}})-[r:ATTENDS]->(s:Session) SET s.attendees = s.attendees - 1 DELETE r REMOVE u.hasFree, u.timeOfFree",
+				"params": {
+					username: username
+				}
+			});
+		}).then(function () {
+			return Promise.map(slugs, function (slug) {
+				// Frees have null as their slug
+				if (!slug)
+					return;
+				return db.cypherAsync({
+					"query": `
+								MATCH (user:User {username: {username}})
+								MATCH (session:Session {slug: {slug}})
+								CREATE (user)-[r:ATTENDS]->(session)
+								SET session.attendees = session.attendees + 1
+								SET user.registered = true`,
+					"params": {
+						username: username,
+						slug: slug
+					}
+				});
+			});
+		}).then(function () {
+			response.json({ "success": true, "message": "User moved successfully" });
+		}).catch(IgnoreError, function () {
+			// Response has already been handled if this error is thrown
+		}).catch(common.handleError.bind(response));
 	});
 router.route("/session")
 	.get(function (request, response) {
