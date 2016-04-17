@@ -1362,5 +1362,133 @@ router.route("/registration/stats")
 			});
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/registration/auto").post(function (request, response) {
+	var totalUsers = 0;
+	// Get all unregistered users and all sessions first
+	Promise.all([
+		db.cypherAsync({
+			query: "MATCH (u:User {registered: false}) RETURN u.username AS username"
+		}),
+		db.cypherAsync({
+			query: "MATCH(item:ScheduleItem {editable: true }) RETURN item.title AS title, item.start AS startTime, item.end AS endTime"
+		}),
+		db.cypherAsync({
+			query: "MATCH (s:Session) RETURN s.slug AS slug, s.attendees AS attendees, s.capacity AS capacity, s.startTime AS startTime, s.endTime AS endTime"
+		})
+	]).spread(function (users: User[], editablePeriods: any[], sessions: any[]) {
+		totalUsers = users.length;
+		Promise.each(editablePeriods, function (period) {
+			// Shuffle users for each period
+			function shuffle(array) {
+				let counter = array.length;
+
+				// While there are elements in the array
+				while (counter > 0) {
+					// Pick a random index
+					let index = Math.floor(Math.random() * counter);
+
+					// Decrease counter by 1
+					counter--;
+
+					// And swap the last element with it
+					let temp = array[counter];
+					array[counter] = array[index];
+					array[index] = temp;
+				}
+
+				return array;
+			}
+			users = shuffle(users);
+			// Find non-full sessions that occur at this time
+			var availableSessions = [];
+			function updateAvailableSessions() {
+				availableSessions = sessions.filter(function (session) {
+					if (session.attendees < session.capacity && moment(session.startTime).isSame(moment(period.startTime))) {
+						return true;
+					}
+					return false;
+				});
+				if (availableSessions.length < 1) {
+					// Not enough sessions
+					console.warn(`Not enough capacity at ${moment(period.startTime).format(timeFormat)} to autoregister`);
+				}
+				function sortSessions(sessions: any[]): any[] {
+					return sessions.sort(function (a, b) {
+						return a.attendees - b.attendees;
+					});
+				}
+				availableSessions = sortSessions(availableSessions);
+			}
+			updateAvailableSessions();
+			// Find the unregistered users that have registered for this period already (partially completed registration) to filter them out of needing to be autoregistered
+			return db.cypherAsync({
+				query: "MATCH (u:User {registered: false})-[r:ATTENDS]->(s:Session {startTime: {startTime}}) RETURN u.username AS username",
+				params: {
+					startTime: period.startTime
+				}
+			}).then(function (attendingUsers: User[]) {
+				var attendingUsernames = attendingUsers.map(function (attendingUser) {
+					return attendingUser.username;
+				});
+				var remainingUsers = users.filter(function (user) {
+					return attendingUsernames.indexOf(user.username) === -1;
+				});
+				Promise.each(remainingUsers, function (user: User) {
+					updateAvailableSessions();
+					// Check if this user moderates or presents a session at this time period
+					return Promise.all([
+						db.cypherAsync({
+							query: "MATCH (u:User {username: {username}})-[r:PRESENTS]->(s:Session {startTime: {startTime}}) RETURN s.slug AS slug",
+							params: {
+								username: user.username,
+								startTime: period.startTime
+							}
+						}),
+						db.cypherAsync({
+							query: "MATCH (u:User {username: {username}})-[r:MODERATES]->(s:Session {startTime: {startTime}}) RETURN s.slug AS slug",
+							params: {
+								username: user.username,
+								startTime: period.startTime
+							}
+						})
+					]).spread(function (presenting: any[], moderating: any[]) {
+						var registerSlug = null;
+						if (presenting.length > 0) {
+							registerSlug = presenting[0].slug;
+						}
+						else if (moderating.length > 0) {
+							registerSlug = moderating[0].slug;
+						}
+						else {
+							registerSlug = availableSessions[0].slug;
+							availableSessions[0].attendees++;
+						}
+						// Register this user
+						return db.cypherAsync({
+							query: `
+								MATCH (user:User {username: {username}})
+								MATCH (session:Session {slug: {slug}})
+								CREATE (user)-[r:ATTENDS]->(session)
+								SET session.attendees = session.attendees + 1`,
+							params: {
+								username: user.username,
+								slug: registerSlug
+							}
+						});
+					});
+				});
+			});
+		});
+	}).then(function () {
+		// Set all users as registered
+		return db.cypherAsync({
+			query: "MATCH (u:User {registered: false}) SET u.registered = true"
+		});
+	}).then(function () {
+		response.json({ "success": true, "message": `Successfully autoregistered ${totalUsers} users` });
+	}).catch(IgnoreError, function () {
+		// Response has already been handled if this error is thrown
+	}).catch(common.handleError.bind(response));
+});
 
 export = router;

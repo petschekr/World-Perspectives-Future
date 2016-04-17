@@ -84,7 +84,8 @@
 			<iron-ajax id="get-emails-ajax" auto url="/admin/registration/email" handle-as="json" last-response="{{emailStatus}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="send-registration-emails-ajax" url="/admin/registration/email/registration" method="POST" handle-as="json" on-response="sendRegistrationEmailsResponse" on-error="handleError"></iron-ajax>
 			<iron-ajax id="send-schedule-emails-ajax" url="/admin/registration/email/schedule" method="POST" handle-as="json" on-response="sendScheduleEmailsResponse" on-error="handleError"></iron-ajax>
-			<iron-ajax auto url="/admin/registration/stats" handle-as="json" last-response="{{registrationStats}}" on-error="handleError"></iron-ajax>
+			<iron-ajax auto id="stats-ajax" url="/admin/registration/stats" handle-as="json" last-response="{{registrationStats}}" on-error="handleError"></iron-ajax>
+			<iron-ajax id="autoregister-ajax" url="/admin/registration/auto" method="POST" handle-as="json" on-response="autoregisterResponse" on-error="handleError"></iron-ajax>
 			<paper-toggle-button id="open" checked="[[registrationOpen.open]]" on-change="updateRegistrationOpen" style="width: 184px; margin: 20px auto;">
 				<template is="dom-if" if="[[registrationOpen.open]]">
 					Registration open
@@ -115,6 +116,15 @@
 			<div class="flex-container">
 				<span class="flex"></span>
 				<paper-button raised on-click="sendScheduleEmails">Send schedule emails</paper-button>
+				<span class="flex"></span>
+			</div>
+		</content-section>
+		<content-section>
+			<h2>Autoregister</h2>
+			<p>This will automatically register all unregistered users into available sessions from least full to most full. This will only affect unregistered users and cannot be undone.</p>
+			<div class="flex-container">
+				<span class="flex"></span>
+				<paper-button raised on-click="autoregister">Autoregister</paper-button>
 				<span class="flex"></span>
 			</div>
 		</content-section>
@@ -180,6 +190,24 @@
 					this.$.done.show(response.message);
 				}
 				this.$["registration-open-ajax"].generateRequest();
+			},
+			autoregister: function () {
+				var message = "Are you sure that you want to autoregister all unregistered users?";
+				if (!confirm(message))
+					return;
+				this.$.loading.open();
+				this.$["autoregister-ajax"].generateRequest();
+			},
+			autoregisterResponse: function () {
+				this.$.loading.close();
+				var response = this.$["autoregister-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				this.$["stats-ajax"].generateRequest();
 			},
 			handleError: function (e) {
 				this.$.loading.close();
