@@ -1453,11 +1453,14 @@ router.route("/registration/auto").post(function (request, response) {
 						})
 					]).spread(function (presenting: any[], moderating: any[]) {
 						var registerSlug = null;
+						var attendanceCount = 1;
 						if (presenting.length > 0) {
 							registerSlug = presenting[0].slug;
+							attendanceCount = 0;
 						}
 						else if (moderating.length > 0) {
 							registerSlug = moderating[0].slug;
+							attendanceCount = 0;
 						}
 						else {
 							registerSlug = availableSessions[0].slug;
@@ -1469,10 +1472,11 @@ router.route("/registration/auto").post(function (request, response) {
 								MATCH (user:User {username: {username}})
 								MATCH (session:Session {slug: {slug}})
 								CREATE (user)-[r:ATTENDS]->(session)
-								SET session.attendees = session.attendees + 1`,
+								SET session.attendees = session.attendees + {attendanceCount}`,
 							params: {
 								username: user.username,
-								slug: registerSlug
+								slug: registerSlug,
+								attendanceCount: attendanceCount
 							}
 						});
 					});
