@@ -794,6 +794,70 @@ router.route("/session/:slug/attendance/data").get(function (request, response) 
 		});
 	}).catch(common.handleError.bind(response));
 });
+router.route("/free/:id").get(function (request, response) {
+	var id = request.params.id;
+
+	db.cypherAsync({
+		"query": "MATCH (item:ScheduleItem {id: {id}}) RETURN item.title AS title, item.start AS startTime, item.end AS endTime",
+		"params": {
+			id: id
+		}
+	}).then(function (results) {
+		response.json({
+			"title": {
+				"formatted": results[0].title + " Free",
+				"slug": null
+			},
+			"description": "",
+			"type": "Free",
+			"location": "N/A",
+			"capacity": {
+				"total": 0,
+				"filled": 0
+			},
+			"time": {
+				"start": {
+					"raw": results[0].startTime,
+					"formatted": moment(results[0].startTime).format(timeFormat)
+				},
+				"end": {
+					"raw": results[0].endTime,
+					"formatted": moment(results[0].endTime).format(timeFormat)
+				},
+				"date": moment(results[0].startTime).format(dateFormat)
+			},
+			"presenters": [{"name": "N/A"}],
+			"moderator": null
+		});
+	}).catch(common.handleError.bind(response));
+});
+router.route("/free/:id/attendance").get(function (request, response) {
+	fs.readFileAsync("public/components/admin/session.html", "utf8")
+		.then(function (html: string) {
+			response.send(html);
+		})
+		.catch(common.handleError.bind(response));
+});
+router.route("/free/:id/attendance/data").get(function (request, response) {
+	var id = request.params.id;
+	db.cypherAsync({
+		"query": "MATCH (item:ScheduleItem {id: {id}}) MATCH (user:User {registered: true}) WHERE NOT (user)-[:ATTENDS]->(:Session {startTime: item.start}) RETURN user.username AS username, user.name AS name, user.type AS type ORDER BY last(split(user.name, \" \"))",
+		"params": {
+			id: id
+		}
+	}).then(function (results) {
+		var students = results.filter(function (user) {
+			return user.type === common.UserType.Student;
+		});
+		var faculty = results.filter(function (user) {
+			return user.type === common.UserType.Teacher;
+		});
+		response.json({
+			"faculty": faculty,
+			"students": students
+		});
+	}).catch(common.handleError.bind(response));
+});
 router.route("/schedule")
 	.get(function (request, response) {
 		db.cypherAsync({
