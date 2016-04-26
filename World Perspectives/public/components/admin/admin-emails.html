@@ -81,9 +81,11 @@
 			<h2>Registration Settings</h2>
 			<iron-ajax id="registration-open-ajax" auto url="/admin/registration/open" handle-as="json" last-response="{{registrationOpen}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="registration-open-set-ajax" url="/admin/registration/open" method="PUT" handle-as="json" on-response="updateRegistrationOpenResponse" on-error="handleError"></iron-ajax>
-			<iron-ajax id="get-registration-emails-ajax" auto url="/admin/registration/email" handle-as="json" last-response="{{registrationEmailStatus}}" on-error="handleError"></iron-ajax>
-			<iron-ajax id="send-registration-emails-ajax" url="/admin/registration/email" method="POST" handle-as="json" on-response="sendRegistrationEmailsResponse" on-error="handleError"></iron-ajax>
-			<iron-ajax auto url="/admin/registration/stats" handle-as="json" last-response="{{registrationStats}}" on-error="handleError"></iron-ajax>
+			<iron-ajax id="get-emails-ajax" auto url="/admin/registration/email" handle-as="json" last-response="{{emailStatus}}" on-error="handleError"></iron-ajax>
+			<iron-ajax id="send-registration-emails-ajax" url="/admin/registration/email/registration" method="POST" handle-as="json" on-response="sendRegistrationEmailsResponse" on-error="handleError"></iron-ajax>
+			<iron-ajax id="send-schedule-emails-ajax" url="/admin/registration/email/schedule" method="POST" handle-as="json" on-response="sendScheduleEmailsResponse" on-error="handleError"></iron-ajax>
+			<iron-ajax auto id="stats-ajax" url="/admin/registration/stats" handle-as="json" last-response="{{registrationStats}}" on-error="handleError"></iron-ajax>
+			<iron-ajax id="autoregister-ajax" url="/admin/registration/auto" method="POST" handle-as="json" on-response="autoregisterResponse" on-error="handleError"></iron-ajax>
 			<paper-toggle-button id="open" checked="[[registrationOpen.open]]" on-change="updateRegistrationOpen" style="width: 184px; margin: 20px auto;">
 				<template is="dom-if" if="[[registrationOpen.open]]">
 					Registration open
@@ -101,11 +103,28 @@
 		<content-section>
 			<h2>Send Emails</h2>
 			<p>Send registration emails to all GFA students and teachers that have been imported or added in the <code>Users</code> tab. This can take a few minutes to complete.</p>
-			<p><small>Last run on [[registrationEmailStatus.formatted]]</small></p>
+			<p><small>Last run on [[emailStatus.registration.formatted]]</small></p>
 			<div class="flex-container">
 				<span class="flex"></span>
 				<!--style="background-color: #ff4136"-->
 				<paper-button raised on-click="sendRegistrationEmails">Send registration emails</paper-button>
+				<span class="flex"></span>
+			</div>
+			<br />
+			<p>Send an email to each GFA student and teacher containing their personalized schedule or generalized schedule if not yet registered. This can take a few minutes to complete.</p>
+			<p><small>Last run on [[emailStatus.schedule.formatted]]</small></p>
+			<div class="flex-container">
+				<span class="flex"></span>
+				<paper-button raised on-click="sendScheduleEmails">Send schedule emails</paper-button>
+				<span class="flex"></span>
+			</div>
+		</content-section>
+		<content-section>
+			<h2>Autoregister</h2>
+			<p>This will automatically register all unregistered users into available sessions from least full to most full. This will only affect unregistered users and cannot be undone.</p>
+			<div class="flex-container">
+				<span class="flex"></span>
+				<paper-button raised on-click="autoregister">Autoregister</paper-button>
 				<span class="flex"></span>
 			</div>
 		</content-section>
@@ -120,6 +139,7 @@
 				var message = "Are you sure that you want to send out registration emails? Make sure that registration is open!";
 				if (!confirm(message))
 					return;
+				this.$.loading.open();
 				this.$["send-registration-emails-ajax"].generateRequest();
 			},
 			sendRegistrationEmailsResponse: function () {
@@ -131,7 +151,25 @@
 				else {
 					this.$.done.show(response.message);
 				}
-				this.$["get-registration-emails-ajax"].generateRequest();
+				this.$["get-emails-ajax"].generateRequest();
+			},
+			sendScheduleEmails: function () {
+				var message = "Are you sure that you want to send out schedule emails? Make sure that all users have registered or been autoregistered!";
+				if (!confirm(message))
+					return;
+				this.$.loading.open();
+				this.$["send-schedule-emails-ajax"].generateRequest();
+			},
+			sendScheduleEmailsResponse: function () {
+				this.$.loading.close();
+				var response = this.$["send-schedule-emails-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				this.$["get-emails-ajax"].generateRequest();
 			},
 			updateRegistrationOpen: function () {
 				var currentValue = this.$.open.checked;
@@ -152,6 +190,24 @@
 					this.$.done.show(response.message);
 				}
 				this.$["registration-open-ajax"].generateRequest();
+			},
+			autoregister: function () {
+				var message = "Are you sure that you want to autoregister all unregistered users?";
+				if (!confirm(message))
+					return;
+				this.$.loading.open();
+				this.$["autoregister-ajax"].generateRequest();
+			},
+			autoregisterResponse: function () {
+				this.$.loading.close();
+				var response = this.$["autoregister-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				this.$["stats-ajax"].generateRequest();
 			},
 			handleError: function (e) {
 				this.$.loading.close();

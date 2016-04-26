@@ -215,7 +215,7 @@ router.route("/sessions/:time")
 					response.json({ "success": false, "message": "Session has mismatching start time" });
 					return Promise.reject(new IgnoreError());
 				}
-				if (session.attendees >= session.capacity) {
+				if (session.attendees >= session.capacity && !isOwn) {
 					response.json({ "success": false, "message": "There are too many people in that session. Please choose another." });
 					return Promise.reject(new IgnoreError());
 				}

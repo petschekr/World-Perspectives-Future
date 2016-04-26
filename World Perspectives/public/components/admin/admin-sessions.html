@@ -181,6 +181,9 @@
 				</h1>
 				<span class="flex"></span>
 				<div class="fade">
+					<a href$="/admin/session/[[selectedSession.title.slug]]/attendance" tabindex="-1" target="_blank" style="color: black; text-decoration: none;">
+						<paper-icon-button icon="print" style="margin-top: 20px;"></paper-icon-button>
+					</a>
 					<paper-icon-button icon="delete" style="margin-top: 20px;" on-click="deleteSession"></paper-icon-button>
 				</div>
 			</div>
@@ -206,6 +209,20 @@
 				<paper-button dialog-dismiss autofocus>Close</paper-button>
 			</div>
 		</paper-dialog>
+		<content-section>
+			<h2>Print Attendance Lists for Frees</h2>
+			<iron-ajax auto url="/admin/schedule" handle-as="json" last-response="{{schedule}}" on-error="handleError"></iron-ajax>
+			<paper-dropdown-menu id="freeSession" label="Session" style="margin-right: 15px; width: 82%;">
+				<paper-listbox class="dropdown-content">
+					<template is="dom-repeat" items="[[schedule]]">
+						<template is="dom-if" if="[[item.editable]]">
+							<paper-item id="[[item.id]]">[[item.title]]</paper-item>
+						</template>
+					</template>
+				</paper-listbox>
+			</paper-dropdown-menu>
+			<paper-button raised on-click="printFreeAttendance">Print</paper-button>
+		</content-section>
 		<content-section>
 			<h2>Add Session</h2>
 			<paper-input id="title" label="Title"></paper-input>
@@ -490,6 +507,11 @@
 				}
 				// Refresh list
 				this.refreshSessionList();
+			},
+			printFreeAttendance: function () {
+				var id = this.$.freeSession.selectedItem.getAttribute("id");
+				id = encodeURIComponent(id);
+				window.open("/admin/free/" + id + "/attendance", "_blank");
 			},
 			handleError: function (e) {
 				this.$.loading.close();

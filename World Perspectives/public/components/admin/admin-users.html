@@ -109,6 +109,13 @@
 			text-align: center;
 		}
 
+		#userMove {
+			width: 82%;
+			display: inline-block;
+			margin-right: 28px;
+			margin-top: 15px;
+		}
+
 		/* Mobile styles */
 		@media screen and (max-width: 35.5em) {
 
@@ -119,6 +126,8 @@
 		<iron-ajax id="add-user-ajax" method="PUT" handle-as="json" on-response="addUserResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="delete-user-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUserResponse" on-error="handleError"></iron-ajax>
 		<iron-ajax id="delete-users-ajax" method="DELETE" url="/admin/user" handle-as="json" on-response="deleteUsersResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="move-user-search-ajax" url="/admin/move" handle-as="json" on-response="moveUserSearchResponse" on-error="handleError"></iron-ajax>
+		<iron-ajax id="move-user-ajax" method="POST" handle-as="json" on-response="moveUserResponse" on-error="handleError"></iron-ajax>
 		<content-section>
 			<h2>Users</h2>
 			<iron-ajax id="users-ajax" auto url="/admin/user" handle-as="json" last-response="{{users}}" on-error="handleError" params="{{userListParams}}"></iron-ajax>
@@ -128,6 +137,10 @@
 					<paper-listbox class="dropdown-content" selected="0">
 						<paper-item filter="all">All</paper-item>
 						<paper-item filter="student">Students</paper-item>
+						<paper-item filter="freshman">Freshmen</paper-item>
+						<paper-item filter="sophomore">Sophomores</paper-item>
+						<paper-item filter="junior">Juniors</paper-item>
+						<paper-item filter="senior">Seniors</paper-item>
 						<paper-item filter="teacher">Teachers</paper-item>
 						<paper-item filter="parent">Parents</paper-item>
 						<paper-item filter="alum">Alumni</paper-item>
@@ -175,6 +188,62 @@
 			</template>
 			<template is="dom-if" if="[[!users.data.length]]">
 				<p><i>No users found. Try adjusting the filter and refreshing.</i></p>
+			</template>
+		</content-section>
+		<content-section>
+			<h2>Move Users</h2>
+			<iron-ajax auto url="/admin/user?all=true" handle-as="json" last-response="{{usersAutocomplete}}" on-error="handleError"></iron-ajax>
+			<iron-ajax auto id="sessions-ajax" url="/admin/session" handle-as="json" last-response="{{sessions}}" on-error="handleError"></iron-ajax>
+			<paper-autocomplete id="userMove" label="Name of user" source="[[usersAutocomplete]]"></paper-autocomplete>
+			<paper-button raised on-click="moveUserSearch">Search</paper-button>
+			<br />
+			<template is="dom-if" if="[[moveUserInfo]]">
+				<div class="flex-container" style="margin-top: 5px">
+					<h3 style="margin: 5px 0">[[moveUserInfo.name]]</h3>
+					<span class="flex"></span>
+					<div style="position: relative; top: -3px;">
+						<template is="dom-if" if="[[moveUserInfo.registered]]">
+							<paper-icon-button class="fade" icon="assignment-turned-in" on-click="explainRegistered"></paper-icon-button>
+						</template>
+						<template is="dom-if" if="[[!moveUserInfo.registered]]">
+							<paper-icon-button class="fade" icon="assignment-late" on-click="explainUnregistered"></paper-icon-button>
+						</template>
+						<paper-icon-button icon="link" on-click="copyLink" code="[[moveUserInfo.code]]"></paper-icon-button>
+					</div>
+				</div>
+			</template>
+			<template is="dom-repeat" items="[[moveUserData]]">
+				<paper-item>
+					<paper-item-body two-line>
+						<div class="flex-container">
+							<div style="width: 49%;">
+								<div secondary>[[item.time.start.formatted]] to [[item.time.end.formatted]]</div>
+								<div style="overflow: auto;">[[item.title.formatted]]</div>
+							</div>
+							<span class="flex"></span>
+							<paper-dropdown-menu class="moveDropdown" label="Move to..." style="width: 49%; margin-top: -10px;" disabled$="[[item.mandatory]]">
+								<paper-listbox class="dropdown-content" selected$="[[_computeSelectedSession(item, sessions)]]">
+									<paper-item>Free</paper-item>
+									<template is="dom-repeat" items="[[sessions]]" as="session">
+										<template is="dom-if" if="[[_compareTimes(session.time.start.raw, item.time.start.raw)]]">
+											<paper-item slug="[[session.title.slug]]">[[session.title.formatted]]</paper-item>
+										</template>
+									</template>
+								</paper-listbox>
+							</paper-dropdown-menu>
+						</div>
+					</paper-item-body>
+				</paper-item>
+			</template>
+			<template is="dom-if" if="[[moveUserData.length]]">
+				<template is="dom-if" if="[[!moveUserInfo.registered]]">
+					<p>This user hasn't registered yet. Saving changes will mark them as registered.</p>
+				</template>
+				<div class="flex-container">
+					<span class="flex"></span>
+					<paper-button raised on-click="moveUser">Save changes</paper-button>
+					<span class="flex"></span>
+				</div>
 			</template>
 		</content-section>
 		<content-section>
@@ -258,6 +327,25 @@
 					return "user";
 				}
 				return "users";
+			},
+			_computeSelectedSession: function (item, sessions) {
+				var slug = item.title.slug;
+				var availableSessions = [];
+				var i;
+				for (i = 0; i < sessions.length; i++) {
+					if (sessions[i].time.start.raw === item.time.start.raw) {
+						availableSessions.push(sessions[i]);
+					}
+				}
+				for (i = 0; i < availableSessions.length; i++) {
+					if (availableSessions[i].title.slug === slug) {
+						return i + 1;
+					}
+				}
+				return 0;
+			},
+			_compareTimes: function (time1, time2) {
+				return time1 === time2;
 			},
 			explainRegistered: function () {
 				this.$.done.show("This user has registered");
@@ -398,6 +486,55 @@
 				}
 				// Refresh users list
 				this.$["users-ajax"].generateRequest();
+			},
+			moveUserSearch: function () {
+				var name = this.$.userMove.getOption().text.trim();
+				if (!name)
+					return;
+				this.$.loading.open();
+				this.$["move-user-search-ajax"].url = "/admin/move/" + encodeURIComponent(name);
+				this.$["move-user-search-ajax"].contentType = "application/json";
+				this.$["move-user-search-ajax"].generateRequest();
+			},
+			moveUserSearchResponse: function () {
+				this.$.loading.close();
+				var response = this.$["move-user-search-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.moveUserData = response.data;
+					this.moveUserInfo = response.user;
+				}
+			},
+			moveUser: function () {
+				var dropdowns = document.getElementsByClassName("moveDropdown");
+				var slugs = [];
+				for (var i = 0; i < dropdowns.length; i++) {
+					slugs.push(dropdowns[i].selectedItem.slug || null);
+				}
+				var sendData = {
+					"username": this.moveUserInfo.username,
+					"slugs": slugs
+				};
+
+				this.$.loading.open();
+				this.$["move-user-ajax"].url = "/admin/move/" + sendData.username;
+				this.$["move-user-ajax"].contentType = "application/json";
+				this.$["move-user-ajax"].body = sendData;
+				this.$["move-user-ajax"].generateRequest();
+			},
+			moveUserResponse: function () {
+				this.$.loading.close();
+				var response = this.$["move-user-ajax"].lastResponse;
+				if (!response.success) {
+					this.$.error.show(response.message);
+				}
+				else {
+					this.$.done.show(response.message);
+				}
+				this.$["move-user-search-ajax"].generateRequest();
+				this.refreshUserList();
 			},
 			importUsers: function () {
 				var file = this.$$('input[type="file"]');

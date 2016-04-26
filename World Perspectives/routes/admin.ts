@@ -97,6 +97,18 @@ router.route("/user")
 			if (filter === "all") {
 				var criteria = "";
 			}
+			else if (filter === "freshman") {
+				var criteria = "grade: 9";
+			}
+			else if (filter === "sophomore") {
+				var criteria = "grade: 10";
+			}
+			else if (filter === "junior") {
+				var criteria = "grade: 11";
+			}
+			else if (filter === "senior") {
+				var criteria = "grade: 12";
+			}
 			else if (filter === "admin") {
 				var criteria = "admin: true";
 			}
@@ -172,14 +184,15 @@ router.route("/user")
 				continue;
 			var code = crypto.randomBytes(16).toString("hex");
 			queries.push({
-				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
+				"query": "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}, grade: {grade}})",
 				params: {
 					name: `${firstName} ${lastName}`,
 					username: emailParsed[1],
 					registered: false,
 					type: common.UserType.Student,
 					admin: false,
-					code: code
+					code: code,
+					grade: grade
 				}
 			});
 		}
@@ -289,6 +302,170 @@ router.route("/user/:username")
 			}
 		}).then(function (results) {
 			response.json({ "success": true, "message": "User deleted successfully" });
+		}).catch(common.handleError.bind(response));
+	});
+router.route("/move/:name")
+	.get(function (request, response) {
+		var {name}: { name: string } = request.params;
+
+		Promise.all([
+			db.cypherAsync({
+				"query": "MATCH (u:User) WHERE u.name = {name} OR u.username = {name} RETURN u.name AS name, u.username AS username, u.code AS code, u.registered AS registered",
+				"params": {
+					name: name
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH(item:ScheduleItem {editable: true }) RETURN item.title AS title, item.start AS startTime, item.end AS endTime"
+			}),
+			db.cypherAsync({
+				"query": `MATCH (u:User) WHERE u.name = {name} OR u.username = {name}
+						  MATCH (u)-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type`,
+				"params": {
+					name: name
+				}
+			}),
+			db.cypherAsync({
+				"query": `MATCH (u:User) WHERE u.name = {name} OR u.username = {name}
+						  MATCH (u)-[r:PRESENTS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type`,
+				"params": {
+					name: name
+				}
+			}),
+			db.cypherAsync({
+				"query": `MATCH (u:User) WHERE u.name = {name} OR u.username = {name}
+						  MATCH (u)-[r:MODERATES]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type`,
+				"params": {
+					name: name
+				}
+			}),
+		]).spread(function (users: User[], editablePeriods: any[], attends: any[], presents: any[], moderates: any[]) {
+			if (users.length !== 1) {
+				response.json({ "success": false, "message": "User not found" });
+				return Promise.reject(new IgnoreError());
+			}
+			var user = users[0];
+
+			function findByTime (item: any[], time: moment.Moment): any {
+				for (let i = 0; i < item.length; i++) {
+					if (time.isSame(moment(item[i].startTime))) {
+						return item[i];
+					}
+				}
+				return null;
+			}
+			function formatSession (item: any, mandatory: boolean = false): any {
+				return {
+					"title": {
+						"formatted": item.title,
+						"slug": item.slug || null
+					},
+					"time": {
+						"start": {
+							"raw": item.startTime,
+							"formatted": moment(item.startTime).format(timeFormat)
+						},
+						"end": {
+							"raw": item.endTime,
+							"formatted": moment(item.endTime).format(timeFormat)
+						}
+					},
+					"type": item.type || null,
+					"mandatory": mandatory
+				};
+			}
+
+			var periods = editablePeriods.map(function (period) {
+				var startTime = moment(period.startTime);
+				var presenting = findByTime(presents, startTime);
+				if (presenting) {
+					return formatSession(presenting, true);
+				}
+				var moderating = findByTime(moderates, startTime);
+				if (moderating) {
+					return formatSession(moderating, true);
+				}
+				var attending = findByTime(attends, startTime);
+				if (attending) {
+					return formatSession(attending);
+				}
+				period.title = "Free";
+				return formatSession(period);
+			});
+			response.json({ "success": true, "data": periods, "user": user });
+		}).catch(IgnoreError, function () {
+			// Response has already been handled if this error is thrown
+		}).catch(common.handleError.bind(response));
+	})
+	.post(postParser, function (request, response) {
+		var {username, slugs}: { username: string, slugs: string[] } = request.body;
+		Promise.all([
+			db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}}) RETURN u.name AS name, u.username AS username, u.registered AS registered",
+				"params": {
+					username: username
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH(item:ScheduleItem {editable: true }) RETURN item.title AS title, item.start AS startTime, item.end AS endTime"
+			}),
+			db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type",
+				"params": {
+					username: username
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}})-[r:PRESENTS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type",
+				"params": {
+					username: username
+				}
+			}),
+			db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}})-[r:MODERATES]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type",
+				"params": {
+					username: username
+				}
+			}),
+		]).spread(function (users: User[], editablePeriods: any[], attends: any[], presents: any[], moderates: any[]) {
+			if (users.length !== 1) {
+				response.json({ "success": false, "message": "User not found" });
+				return Promise.reject(new IgnoreError());
+			}
+			var user = users[0];
+			if (editablePeriods.length !== slugs.length) {
+				response.json({ "success": false, "message": "Incorrect number of changes for editable periods" });
+				return Promise.reject(new IgnoreError());
+			}
+			// Remove from already registered sessions
+			return db.cypherAsync({
+				"query": "MATCH (u:User {username: {username}})-[r:ATTENDS]->(s:Session) SET s.attendees = s.attendees - 1 DELETE r REMOVE u.hasFree, u.timeOfFree",
+				"params": {
+					username: username
+				}
+			});
+		}).then(function () {
+			return Promise.map(slugs, function (slug) {
+				// Frees have null as their slug
+				if (!slug)
+					return;
+				return db.cypherAsync({
+					"query": `
+								MATCH (user:User {username: {username}})
+								MATCH (session:Session {slug: {slug}})
+								CREATE (user)-[r:ATTENDS]->(session)
+								SET session.attendees = session.attendees + 1
+								SET user.registered = true`,
+					"params": {
+						username: username,
+						slug: slug
+					}
+				});
+			});
+		}).then(function () {
+			response.json({ "success": true, "message": "User moved successfully" });
+		}).catch(IgnoreError, function () {
+			// Response has already been handled if this error is thrown
 		}).catch(common.handleError.bind(response));
 	});
 router.route("/session")
@@ -590,6 +767,97 @@ router.route("/session/:slug")
 			response.json({ "success": true, "message": "Session deleted successfully" });
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/session/:slug/attendance").get(function (request, response) {
+	fs.readFileAsync("public/components/admin/session.html", "utf8")
+		.then(function (html: string) {
+			response.send(html);
+		})
+		.catch(common.handleError.bind(response));
+});
+router.route("/session/:slug/attendance/data").get(function (request, response) {
+	var slug = request.params.slug;
+	db.cypherAsync({
+		"query": "MATCH (user:User)-[r:ATTENDS]->(s:Session {slug: {slug}}) RETURN user.username AS username, user.name AS name, user.type AS type ORDER BY last(split(user.name, \" \"))",
+		"params": {
+			slug: slug
+		}
+	}).then(function (results) {
+		var students = results.filter(function (user) {
+			return user.type === common.UserType.Student;
+		});
+		var faculty = results.filter(function (user) {
+			return user.type === common.UserType.Teacher;
+		});
+		response.json({
+			"faculty": faculty,
+			"students": students
+		});
+	}).catch(common.handleError.bind(response));
+});
+router.route("/free/:id").get(function (request, response) {
+	var id = request.params.id;
+
+	db.cypherAsync({
+		"query": "MATCH (item:ScheduleItem {id: {id}}) RETURN item.title AS title, item.start AS startTime, item.end AS endTime",
+		"params": {
+			id: id
+		}
+	}).then(function (results) {
+		response.json({
+			"title": {
+				"formatted": results[0].title + " Free",
+				"slug": null
+			},
+			"description": "",
+			"type": "Free",
+			"location": "N/A",
+			"capacity": {
+				"total": 0,
+				"filled": 0
+			},
+			"time": {
+				"start": {
+					"raw": results[0].startTime,
+					"formatted": moment(results[0].startTime).format(timeFormat)
+				},
+				"end": {
+					"raw": results[0].endTime,
+					"formatted": moment(results[0].endTime).format(timeFormat)
+				},
+				"date": moment(results[0].startTime).format(dateFormat)
+			},
+			"presenters": [{"name": "N/A"}],
+			"moderator": null
+		});
+	}).catch(common.handleError.bind(response));
+});
+router.route("/free/:id/attendance").get(function (request, response) {
+	fs.readFileAsync("public/components/admin/session.html", "utf8")
+		.then(function (html: string) {
+			response.send(html);
+		})
+		.catch(common.handleError.bind(response));
+});
+router.route("/free/:id/attendance/data").get(function (request, response) {
+	var id = request.params.id;
+	db.cypherAsync({
+		"query": "MATCH (item:ScheduleItem {id: {id}}) MATCH (user:User {registered: true}) WHERE NOT (user)-[:ATTENDS]->(:Session {startTime: item.start}) RETURN user.username AS username, user.name AS name, user.type AS type ORDER BY last(split(user.name, \" \"))",
+		"params": {
+			id: id
+		}
+	}).then(function (results) {
+		var students = results.filter(function (user) {
+			return user.type === common.UserType.Student;
+		});
+		var faculty = results.filter(function (user) {
+			return user.type === common.UserType.Teacher;
+		});
+		response.json({
+			"faculty": faculty,
+			"students": students
+		});
+	}).catch(common.handleError.bind(response));
+});
 router.route("/schedule")
 	.get(function (request, response) {
 		db.cypherAsync({
@@ -670,6 +938,123 @@ router.route("/schedule")
 			response.json({ "success": true, "message": "Updated successfully" });
 		}).catch(common.handleError.bind(response));
 	});
+
+// Very similar to schedule code in data.ts (keep the two roughly in sync if changes are made)
+function getScheduleForUser(user: { name: string; username: string; registered: boolean; }): Promise<{ "name": string; "schedule": any[] }> {
+	if (!user.registered) {
+		// Generalized schedule for unregistered users
+		return db.cypherAsync({
+			query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
+		}).then(function (results) {
+			results = results.map(function (item) {
+				var startTime = item.start;
+				delete item.start;
+				var endTime = item.end;
+				delete item.end;
+				item.time = {
+					"start": {
+						"raw": startTime,
+						"formatted": moment(startTime).format(timeFormat)
+					},
+					"end": {
+						"raw": endTime,
+						"formatted": moment(endTime).format(timeFormat)
+					}
+				};
+				return item;
+			});
+			return {
+				"name": user.name,
+				"schedule": results
+			};
+		});
+	}
+	else {
+		// Schedule for registered users
+		return db.cypherAsync({
+			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, s.description AS description, true AS editable",
+			"params": {
+				username: user.username
+			}
+		}).then(function (attendingSessions: any[]) {
+			return Promise.map(attendingSessions, function (attendingSession) {
+				return db.cypherAsync({
+					"query": "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.name AS name, s.slug AS slug",
+					"params": {
+						slug: attendingSession.slug
+					}
+				});
+			}).then(function (sessionsWithNames) {
+				return db.cypherAsync({
+					query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
+				}).then(function (items) {
+					return Promise.resolve([items, attendingSessions, sessionsWithNames]);
+				});
+			});
+		}).spread(function (items, sessions, sessionsWithNames) {
+			function formatter(item) {
+				var startTime = item.start;
+				delete item.start;
+				var endTime = item.end;
+				delete item.end;
+				item.time = {
+					"start": {
+						"raw": startTime,
+						"formatted": moment(startTime).format(timeFormat)
+					},
+					"end": {
+						"raw": endTime,
+						"formatted": moment(endTime).format(timeFormat)
+					}
+				};
+				return item;
+			}
+			// Flatten array
+			sessionsWithNames = [].concat.apply([], sessionsWithNames);
+			for (let i = 0; i < items.length; i++) {
+				// Insert registration choices into schedule at editable periods
+				if (items[i].editable) {
+					let set = false;
+					for (let j = 0; j < sessions.length; j++) {
+						if (moment(sessions[j].start).isSame(moment(items[i].start))) {
+							items[i] = sessions[j];
+							set = true;
+							let people = [];
+							for (let k = 0; k < sessionsWithNames.length; k++) {
+								if (sessionsWithNames[k].slug === sessions[j].slug) {
+									people.push(sessionsWithNames[k].name);
+								}
+							}
+							// Sort people by last name
+							people = people.sort(function (a, b) {
+								var aSplit = a.toLowerCase().split(" ");
+								var bSplit = b.toLowerCase().split(" ");
+								a = aSplit[aSplit.length - 1];
+								b = bSplit[bSplit.length - 1];
+								if (a < b) return -1;
+								if (a > b) return 1;
+								return 0;
+							});
+							items[i].people = people.join(", ");
+							// Return type of form "Global" or "Science" instead of including "session" at the end
+							if (items[i].type)
+								items[i].type = items[i].type.split(" ")[0];
+							break;
+						}
+					}
+					if (!set) {
+						// Couldn't find registered session for this editable time so it must be a free
+						items[i].title = "Free";
+					}
+				}
+			}
+			return {
+				"name": user.name,
+				"schedule": items.map(formatter)
+			};
+		});
+	}
+}
 router.route("/schedule/:filter").get(function (request, response) {
 	fs.readFileAsync("public/components/admin/schedule.html", "utf8")
 		.then(function (html: string) {
@@ -682,8 +1067,21 @@ router.route("/schedule/:filter/data").get(function (request, response) {
 	if (!filter) {
 		filter = "all";
 	}
+	filter = filter.toString().toLowerCase();
 	if (filter === "all") {
 		var criteria = "";
+	}
+	else if (filter === "freshman") {
+		var criteria = "grade: 9";
+	}
+	else if (filter === "sophomore") {
+		var criteria = "grade: 10";
+	}
+	else if (filter === "junior") {
+		var criteria = "grade: 11";
+	}
+	else if (filter === "senior") {
+		var criteria = "grade: 12";
 	}
 	else {
 		var criteria = "type: {type}";
@@ -696,119 +1094,7 @@ router.route("/schedule/:filter/data").get(function (request, response) {
 		}
 	}).then(function (users) {
 		return Promise.map(users, function (user: { name: string; username: string; registered: boolean; }) {
-			if (!user.registered) {
-				// Generalized schedule for unregistered users
-				return db.cypherAsync({
-					query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
-				}).then(function (results) {
-					results = results.map(function (item) {
-						var startTime = item.start;
-						delete item.start;
-						var endTime = item.end;
-						delete item.end;
-						item.time = {
-							"start": {
-								"raw": startTime,
-								"formatted": moment(startTime).format(timeFormat)
-							},
-							"end": {
-								"raw": endTime,
-								"formatted": moment(endTime).format(timeFormat)
-							}
-						};
-						return item;
-					});
-					return {
-						"name": user.name,
-						"schedule": results
-					};
-				});
-			}
-			else {
-				// Schedule for registered users
-				return db.cypherAsync({
-					"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, s.description AS description, true AS editable",
-					"params": {
-						username: user.username
-					}
-				}).then(function (attendingSessions: any[]) {
-					return Promise.map(attendingSessions, function (attendingSession) {
-						return db.cypherAsync({
-							"query": "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.name AS name, s.slug AS slug",
-							"params": {
-								slug: attendingSession.slug
-							}
-						});
-					}).then(function (sessionsWithNames) {
-						return db.cypherAsync({
-							query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
-						}).then(function (items) {
-							return Promise.resolve([items, attendingSessions, sessionsWithNames]);
-						});
-					});
-				}).spread(function (items, sessions, sessionsWithNames) {
-					function formatter(item) {
-						var startTime = item.start;
-						delete item.start;
-						var endTime = item.end;
-						delete item.end;
-						item.time = {
-							"start": {
-								"raw": startTime,
-								"formatted": moment(startTime).format(timeFormat)
-							},
-							"end": {
-								"raw": endTime,
-								"formatted": moment(endTime).format(timeFormat)
-							}
-						};
-						return item;
-					}
-					// Flatten array
-					sessionsWithNames = [].concat.apply([], sessionsWithNames);
-					for (let i = 0; i < items.length; i++) {
-						// Insert registration choices into schedule at editable periods
-						if (items[i].editable) {
-							let set = false;
-							for (let j = 0; j < sessions.length; j++) {
-								if (sessions[j].start === items[i].start) {
-									items[i] = sessions[j];
-									set = true;
-									let people = [];
-									for (let k = 0; k < sessionsWithNames.length; k++) {
-										if (sessionsWithNames[k].slug === sessions[j].slug) {
-											people.push(sessionsWithNames[k].name);
-										}
-									}
-									// Sort people by last name
-									people = people.sort(function (a, b) {
-										var aSplit = a.toLowerCase().split(" ");
-										var bSplit = b.toLowerCase().split(" ");
-										a = aSplit[aSplit.length - 1];
-										b = bSplit[bSplit.length - 1];
-										if (a < b) return -1;
-										if (a > b) return 1;
-										return 0;
-									});
-									items[i].people = people.join(", ");
-									// Return type of form "Global" or "Science" instead of including "session" at the end
-									if (items[i].type)
-										items[i].type = items[i].type.split(" ")[0];
-									break;
-								}
-							}
-							if (!set) {
-								// Couldn't find registered session for this editable time so it must be a free
-								items[i].title = "Free";
-							}
-						}
-					}
-					return {
-						"name": user.name,
-						"schedule": items.map(formatter)
-					};
-				});
-			}
+			return getScheduleForUser(user);
 		});
 	}).then(function (results) {
 		response.json(results);
@@ -821,6 +1107,30 @@ router.route("/schedule/user/:name").get(function (request, response) {
 			response.send(html);
 		})
 		.catch(common.handleError.bind(response));
+});
+router.route("/schedule/user/:name/data").get(function (request, response) {
+	var {name}: { name: string } = request.params;
+
+	db.cypherAsync({
+		"query": "MATCH (u:User) WHERE u.name = {name} OR u.username = {name} RETURN u.name AS name, u.username AS username, u.registered AS registered",
+		"params": {
+			name: name
+		}
+	}).then(function (user) {
+		if (user.length !== 1) {
+			return getScheduleForUser({
+				"name": "Unknown user",
+				"username": "unknown",
+				"registered": false
+			});
+		}
+		else {
+			return getScheduleForUser(user[0]);
+		}
+	}).then(function (schedule) {
+		// Wrap in an array because the schedule displayer is used for both lists of schedules and individual schedules
+		response.json([schedule]);
+	}).catch(common.handleError.bind(response));
 });
 router.route("/schedule/switch").patch(postParser, function (request, response) {
 	var {id1, id2}: { id1: string, id2: string } = request.body;
@@ -883,8 +1193,8 @@ router.route("/schedule/date")
 				end.set("year", date.get("year"));
 				end.set("month", date.get("month"));
 				end.set("date", date.get("date"));
-				item.start = start;
-				item.end = end;
+				item.start = start.format();
+				item.end = end.format();
 				return item;
 			});
 			sessions.map(function (session) {
@@ -933,37 +1243,48 @@ router.route("/schedule/date")
 			response.json({ "success": true, "message": "Symposium date changed successfully" });
 		}).catch(common.handleError.bind(response));
 	});
-router.route("/registration/email")
-	.get(function (request, response) {
+router.route("/registration/email").get(function (request, response) {
+	Promise.all([
 		db.cypherAsync({
 			query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL RETURN c"
-		}).then(function (result) {
-			var registrationEmailTime: boolean = result[0].c.properties.registrationEmailTime;
-			response.json({
-				"raw": registrationEmailTime,
-				"formatted": `${moment(registrationEmailTime).format(dateFormat)} at ${moment(registrationEmailTime).format(timeFormat)}`
-			});
-		}).catch(common.handleError.bind(response));
-	})
-	.post(function (request, response) {
-		var totalRecipients = 0;
-		// Get emails to send to
-		Promise.all([
-			db.cypherAsync({
-				"query": "MATCH (u:User) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code"
-			}),
-			common.getSymposiumDate()
-		]).spread(function (results, date: moment.Moment) {
-			totalRecipients = results.length;
-			return Promise.mapSeries(results, function (user: any) {
-				var email = (!!user.email) ? user.email : `${user.username}@gfacademy.org`;
-				var emailToSend = new sendgrid.Email({
-					to: email,
-					from: "registration@wppsymposium.org",
-					fromname: "GFA World Perspectives Symposium",
-					subject: "GFA WPP Symposium Registration",
-					text:
-					`Hi ${user.name},
+		}),
+		db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.scheduleEmailTime IS NOT NULL RETURN c"
+		})
+	]).spread(function (registration, schedule) {
+		var registrationEmailTime: moment.Moment = moment(registration[0].c.properties.registrationEmailTime);
+		var scheduleEmailTime: moment.Moment = moment(schedule[0].c.properties.scheduleEmailTime);
+		response.json({
+			"registration": {
+				"raw": registration[0].c.properties.registrationEmailTime,
+				"formatted": `${registrationEmailTime.format(dateFormat)} at ${registrationEmailTime.format(timeFormat)}`
+			},
+			"schedule": {
+				"raw": schedule[0].c.properties.scheduleEmailTime,
+				"formatted": `${scheduleEmailTime.format(dateFormat)} at ${scheduleEmailTime.format(timeFormat)}`
+			}
+		});
+	}).catch(common.handleError.bind(response));
+});
+router.route("/registration/email/registration").post(function (request, response) {
+	var totalRecipients = 0;
+	// Get emails to send to
+	Promise.all([
+		db.cypherAsync({
+			"query": "MATCH (u:User) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code"
+		}),
+		common.getSymposiumDate()
+	]).spread(function (results, date: moment.Moment) {
+		totalRecipients = results.length;
+		return Promise.mapSeries(results, function (user: any) {
+			var email = (!!user.email) ? user.email : `${user.username}@gfacademy.org`;
+			var emailToSend = new sendgrid.Email({
+				to: email,
+				from: "registration@wppsymposium.org",
+				fromname: "GFA World Perspectives Symposium",
+				subject: "GFA WPP Symposium Registration",
+				text:
+				`Hi ${user.name},
 
 This year's World Perspectives Symposium will take place on ${date.format(dateFormat)}. To login and register for presentations, visit the following link:
 
@@ -976,20 +1297,76 @@ Feel free to reply to this email if you're having any problems.
 Thanks,
 The GFA World Perspectives Team
 `
+			});
+			return sendgrid.sendAsync(emailToSend);
+		});
+	}).then(function (results) {
+		return db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL SET c.registrationEmailTime = {time} RETURN c",
+			params: {
+				time: moment().format()
+			}
+		});
+	}).then(function (results) {
+		response.json({ "success": true, "message": `Sent registration emails to ${totalRecipients} recipients` });
+	}).catch(common.handleError.bind(response));
+});
+router.route("/registration/email/schedule").post(function (request, response) {
+	var totalRecipients = 0;
+	// Get emails to send to
+	Promise.all([
+		db.cypherAsync({
+			"query": "MATCH (u:User) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code, u.registered AS registered"
+		}),
+		common.getSymposiumDate()
+	]).spread(function (results, date: moment.Moment) {
+		totalRecipients = results.length;
+		return Promise.mapSeries(results, function (user: any) {
+			return getScheduleForUser({
+				"name": user.name,
+				"username": user.username,
+				"registered": user.registered
+			}).get("schedule").then(function (schedule: any[]) {
+				// Generate schedule for email body
+				var scheduleFormatted = schedule.map(function (scheduleItem) {
+					return `${scheduleItem.time.start.formatted} to ${scheduleItem.time.end.formatted}${!!scheduleItem.location ? " in " + scheduleItem.location : ""}: ${scheduleItem.title}${!!scheduleItem.type ? ` (${scheduleItem.type})` : ""}`;
+				}).join("\n\n");
+
+				var email = (!!user.email) ? user.email : `${user.username}@gfacademy.org`;
+				var emailToSend = new sendgrid.Email({
+					to: email,
+					from: "registration@wppsymposium.org",
+					fromname: "GFA World Perspectives Symposium",
+					subject: "Your symposium schedule",
+					text:
+					`Hi ${user.name},
+
+Here is your schedule for this year's World Perspectives Symposium taking place on ${date.format("dddd")} ${date.format(dateFormat)}:
+
+${scheduleFormatted}
+
+You can also visit the following link to view and print a more detailed schedule: https://wppsymposium.org/user/login/${user.code}
+
+Feel free to reply to this email if you're having any problems.
+
+Thanks,
+The GFA World Perspectives Team
+`
 				});
 				return sendgrid.sendAsync(emailToSend);
 			});
-		}).then(function (results) {
-			return db.cypherAsync({
-				query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL SET c.registrationEmailTime = {time} RETURN c",
-				params: {
-					time: moment().format()
-				}
-			});
-		}).then(function (results) {
-			response.json({ "success": true, "message": `Sent registration emails to ${totalRecipients} recipients` });
-		}).catch(common.handleError.bind(response));
-	});
+		});
+	}).then(function (results) {
+		return db.cypherAsync({
+			query: "MATCH (c:Constant) WHERE c.scheduleEmailTime IS NOT NULL SET c.scheduleEmailTime = {time} RETURN c",
+			params: {
+				time: moment().format()
+			}
+		});
+	}).then(function (results) {
+		response.json({ "success": true, "message": `Sent schedule emails to ${totalRecipients} recipients` });
+	}).catch(common.handleError.bind(response));
+});
 router.route("/registration/open")
 	.get(function(request, response) {
 		db.cypherAsync({
@@ -1049,5 +1426,137 @@ router.route("/registration/stats")
 			});
 		}).catch(common.handleError.bind(response));
 	});
+router.route("/registration/auto").post(function (request, response) {
+	var totalUsers = 0;
+	// Get all unregistered users and all sessions first
+	Promise.all([
+		db.cypherAsync({
+			query: "MATCH (u:User {registered: false}) RETURN u.username AS username"
+		}),
+		db.cypherAsync({
+			query: "MATCH(item:ScheduleItem {editable: true }) RETURN item.title AS title, item.start AS startTime, item.end AS endTime"
+		}),
+		db.cypherAsync({
+			query: "MATCH (s:Session) RETURN s.slug AS slug, s.attendees AS attendees, s.capacity AS capacity, s.startTime AS startTime, s.endTime AS endTime"
+		})
+	]).spread(function (users: User[], editablePeriods: any[], sessions: any[]) {
+		totalUsers = users.length;
+		Promise.each(editablePeriods, function (period) {
+			// Shuffle users for each period
+			function shuffle(array) {
+				let counter = array.length;
+
+				// While there are elements in the array
+				while (counter > 0) {
+					// Pick a random index
+					let index = Math.floor(Math.random() * counter);
+
+					// Decrease counter by 1
+					counter--;
+
+					// And swap the last element with it
+					let temp = array[counter];
+					array[counter] = array[index];
+					array[index] = temp;
+				}
+
+				return array;
+			}
+			users = shuffle(users);
+			// Find non-full sessions that occur at this time
+			var availableSessions = [];
+			function updateAvailableSessions() {
+				availableSessions = sessions.filter(function (session) {
+					if (session.attendees < session.capacity && moment(session.startTime).isSame(moment(period.startTime))) {
+						return true;
+					}
+					return false;
+				});
+				if (availableSessions.length < 1) {
+					// Not enough sessions
+					console.warn(`Not enough capacity at ${moment(period.startTime).format(timeFormat)} to autoregister`);
+				}
+				function sortSessions(sessions: any[]): any[] {
+					return sessions.sort(function (a, b) {
+						return a.attendees - b.attendees;
+					});
+				}
+				availableSessions = sortSessions(availableSessions);
+			}
+			updateAvailableSessions();
+			// Find the unregistered users that have registered for this period already (partially completed registration) to filter them out of needing to be autoregistered
+			return db.cypherAsync({
+				query: "MATCH (u:User {registered: false})-[r:ATTENDS]->(s:Session {startTime: {startTime}}) RETURN u.username AS username",
+				params: {
+					startTime: period.startTime
+				}
+			}).then(function (attendingUsers: User[]) {
+				var attendingUsernames = attendingUsers.map(function (attendingUser) {
+					return attendingUser.username;
+				});
+				var remainingUsers = users.filter(function (user) {
+					return attendingUsernames.indexOf(user.username) === -1;
+				});
+				Promise.each(remainingUsers, function (user: User) {
+					updateAvailableSessions();
+					// Check if this user moderates or presents a session at this time period
+					return Promise.all([
+						db.cypherAsync({
+							query: "MATCH (u:User {username: {username}})-[r:PRESENTS]->(s:Session {startTime: {startTime}}) RETURN s.slug AS slug",
+							params: {
+								username: user.username,
+								startTime: period.startTime
+							}
+						}),
+						db.cypherAsync({
+							query: "MATCH (u:User {username: {username}})-[r:MODERATES]->(s:Session {startTime: {startTime}}) RETURN s.slug AS slug",
+							params: {
+								username: user.username,
+								startTime: period.startTime
+							}
+						})
+					]).spread(function (presenting: any[], moderating: any[]) {
+						var registerSlug = null;
+						var attendanceCount = 1;
+						if (presenting.length > 0) {
+							registerSlug = presenting[0].slug;
+							attendanceCount = 0;
+						}
+						else if (moderating.length > 0) {
+							registerSlug = moderating[0].slug;
+							attendanceCount = 0;
+						}
+						else {
+							registerSlug = availableSessions[0].slug;
+							availableSessions[0].attendees++;
+						}
+						// Register this user
+						return db.cypherAsync({
+							query: `
+								MATCH (user:User {username: {username}})
+								MATCH (session:Session {slug: {slug}})
+								CREATE (user)-[r:ATTENDS]->(session)
+								SET session.attendees = session.attendees + {attendanceCount}`,
+							params: {
+								username: user.username,
+								slug: registerSlug,
+								attendanceCount: attendanceCount
+							}
+						});
+					});
+				});
+			});
+		});
+	}).then(function () {
+		// Set all users as registered
+		return db.cypherAsync({
+			query: "MATCH (u:User {registered: false}) SET u.registered = true"
+		});
+	}).then(function () {
+		response.json({ "success": true, "message": `Successfully autoregistered ${totalUsers} users` });
+	}).catch(IgnoreError, function () {
+		// Response has already been handled if this error is thrown
+	}).catch(common.handleError.bind(response));
+});
 
 export = router;
