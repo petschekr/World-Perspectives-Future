@@ -216,7 +216,7 @@ router.route("/user")
 			.then(function (results) {
 				response.json({ "success": true, "message": `${queries.length} users successfully created` });
 			}).catch(neo4j.ClientError, function () {
-				response.json({ "success": false, "message": "A user with an existing username can't be imported. Rolling back changes." });
+				response.json({ "success": false, "message": "A user with an existing username or name can't be imported. Rolling back changes." });
 			}).catch(common.handleError.bind(response));
 	})
 	.delete(function (request, response) {
@@ -277,7 +277,7 @@ router.route("/user/:username")
 		}).then(function (results) {
 			response.json({ "success": true, "message": "User successfully created" });
 		}).catch(neo4j.ClientError, function () {
-			response.json({ "success": false, "message": "A user with that username already exists" });
+			response.json({ "success": false, "message": "A user with that username or name already exists" });
 		}).catch(common.handleError.bind(response));
 	})
 	.delete(function (request, response) {
