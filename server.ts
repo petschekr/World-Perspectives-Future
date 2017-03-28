@@ -111,16 +111,16 @@ app.use((err: Error, request: express.Request, response: express.Response, next:
 
 const PORT = common.keys.production ? 80 : 3000;
 const HTTPS_PORT = 443;
-const httpsOptions = {
-	key: fs.readFileSync("/etc/letsencrypt/live/wppsymposium.org/privkey.pem"),
-	cert: fs.readFileSync("/etc/letsencrypt/live/wppsymposium.org/cert.pem"),
-	ca: fs.readFileSync("/etc/letsencrypt/live/wppsymposium.org/chain.pem"),
-	//secureProtocol: "TLSv1_method"
-	ciphers: "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
-};
 
 let server: any;
 if (common.keys.production) {
+	const httpsOptions = {
+		key: fs.readFileSync("/etc/letsencrypt/live/wppsymposium.org/privkey.pem"),
+		cert: fs.readFileSync("/etc/letsencrypt/live/wppsymposium.org/cert.pem"),
+		ca: fs.readFileSync("/etc/letsencrypt/live/wppsymposium.org/chain.pem"),
+		//secureProtocol: "TLSv1_method"
+		ciphers: "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
+	};
 	server = https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", 511, () => {
 		console.log("HTTPS server listening on port " + PORT);
 	});
