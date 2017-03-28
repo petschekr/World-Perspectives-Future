@@ -236,6 +236,9 @@ adminRouter.route("/user")
 			await common.cypherAsync({
 				query: "MATCH (user:User {admin: false}) DETACH DELETE user"
 			});
+			await common.cypherAsync({
+				query: "MATCH (user:User {admin: true}) SET user.registered = false"
+			});
 			response.json({ "success": true, "message": "All non-admin users successfully deleted" });
 		}
 		catch (err) {
