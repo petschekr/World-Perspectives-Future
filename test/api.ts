@@ -1,21 +1,12 @@
-﻿import assert = require("assert");
-import crypto = require("crypto");
-import chai = require("chai");
-import request = require("supertest");
-var expect = chai.expect;
+﻿import * as crypto from "crypto";
+import * as mocha from "mocha";
+import {expect} from "chai";
+import * as request from "supertest";
 
-import app = require("../server");
-import common = require("../common");
-var db = common.db;
+import {app} from "../server";
+import * as common from "../common";
 
-declare var describe: any;
-declare var it: any;
-declare var before: (func: (done?: () => void) => void) => void;
-declare var after: (func: (done?: () => void) => void) => void;
-declare var beforeEach: (func: (done?: () => void) => void) => void;
-declare var afterEach: (func: (done?: () => void) => void) => void;
-
-function signCookie (val, secret): string {
+function signCookie (val: any, secret: any): string {
 	// Simplified from node-cookie-signature
 	var signature = crypto.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
 	return val + "." + signature;
@@ -27,7 +18,7 @@ var testUser: any = {
 };
 testUser.cookie = "username=s" + encodeURIComponent(":" + signCookie(testUser.username, common.keys.cookieSecret));
 function insertTestUser (registered: boolean = false, teacher: boolean = false, admin: boolean = false, done: (err?: Error) => void): void {
-	db.cypher({
+	common.dbRaw.cypher({
 		query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
 		params: {
 			name: testUser.name,
@@ -40,7 +31,7 @@ function insertTestUser (registered: boolean = false, teacher: boolean = false, 
 	}, done);
 }
 function removeTestUser(done: (err?: Error) => void): void {
-	db.cypher({
+	common.dbRaw.cypher({
 		query: "MATCH (user:User {username: {username}}) DELETE user",
 		params: {
 			username: testUser.username
@@ -49,21 +40,21 @@ function removeTestUser(done: (err?: Error) => void): void {
 }
 
 describe("Main endpoints", () => {
-    it("GET /", (done) => {
+    it("GET /", done => {
         request(app)
 			.get("/")
 			.expect(200)
 			.expect("Content-Type", /html/)
 			.end(done);
     });
-	it("GET /about", (done) => {
+	it("GET /about", done => {
 		request(app)
 			.get("/about")
 			.expect(200)
 			.expect("Content-Type", /html/)
 			.end(done);
     });
-	it("GET /print", (done) => {
+	it("GET /print", done => {
 		request(app)
 			.get("/print")
 			.expect(200)
@@ -72,12 +63,12 @@ describe("Main endpoints", () => {
     });
 });
 describe("Data endpoints", () => {
-	it("GET /schedule", (done) => {
+	it("GET /schedule", done => {
 		request(app)
 			.get("/data/schedule")
 			.expect(200)
 			.expect("Content-Type", /json/)
-			.expect(function (response) {
+			.expect((response: any) => {
 				expect(response.body).to.be.an("array");
 				expect(response.body).to.have.length.above(0);
 				for (let item of response.body) {
@@ -86,12 +77,12 @@ describe("Data endpoints", () => {
 			})
 			.end(done);
 	});
-	it("GET /date", (done) => {
+	it("GET /date", done => {
 		request(app)
 			.get("/data/date")
 			.expect(200)
 			.expect("Content-Type", /json/)
-			.expect(function (response) {
+			.expect((response: any) => {
 				expect(response.body).to.be.an("object");
 				expect(response.body).to.have.all.keys(["formatted"]);
 				expect(response.body.formatted).to.be.a("string");
@@ -106,17 +97,17 @@ describe("User endpoints", () => {
 	after(function (done) {
 		removeTestUser(done);
 	});
-	it("Unauthenticated GET /", (done) => {
+	it("Unauthenticated GET /", done => {
 		request(app)
 			.get("/user")
 			.expect(403)
 			.expect("Content-Type", /json/)
-			.expect(function (response) {
+			.expect((response: any) => {
 				expect(response.body).to.have.keys("error");
 			})
 			.end(done);
 	});
-	it("Authenticated GET /", (done) => {
+	it("Authenticated GET /", done => {
 		expect(testUser.cookie).to.be.a("string");
 		expect(testUser.cookie).to.not.be.empty;
 		request(app)
@@ -124,7 +115,7 @@ describe("User endpoints", () => {
 			.set("Cookie", testUser.cookie)
 			.expect(200)
 			.expect("Content-Type", /json/)
-			.expect(function (response) {
+			.expect((response: any) => {
 				expect(response.body).to.have.all.keys(["name", "username", "registered", "admin"]);
 				expect(response.body.name).to.equal(testUser.name);
 				expect(response.body.username).to.equal(testUser.username);
@@ -133,7 +124,7 @@ describe("User endpoints", () => {
 			})
 			.end(done);
 	});
-	it("Invalid GET /login/:code", (done) => {
+	it("Invalid GET /login/:code", done => {
 		request(app)
 			.get("/user/login/abcd")
 			.redirects(0)
@@ -141,7 +132,7 @@ describe("User endpoints", () => {
 			.expect("Content-Type", /html/)
 			.end(done);
 	});
-	it("Valid unregistered GET /login/:code", (done) => {
+	it("Valid unregistered GET /login/:code", done => {
 		request(app)
 			.get(`/user/login/${testUser.code}`)
 			.redirects(0)
@@ -150,7 +141,7 @@ describe("User endpoints", () => {
 			.expect("location", "/register")
 			.end(done);
 	});
-	it("Valid registered GET /login/:code", (done) => {
+	it("Valid registered GET /login/:code", done => {
 		removeTestUser(function () {
 			insertTestUser(true, false, false, function () {
 				request(app)
@@ -171,7 +162,7 @@ describe("Unauthenticated admin endpoints", () => {
 	after(function (done) {
 		removeTestUser(done);
 	});
-	it("Unauthenticated GET /", (done) => {
+	it("Unauthenticated GET /", done => {
 		request(app)
 			.get("/admin")
 			.redirects(0)
@@ -179,14 +170,14 @@ describe("Unauthenticated admin endpoints", () => {
 			.expect("location", "/")
 			.end(done);
 	});
-	it("Unauthenticated POST /", (done) => {
+	it("Unauthenticated POST /", done => {
 		request(app)
 			.post("/admin")
 			.redirects(0)
 			.expect(403)
 			.end(done);
 	});
-	it("Unauthorized GET /", (done) => {
+	it("Unauthorized GET /", done => {
 		request(app)
 			.get("/admin")
 			.set("Cookie", testUser.cookie)
@@ -195,7 +186,7 @@ describe("Unauthenticated admin endpoints", () => {
 			.expect("location", "/")
 			.end(done);
 	});
-	it("Unauthorized POST /", (done) => {
+	it("Unauthorized POST /", done => {
 		request(app)
 			.post("/admin")
 			.set("Cookie", testUser.cookie)
@@ -211,7 +202,7 @@ describe("Admin endpoints", () => {
 	after(function (done) {
 		removeTestUser(done);
 	});
-	it("Authorized GET /", (done) => {
+	it("Authorized GET /", done => {
 		request(app)
 			.get("/admin")
 			.set("Cookie", testUser.cookie)
@@ -220,13 +211,13 @@ describe("Admin endpoints", () => {
 			.expect("Content-Type", /html/)
 			.end(done);
 	});
-	it("GET /user (pagination)", (done) => {
+	it("GET /user (pagination)", done => {
 		request(app)
 			.get("/admin/user")
 			.set("Cookie", testUser.cookie)
 			.expect(200)
 			.expect("Content-Type", /json/)
-			.expect(function (response) {
+			.expect((response: any) => {
 				expect(response.body).to.be.an("object");
 				expect(response.body).to.have.all.keys(["info", "data"]);
 				expect(response.body.info).to.be.an("object");
@@ -245,13 +236,13 @@ describe("Admin endpoints", () => {
 			})
 			.end(done);
 	});
-	it("GET /user (list all users)", (done) => {
+	it("GET /user (list all users)", done => {
 		request(app)
 			.get("/admin/user?all=true")
 			.set("Cookie", testUser.cookie)
 			.expect(200)
 			.expect("Content-Type", /json/)
-			.expect(function (response) {
+			.expect((response: any) => {
 				expect(response.body).to.be.an("array");
 				expect(response.body).to.have.length.above(0);
 				for (let item of response.body) {
@@ -273,13 +264,13 @@ describe("Admin endpoints", () => {
 	it("GET /session/:slug (get specific session)");
 	it("DELETE /session/:slug (delete specific session");
 
-	it("GET /schedule", (done) => {
+	it("GET /schedule", done => {
 		request(app)
 			.get("/admin/schedule")
 			.set("Cookie", testUser.cookie)
 			.expect(200)
 			.expect("Content-Type", /json/)
-			.expect(function (response) {
+			.expect((response: any) => {
 				expect(response.body).to.be.an("array");
 				expect(response.body).to.have.length.above(0);
 				for (let item of response.body) {

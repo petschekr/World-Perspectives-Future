@@ -20,7 +20,7 @@ import * as compress from "compression";
 import * as cookieParser from "cookie-parser";
 import * as bodyParser from "body-parser";
 
-let app = express();
+export let app = express();
 let postParser = bodyParser.urlencoded({ "extended": false });
 app.use(compress());
 app.use(responseTime());
@@ -95,5 +95,3 @@ const PORT = 8080;
 let server = http.createServer(app).listen(PORT, "0.0.0.0", 511, () => {
 	console.log("HTTP server listening on port " + PORT);
 });
-
-export = app;

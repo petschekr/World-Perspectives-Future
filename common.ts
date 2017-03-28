@@ -76,7 +76,7 @@ export function connectWS(server: http.Server | https.Server) {
 	io = socket.listen(server);
 }
 
-let dbRaw = new neo4j.GraphDatabase(`http://${keys.neo4j.username}:${keys.neo4j.password}@${keys.neo4j.server}:7474`);
+export let dbRaw = new neo4j.GraphDatabase(`http://${keys.neo4j.username}:${keys.neo4j.password}@${keys.neo4j.server}:7474`);
 export function cypherAsync (options: neo4j.CypherOptions): Promise<any> {
 	return new Promise<any>((resolve, reject) => {
 		dbRaw.cypher(options, (err, result) => {
