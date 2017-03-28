@@ -1,29 +1,27 @@
-﻿import Promise = require("bluebird");
-// Node.js libraries
-import crypto = require("crypto");
-var fs = Promise.promisifyAll(require("fs"));
-import http = require("http");
-import https = require("https");
-import urllib = require("url");
-import path = require("path");
+﻿// Node.js libraries
+import * as crypto from "crypto";
+import * as fs from "fs";
+import * as http from "http";
+import * as https from "https";
+import * as urllib from "url";
+import * as path from "path";
 // npm libraries
-import common = require("./common");
-var keys = common.keys;
-var db = common.db;
-import moment = require("moment");
-var csv = require("csv");
-import cheerio = require("cheerio");
-var git = Promise.promisifyAll(require("git-last-commit"));
+import * as common from "./common";
+let keys = common.keys;
+import * as moment from "moment";
+const csv = require("csv");
+import * as cheerio from "cheerio";
+const git = require("git-last-commit");
 // Set up the Express server
-import express = require("express");
-import serveStatic = require("serve-static");
-import responseTime = require("response-time");
-import compress = require("compression");
-import cookieParser = require("cookie-parser");
-import bodyParser = require("body-parser");
+import * as express from "express";
+import * as serveStatic from "serve-static";
+import * as responseTime from "response-time";
+import * as compress from "compression";
+import * as cookieParser from "cookie-parser";
+import * as bodyParser from "body-parser";
 
-var app = express();
-var postParser = bodyParser.urlencoded({ "extended": false });
+let app = express();
+let postParser = bodyParser.urlencoded({ "extended": false });
 app.use(compress());
 app.use(responseTime());
 app.use(cookieParser(
@@ -37,69 +35,65 @@ app.use("/css", serveStatic("public/css"));
 app.use("/img", serveStatic("public/img"));
 
 // Routes
-import dataRouter = require("./routes/data");
-import userRouter = require("./routes/user");
-import registerRouter = require("./routes/register");
-import adminRouter = require("./routes/admin");
+import {dataRouter} from "./routes/data";
 app.use("/data", dataRouter);
+import {userRouter} from "./routes/user";
 app.use("/user", userRouter);
+import {registerRouter} from "./routes/register";
 app.use("/register", registerRouter);
+import {adminRouter} from "./routes/admin";
 app.use("/admin", adminRouter);
 
-app.route("/").get(function (request, response) {
-	fs.readFileAsync("pages/index.html", "utf8")
-		.then(function (html: string) {
-			response.send(html);
-		})
-		.catch(common.handleError.bind(response));
+app.route("/").get(async (request, response) => {
+	response.send(await common.readFileAsync("pages/index.html"));
 });
-app.route("/about").get(function (request, response) {
-	Promise.all([
-		fs.readFileAsync("pages/about.html", "utf8"),
-		fs.readFileAsync("package.json", "utf8")
+app.route("/about").get((request, response) => {
+	Promise.all<string, string, any>([
+		common.readFileAsync("pages/about.html"),
+		common.readFileAsync("package.json")
 			.then(JSON.parse)
-			.get("version"),
-		git.getLastCommitAsync()
+			.then(data => data.version),
+		new Promise<any>((resolve, reject) => {
+			git.getLastCommit((err: Error | null, hash: any) => {
+				if (err) {
+					reject(err);
+				}
+				else {
+					resolve(hash);
+				}
+			});
+		})
 	]).then(function ([aboutHTML, version, commit]) {
 		// Dynamically update the version field to represent the current version from the package.json
-		var $ = cheerio.load(aboutHTML);
+		let $ = cheerio.load(aboutHTML);
 		$("b#app-version").text(version + "@" + commit.shortHash);
 		$("b#node-version").text(process.version);
 		response.send($.html());
 	}).catch(common.handleError.bind(response));
 });
-app.route("/print").get(function (request, response) {
-	fs.readFileAsync("pages/schedule.html", "utf8")
-		.then(function (html: string) {
-			response.send(html);
-		})
-		.catch(common.handleError.bind(response));
+app.route("/print").get(async (request, response) => {
+	response.send(await common.readFileAsync("pages/schedule.html"));
 });
 
 // 404 page
-app.use(common.authenticateMiddleware, function (request, response, next) {
+app.use(common.authenticateMiddleware, async (request, response, next) => {
 	console.info(`Handled 404 for ${request.url} (${request.method}) by ${!!response.locals.user ? response.locals.user.username : "unauthenticated"} (${request.ip}) at ${new Date().toString()}`);
 	//response.status(404).send("404 Not found!");
-	fs.readFileAsync("pages/404.html", "utf8")
-		.then(function (html: string) {
-			var $ = cheerio.load(html);
-			$("#url").text(request.url);
-			response.status(404).send($.html());
-		})
-		.catch(common.handleError.bind(response));
+	let html = await common.readFileAsync("pages/404.html");
+	let $ = cheerio.load(html);
+	$("#url").text(request.url);
+	response.status(404).send($.html());
 });
 // Generic error handling
-app.use(function (err: Error, request, response, next) {
+app.use((err: Error, request: express.Request, response: express.Response, next: express.NextFunction) => {
 	common.handleError.bind(response)(err);
 });
 
 const PORT = 8080;
 
 // Set up the Socket.io server
-var server = http.createServer(app).listen(PORT, "0.0.0.0", 511, function () {
+let server = http.createServer(app).listen(PORT, "0.0.0.0", 511, () => {
 	console.log("HTTP server listening on port " + PORT);
 });
-var io = require("socket.io").listen(server);
-common.io = io;
 
 export = app;
