@@ -1,25 +1,25 @@
-﻿import Promise = require("bluebird");
-import common = require("../common");
-var db = common.db;
-import express = require("express");
-var router = express.Router();
-import moment = require("moment");
+﻿import * as common from "../common";
+import * as express from "express";
+import * as moment from "moment";
+
+export let dataRouter = express.Router();
 
 const timeFormat: string = "h:mm A";
 const dateFormat: string = "MMMM Do, YYYY";
 
-var authenticateCheck = common.authenticateMiddleware;
+let authenticateCheck = common.authenticateMiddleware;
 
-router.route("/schedule").get(authenticateCheck, function (request, response) {
-	if (!response.locals.authenticated || !response.locals.user.registered) {
-		// Generalized schedule for unknown or unregistered users
-		db.cypherAsync({
-			query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
-		}).then(function (results) {
+dataRouter.route("/schedule").get(authenticateCheck, async (request, response) => {
+	try {
+		if (!response.locals.authenticated || !response.locals.user.registered) {
+			// Generalized schedule for unknown or unregistered users
+			let results: any[] = await common.cypherAsync({
+				query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
+			});
 			response.json(results.map(function (item) {
-				var startTime = item.start;
+				let startTime = item.start;
 				delete item.start;
-				var endTime = item.end;
+				let endTime = item.end;
 				delete item.end;
 				item.time = {
 					"start": {
@@ -33,34 +33,30 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 				};
 				return item;
 			}));
-		}).catch(common.handleError.bind(response));
-	}
-	else {
-		db.cypherAsync({
-			"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, s.description AS description, true AS editable",
-			"params": {
-				username: response.locals.user.username
-			}
-		}).then(function (attendingSessions: any[]) {
-			return Promise.map(attendingSessions, function (attendingSession) {
-				return db.cypherAsync({
+		}
+		else {
+			let sessions: any[] = await common.cypherAsync({
+				"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, s.description AS description, true AS editable",
+				"params": {
+					username: response.locals.user.username
+				}
+			});
+
+			let sessionsWithNames = await Promise.all(sessions.map(session => {
+				return common.cypherAsync({
 					"query": "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.name AS name, s.slug AS slug",
 						"params": {
-							slug: attendingSession.slug
+							slug: session.slug
 						}
 				});
-			}).then(function (sessionsWithNames) {
-				return db.cypherAsync({
-					query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
-				}).then(function (items) {
-					return Promise.resolve([items, attendingSessions, sessionsWithNames]);
-				});
+			}));
+			let items = await common.cypherAsync({
+				query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
 			});
-		}).spread(function (items, sessions, sessionsWithNames) {
-			function formatter (item) {
-				var startTime = item.start;
+			function formatter (item: any) {
+				let startTime = item.start;
 				delete item.start;
-				var endTime = item.end;
+				let endTime = item.end;
 				delete item.end;
 				item.time = {
 					"start": {
@@ -92,8 +88,8 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 							}
 							// Sort people by last name
 							people = people.sort(function (a, b) {
-								var aSplit = a.toLowerCase().split(" ");
-								var bSplit = b.toLowerCase().split(" ");
+								let aSplit = a.toLowerCase().split(" ");
+								let bSplit = b.toLowerCase().split(" ");
 								a = aSplit[aSplit.length - 1];
 								b = bSplit[bSplit.length - 1];
 								if (a < b) return -1;
@@ -114,25 +110,29 @@ router.route("/schedule").get(authenticateCheck, function (request, response) {
 				}
 			}
 			response.json(items.map(formatter));
-		}).catch(common.handleError.bind(response));
+		}
+	}
+	catch (err) {
+		common.handleError(response, err);
 	}
 });
-router.route("/sessions").get(function (request, response) {
-	db.cypherAsync({
-		query: `MATCH (s:Session) RETURN
-			s.title AS title,
-			s.slug AS slug,
-			s.description AS description,
-			s.type AS type,
-			s.location AS location,
-			s.capacity AS capacity,
-			s.attendees AS attendees,
-			s.startTime AS startTime,
-			s.endTime AS endTime
-			ORDER BY s.startTime, lower(s.title)`
-	}).then(function (results) {
-		return Promise.map(results, function (session: any) {
-			return db.cypherAsync({
+dataRouter.route("/sessions").get(async (request, response) => {
+	try {
+		let results: any[] = await common.cypherAsync({
+			query: `MATCH (s:Session) RETURN
+				s.title AS title,
+				s.slug AS slug,
+				s.description AS description,
+				s.type AS type,
+				s.location AS location,
+				s.capacity AS capacity,
+				s.attendees AS attendees,
+				s.startTime AS startTime,
+				s.endTime AS endTime
+				ORDER BY s.startTime, lower(s.title)`
+		});
+		let sessions = await Promise.all(results.map(async session => {
+			let sessionRelationships = await common.cypherAsync({
 				queries: [{
 					query: "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name ORDER BY last(split(user.name, \" \"))",
 					params: {
@@ -144,47 +144,47 @@ router.route("/sessions").get(function (request, response) {
 						slug: session.slug
 					}
 				}]
-			}).then(function (sessionRelationships) {
-				return {
-					"title": {
-						"formatted": session.title,
-						"slug": session.slug
-					},
-					"description": session.description,
-					"type": session.type,
-					"location": session.location,
-					"capacity": {
-						"total": session.capacity,
-						"filled": session.attendees
-					},
-					"time": {
-						"start": {
-							"raw": session.startTime,
-							"formatted": moment(session.startTime).format(timeFormat)
-						},
-						"end": {
-							"raw": session.endTime,
-							"formatted": moment(session.endTime).format(timeFormat)
-						},
-						"date": moment(session.startTime).format(dateFormat)
-					},
-					"presenters": sessionRelationships[0],
-					"moderator": (sessionRelationships[1].length !== 0) ? sessionRelationships[1][0] : null
-				};
 			});
-		});
-	})
-	.then(function (sessions) {
+			return {
+				"title": {
+					"formatted": session.title,
+					"slug": session.slug
+				},
+				"description": session.description,
+				"type": session.type,
+				"location": session.location,
+				"capacity": {
+					"total": session.capacity,
+					"filled": session.attendees
+				},
+				"time": {
+					"start": {
+						"raw": session.startTime,
+						"formatted": moment(session.startTime).format(timeFormat)
+					},
+					"end": {
+						"raw": session.endTime,
+						"formatted": moment(session.endTime).format(timeFormat)
+					},
+					"date": moment(session.startTime).format(dateFormat)
+				},
+				"presenters": sessionRelationships[0],
+				"moderator": (sessionRelationships[1].length !== 0) ? sessionRelationships[1][0] : null
+			};
+		}));
 		response.json(sessions);
-	})
-	.catch(common.handleError.bind(response));
+	}
+	catch (err) {
+		common.handleError(response, err);
+	}
 });
-router.route("/date").get(function (request, response) {
-    common.getSymposiumDate().then(function (date: moment.Moment) {
+dataRouter.route("/date").get(async (request, response) => {
+	try {
 		response.json({
-			"formatted": date.format(dateFormat)
+			"formatted": (await common.getSymposiumDate()).format(dateFormat)
 		});
-	}).catch(common.handleError.bind(response));
+	}
+	catch (err) {
+		common.handleError(response, err);
+	}
 });
-
-export = router;

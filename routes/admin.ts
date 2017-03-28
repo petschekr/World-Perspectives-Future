@@ -32,7 +32,7 @@ let uploadHandler = multer({
 });
 const xlsx = require("node-xlsx");
 
-interface User extends common.User { };
+type User = common.User;
 const timeFormat: string = "h:mm A";
 const dateFormat: string = "MMMM Do, YYYY";
 
