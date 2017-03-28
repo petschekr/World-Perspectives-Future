@@ -132,22 +132,18 @@ pusher.devices((err: Error | null, response: any) => {
 	let devices: any[] = response.devices;
 	pushbulletDevices = devices.filter(device => device.active).map(device => device.iden);
 });
-export var handleError = function (err: any): void {
+export var handleError = function (response: express.Response, err: any): void {
 	console.error(err.stack);
 
-	// Check if this error occurred while responding to a request
-	if (this.status && this.send) {
-		var response: express.Response = this;
-		fs.readFile("pages/500.html", "utf8", function (err, html) {
-			response.status(500);
-			if (err) {
-				console.error(err);
-				response.send("An internal server error occurred and an additional error occurred while serving an error page.");
-				return;
-			}
-			response.send(html);
-		});
-	}
+	fs.readFile("pages/500.html", "utf8", function (err, html) {
+		response.status(500);
+		if (err) {
+			console.error(err);
+			response.send("An internal server error occurred and an additional error occurred while serving an error page.");
+			return;
+		}
+		response.send(html);
+	});
 
 	const debugging: boolean = true;
 	if (debugging) {

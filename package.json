@@ -23,7 +23,7 @@
     "kew": "^0.5.0",
     "moment": "^2.13.0",
     "multer": "^1.1.0",
-    "neo4j": "^2.0.0-alpha5",
+    "neo4j": "2.0.0-RC2",
     "node-xlsx": "^0.6.0",
     "pushbullet": "^1.4.3",
     "response-time": "^2.3.1",
