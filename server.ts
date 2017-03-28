@@ -19,11 +19,31 @@ import * as responseTime from "response-time";
 import * as compress from "compression";
 import * as cookieParser from "cookie-parser";
 import * as bodyParser from "body-parser";
+const hsts = require("hsts");
 
 export let app = express();
 let postParser = bodyParser.urlencoded({ "extended": false });
 app.use(compress());
 app.use(responseTime());
+if (common.keys.production) {
+	app.use(hsts({
+		"maxAge": 1000 * 60 * 60 * 24 * 30 * 6 // 6 months
+	}));
+	app.use(function (request, response, next) {
+		if (request.secure) {
+			next();
+		}
+		else {
+			// Redirect to HTTPS
+			if (request.method === "GET") {
+				response.redirect(301, urllib.resolve("https://wppsymposium.org", request.originalUrl));
+			}
+			else {
+				response.status(403).send("Insecure access forbidden. Please use HTTPS.");
+			}
+		}
+	});
+}
 app.use(cookieParser(
 	keys.cookieSecret, // Secret for signing cookies
 	common.cookieOptions
@@ -89,9 +109,26 @@ app.use((err: Error, request: express.Request, response: express.Response, next:
 	common.handleError.bind(response)(err);
 });
 
-const PORT = 8080;
+const PORT = common.keys.production ? 80 : 3000;
+const HTTPS_PORT = 443;
+const httpsOptions = {
+	key: fs.readFileSync("/etc/letsencrypt/live/wppsymposium.org/privkey.pem"),
+	cert: fs.readFileSync("/etc/letsencrypt/live/wppsymposium.org/cert.pem"),
+	ca: fs.readFileSync("/etc/letsencrypt/live/wppsymposium.org/chain.pem"),
+	//secureProtocol: "TLSv1_method"
+	ciphers: "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
+};
 
+let server: any;
+if (common.keys.production) {
+	server = https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", 511, () => {
+		console.log("HTTPS server listening on port " + PORT);
+	});
+}
+else {
+	server = http.createServer(app).listen(PORT, "0.0.0.0", 511, () => {
+		console.log("HTTP server listening on port " + PORT);
+	});
+}
 // Set up the Socket.io server
-let server = http.createServer(app).listen(PORT, "0.0.0.0", 511, () => {
-	console.log("HTTP server listening on port " + PORT);
-});
+common.connectWS(server);

@@ -55,6 +55,7 @@ export interface User {
 	"type": UserType;
 }
 export const keys: {
+	"production": boolean;
 	"neo4j": {
 		"username": string;
 		"password": string;
@@ -67,12 +68,12 @@ export const keys: {
 export const cookieOptions = {
 	"path": "/",
 	"maxAge": 1000 * 60 * 60 * 24 * 30 * 6, // 6 months
-	"secure": false,
+	"secure": keys.production,
 	"httpOnly": true,
 	"signed": true
 };
 export let io: any = null;
-export function connectWS(server: http.Server | https.Server) {
+export function connectWS(server: any) {
 	io = socket.listen(server);
 }
 
@@ -145,8 +146,7 @@ export var handleError = function (response: express.Response, err: any): void {
 		response.send(html);
 	});
 
-	const debugging: boolean = true;
-	if (debugging) {
+	if (!keys.production) {
 		return;
 	}
 	// Notify via PushBullet
