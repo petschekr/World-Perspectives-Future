@@ -211,15 +211,12 @@ registerRouter.route("/sessions/:time")
 					return;
 				}
 				if (userFreeInfo.hasFree && userFreeInfo.timeOfFree === time) {
-					return common.cypherAsync({
+					await common.cypherAsync({
 						"query": "MATCH (user:User {username: {username}}) REMOVE user.hasFree, user.timeOfFree",
 						"params": {
 							username: response.locals.user.username
 						}
 					});
-				}
-				else {
-					return Promise.resolve();
 				}
 			}
 			else {
