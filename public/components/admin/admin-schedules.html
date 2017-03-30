@@ -128,7 +128,7 @@
 		<content-section>
 			<h2>Master Schedule</h2>
 
-			<iron-ajax auto method="GET" url="/admin/schedule/date" handle-as="json" last-response="{{date}}" on-error="handleError"></iron-ajax>
+			<iron-ajax auto method="GET" url="/data/date" handle-as="json" last-response="{{date}}" on-error="handleError"></iron-ajax>
 			<iron-ajax id="change-date-ajax" method="PATCH" url="/admin/schedule/date" handle-as="json" on-response="changeDateResponse" on-error="handleError"></iron-ajax>
 			<iron-ajax id="save-period-ajax" method="PATCH" url="/admin/schedule" handle-as="json" on-response="savePeriodResponse" on-error="handleError"></iron-ajax>
 			<iron-ajax id="switch-period-ajax" method="PATCH" url="/admin/schedule/switch" handle-as="json" on-response="switchPeriodResponse" on-error="handleError"></iron-ajax>

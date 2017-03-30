@@ -1226,16 +1226,6 @@ adminRouter.route("/schedule/user/:name/data").get(async (request, response) => 
 	});
 });*/
 adminRouter.route("/schedule/date")
-	.get(async (request, response) => {
-		try {
-			response.json({
-				"formatted": (await common.getSymposiumDate()).format("MMMM Do, YYYY")
-			});
-		}
-		catch (err) {
-			common.handleError(response, err);
-		}
-	})
 	.patch(postParser, async (request, response) => {
 		let rawDate: string = request.body.date;
 		if (!rawDate) {
