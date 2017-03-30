@@ -225,7 +225,23 @@ adminRouter.route("/user")
 		}
 		catch (err) {
 			if (err instanceof neo4j.ClientError) {
-				response.json({ "success": false, "message": "A user with an existing username or name can't be imported. Rolling back changes." });
+				// Find and show duplicate username(s) or name(s)
+				let repeats: any[][] = await common.cypherAsync({
+					// Spread operator used for concatenating student and teacher arrays
+					queries: [...data[0].data, ...data[1].data].map((user: any[]) => {
+						let emailParsed = user[2].match(emailRegEx);
+						return {
+							"query": "MATCH (user:User) WHERE user.name = {name} OR user.username = {username} RETURN user.username AS username, user.name AS name",
+							"params": {
+								"name": `${user[0]} ${user[1]}`,
+								"username": emailParsed ? emailParsed[1] : ""
+							}
+						}
+					})
+				});
+				let formattedRepeats: string = repeats.filter(item => item.length !== 0).map(item => item[0].name).join(", ");
+
+				response.json({ "success": false, "message": `A user with an existing username or name can't be imported. (${formattedRepeats}) Rolling back changes.` });
 				return;
 			}
 			common.handleError(response, err);
