@@ -121,14 +121,12 @@ if (common.keys.production) {
 		//secureProtocol: "TLSv1_method"
 		ciphers: "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
 	};
-	server = https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", 511, () => {
-		console.log("HTTPS server listening on port " + PORT);
+	server = https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", () => {
+		console.log("HTTPS server listening on port " + HTTPS_PORT);
 	});
 }
-else {
-	server = http.createServer(app).listen(PORT, "0.0.0.0", 511, () => {
-		console.log("HTTP server listening on port " + PORT);
-	});
-}
+server = http.createServer(app).listen(PORT, "0.0.0.0", () => {
+	console.log("HTTP server listening on port " + PORT);
+});
 // Set up the Socket.io server
 common.connectWS(server);
