@@ -1,6 +1,4 @@
-﻿import * as http from "http";
-import * as https from "https";
-import * as fs from "fs";
+﻿import * as fs from "fs";
 import * as express from "express";
 import * as moment from "moment";
 import * as neo4j from "neo4j";
@@ -152,7 +150,7 @@ export var handleError = function (response: express.Response, err: any): void {
 	// Notify via PushBullet
 	var pushbulletPromises: any[] = [];
 	for (let deviceIden of pushbulletDevices) {
-		//pushbulletPromises.push(pusher.noteAsync(deviceIden, "WPP Error", `${new Date().toString()}\n\n${err.stack}`));
+		pushbulletPromises.push(pusher.noteAsync(deviceIden, "WPP Error", `${new Date().toString()}\n\n${err.stack}`));
 	}
 	Promise.all(pushbulletPromises).then(function () {
 		console.log("Error report sent via Pushbullet");

@@ -1,15 +1,10 @@
 ﻿// Node.js libraries
-import * as crypto from "crypto";
 import * as fs from "fs";
 import * as http from "http";
 import * as https from "https";
 import * as urllib from "url";
-import * as path from "path";
 // npm libraries
 import * as common from "./common";
-let keys = common.keys;
-import * as moment from "moment";
-const csv = require("csv");
 import * as cheerio from "cheerio";
 const git = require("git-last-commit");
 // Set up the Express server
@@ -18,11 +13,9 @@ import * as serveStatic from "serve-static";
 import * as responseTime from "response-time";
 import * as compress from "compression";
 import * as cookieParser from "cookie-parser";
-import * as bodyParser from "body-parser";
 const hsts = require("hsts");
 
 export let app = express();
-let postParser = bodyParser.urlencoded({ "extended": false });
 app.use(compress());
 app.use(responseTime());
 if (common.keys.production) {
@@ -45,8 +38,8 @@ if (common.keys.production) {
 	});
 }
 app.use(cookieParser(
-	keys.cookieSecret, // Secret for signing cookies
-	common.cookieOptions
+	common.keys.cookieSecret, // Secret for signing cookies
+	common.cookieOptions as cookieParser.CookieParseOptions
 ));
 
 app.use("/bower_components", serveStatic("bower_components"));

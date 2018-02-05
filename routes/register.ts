@@ -1,7 +1,6 @@
 ﻿import * as common from "../common";
 import * as express from "express";
 import * as bodyParser from "body-parser";
-import * as neo4j from "neo4j";
 import * as moment from "moment";
 
 let postParser = bodyParser.json();

@@ -1,5 +1,4 @@
-﻿import * as fs from "fs";
-import * as crypto from "crypto";
+﻿import * as crypto from "crypto";
 import * as common from "../common";
 import * as express from "express";
 import * as bodyParser from "body-parser";
@@ -439,7 +438,7 @@ adminRouter.route("/move/:name")
 	.post(postParser, async (request, response) => {
 		let {username, slugs}: { username: string, slugs: string[] } = request.body;
 		try {
-			let [users, editablePeriods, attends, presents, moderates] = await Promise.all<User[], any[], any[], any[], any[]>([
+			let [users, editablePeriods] = await Promise.all<User[], any[]>([
 				common.cypherAsync({
 					"query": "MATCH (u:User {username: {username}}) RETURN u.name AS name, u.username AS username, u.registered AS registered",
 					"params": {
@@ -448,24 +447,6 @@ adminRouter.route("/move/:name")
 				}),
 				common.cypherAsync({
 					"query": "MATCH(item:ScheduleItem {editable: true }) RETURN item.title AS title, item.start AS startTime, item.end AS endTime"
-				}),
-				common.cypherAsync({
-					"query": "MATCH (u:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type",
-					"params": {
-						username: username
-					}
-				}),
-				common.cypherAsync({
-					"query": "MATCH (u:User {username: {username}})-[r:PRESENTS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type",
-					"params": {
-						username: username
-					}
-				}),
-				common.cypherAsync({
-					"query": "MATCH (u:User {username: {username}})-[r:MODERATES]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS startTime, s.endTime AS endTime, s.type AS type",
-					"params": {
-						username: username
-					}
 				})
 			]);
 
@@ -473,7 +454,6 @@ adminRouter.route("/move/:name")
 				response.json({ "success": false, "message": "User not found" });
 				return;
 			}
-			let user = users[0];
 			if (editablePeriods.length !== slugs.length) {
 				response.json({ "success": false, "message": "Incorrect number of changes for editable periods" });
 				return;
@@ -1152,7 +1132,6 @@ adminRouter.route("/schedule/:filter/data").get(async (request, response) => {
 	else {
 		criteria = "type: {type}";
 	}
-	let type = common.getUserType(filter);
 	try {
 		type User = {
 			name: string;
@@ -1175,7 +1154,6 @@ adminRouter.route("/schedule/:filter/data").get(async (request, response) => {
 	}
 });
 adminRouter.route("/schedule/user/:name").get(async (request, response) => {
-	let {name}: { name: string } = request.params;
 	response.send(await common.readFileAsync("public/components/admin/schedule.html"));
 });
 adminRouter.route("/schedule/user/:name/data").get(async (request, response) => {

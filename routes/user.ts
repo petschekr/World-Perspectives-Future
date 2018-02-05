@@ -13,7 +13,7 @@ sendgrid.setApiKey(common.keys.sendgrid);
 
 type User = common.User;
 
-const timeFormat: string = "h:mm A";
+//const timeFormat: string = "h:mm A";
 const dateFormat: string = "MMMM Do, YYYY";
 
 userRouter.route("/").get(common.authenticateMiddleware, (request, response) => {
