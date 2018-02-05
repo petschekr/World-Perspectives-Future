@@ -11,7 +11,9 @@
 		"alwaysStrict": true,
 		"strictNullChecks": true,
 		"noImplicitAny": true,
-		"noImplicitReturns": true
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+		"moduleResolution": "node"
 	},
 	"exclude": [
 		"bower_components",
