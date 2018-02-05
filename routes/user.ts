@@ -4,12 +4,12 @@ import * as neo4j from "neo4j";
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as slugMaker from "slug";
-import * as Sendgrid from "sendgrid";
+import * as sendgrid from "@sendgrid/mail";
 
 let postParser = bodyParser.json();
 export let userRouter = express.Router();
 
-const sendgrid = Sendgrid(common.keys.sendgrid);
+sendgrid.setApiKey(common.keys.sendgrid);
 
 type User = common.User;
 
@@ -73,10 +73,12 @@ userRouter.route("/signup")
 			// Get information on the event
 			let date = await common.getSymposiumDate();
 			// Send them an email with their login link
-			let emailToSend = new sendgrid.Email({
-				to: email,
-				from: "registration@wppsymposium.org",
-				fromname: "GFA World Perspectives Symposium",
+			let emailToSend = {
+				to: { name, email },
+				from: {
+					name: "GFA World Perspectives Symposium",
+					email: "registration@wppsymposium.org"
+				},
 				subject: "Thank you for signing up!",
 				text: 
 `Hi ${name},
@@ -90,17 +92,8 @@ Feel free to reply to this email if you're having any problems.
 Thanks,
 The GFA World Perspectives Team
 `
-			});
-			await new Promise<Object>((resolve, reject) => {
-				sendgrid.send(emailToSend, (err: Error | null, json: Object) => {
-					if (err) {
-						reject(err);
-					}
-					else {
-						resolve(json);
-					}
-				});
-			});
+			};
+			await sendgrid.send(emailToSend);
 			response.json({ "success": true, "message": "Account successfully created" });
 		}
 		catch (err) {

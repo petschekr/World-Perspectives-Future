@@ -6,13 +6,13 @@ import * as bodyParser from "body-parser";
 import * as neo4j from "neo4j";
 import * as moment from "moment";
 import * as slugMaker from "slug";
-import * as Sendgrid from "sendgrid";
+import * as sendgrid from "@sendgrid/mail";
 import * as multer from "multer";
 
 export let adminRouter = express.Router();
 
 let postParser = bodyParser.json();
-let sendgrid = Sendgrid(common.keys.sendgrid);
+sendgrid.setApiKey(common.keys.sendgrid);
 let uploadHandler = multer({
 	"storage": multer.memoryStorage(),
 	"limits": {
@@ -1349,12 +1349,15 @@ adminRouter.route("/registration/email/registration").post(async (request, respo
 			"query": "MATCH (u:User) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code"
 		});
 		totalRecipients = results.length;
+		let emails: any[] = [];
 		for (let user of results) {
-			let email = (!!user.email) ? user.email : `${user.username}@gfacademy.org`;
-			let emailToSend = new sendgrid.Email({
-				to: email,
-				from: "registration@wppsymposium.org",
-				fromname: "GFA World Perspectives Symposium",
+			let email = user.email || `${user.username}@gfacademy.org`;
+			let emailToSend = {
+				to: { name: user.name, email },
+				from: {
+					name: "GFA World Perspectives Symposium",
+					email: "registration@wppsymposium.org"
+				},
 				subject: "GFA WPP Symposium Registration",
 				text:
 				`Hi ${user.name},
@@ -1370,18 +1373,11 @@ Feel free to reply to this email if you're having any problems.
 Thanks,
 The GFA World Perspectives Team
 `
-			});
-			await new Promise<Object>((resolve, reject) => {
-				sendgrid.send(emailToSend, (err: Error | null, json: Object) => {
-					if (err) {
-						reject(err);
-					}
-					else {
-						resolve(json);
-					}
-				});
-			});
+			};
+			emails.push(emailToSend);
 		}
+		await sendgrid.send(emails);
+
 		await common.cypherAsync({
 			query: "MATCH (c:Constant) WHERE c.registrationEmailTime IS NOT NULL SET c.registrationEmailTime = {time} RETURN c",
 			params: {
@@ -1403,6 +1399,7 @@ adminRouter.route("/registration/email/schedule").post(async (request, response)
 			"query": "MATCH (u:User) RETURN u.name AS name, u.username AS username, u.email AS email, u.code AS code, u.registered AS registered"
 		});
 		totalRecipients = results.length;
+		let emails: any[] = [];
 		for (let user of results) {
 			let {schedule}: {schedule: any[]} = await getScheduleForUser({
 				"name": user.name,
@@ -1415,7 +1412,7 @@ adminRouter.route("/registration/email/schedule").post(async (request, response)
 			}).join("\n\n");
 
 			let email = (!!user.email) ? user.email : `${user.username}@gfacademy.org`;
-			let emailToSend = new sendgrid.Email({
+			let emailToSend = {
 				to: email,
 				from: "registration@wppsymposium.org",
 				fromname: "GFA World Perspectives Symposium",
@@ -1434,18 +1431,11 @@ Feel free to reply to this email if you're having any problems.
 Thanks,
 The GFA World Perspectives Team
 `
-			});
-			await new Promise<Object>((resolve, reject) => {
-				sendgrid.send(emailToSend, (err: Error | null, json: Object) => {
-					if (err) {
-						reject(err);
-					}
-					else {
-						resolve(json);
-					}
-				});
-			});
+			};
+			emails.push(emailToSend);
 		}
+		await sendgrid.send(emails);
+
 		await common.cypherAsync({
 			query: "MATCH (c:Constant) WHERE c.scheduleEmailTime IS NOT NULL SET c.scheduleEmailTime = {time} RETURN c",
 			params: {
