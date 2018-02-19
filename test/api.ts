@@ -16,26 +16,43 @@ var testUser: any = {
 	"code": crypto.randomBytes(16).toString("hex"),
 };
 testUser.cookie = "username=s" + encodeURIComponent(":" + signCookie(testUser.username, common.keys.cookieSecret));
-function insertTestUser (registered: boolean = false, teacher: boolean = false, admin: boolean = false, done: (err?: Error) => void): void {
-	common.dbRaw.cypher({
-		query: "CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
-		params: {
+async function insertTestUser (registered: boolean = false, teacher: boolean = false, admin: boolean = false, done: (err?: Error) => void): Promise<void> {
+	let session = common.driver.session();
+	try {
+		await session.run(`
+			CREATE (user:User {name: {name}, username: {username}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})
+		`, {
 			name: testUser.name,
 			username: testUser.username,
 			registered: registered,
 			type: teacher ? common.UserType.Teacher : common.UserType.Student,
 			admin: admin,
 			code: testUser.code
-		}
-	}, done);
+		});
+		done();
+	}
+	catch (err) {
+		done(err);
+	}
+	finally {
+		session.close();
+	}
 }
-function removeTestUser(done: (err?: Error) => void): void {
-	common.dbRaw.cypher({
-		query: "MATCH (user:User {username: {username}}) DELETE user",
-		params: {
-			username: testUser.username
-		}
-	}, done);
+async function removeTestUser(done: (err?: Error) => void): Promise<void> {
+	let session = common.driver.session();
+	try {
+		await session.run(`
+			MATCH (user:User {username: {username}})
+			DELETE user
+		`, { username: testUser.username });
+		done();
+	}
+	catch (err) {
+		done(err);
+	}
+	finally {
+		session.close();
+	}
 }
 
 describe("Main endpoints", () => {

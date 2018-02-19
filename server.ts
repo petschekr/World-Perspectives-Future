@@ -15,6 +15,10 @@ import * as compress from "compression";
 import * as cookieParser from "cookie-parser";
 const hsts = require("hsts");
 
+process.on("unhandledRejection", (reason, p) => {
+	console.log("Unhandled Rejection at:", p, "reason:", reason);
+ });
+
 export let app = express();
 app.use(compress());
 app.use(responseTime());

@@ -1,5 +1,5 @@
 {
-  "name": "World Perspectives",
+  "name": "world-perspectives",
   "version": "3.4.0",
   "description": "Web app for World Perspectives Symposium day at GFA",
   "main": "server.js",
@@ -9,7 +9,7 @@
   "authors": [
     "Ryan Petschek <petschekr@gmail.com>"
   ],
-  "license": "Copyright (C) 2017 Ryan Petschek",
+  "license": "Copyright (C) 2018 Ryan Petschek",
   "ignore": [
     "**/.*",
     "node_modules",

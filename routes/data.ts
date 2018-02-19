@@ -9,117 +9,185 @@ const dateFormat: string = "MMMM Do, YYYY";
 
 let authenticateCheck = common.authenticateMiddleware;
 
+export interface ScheduleItem {
+	title: string;
+	slug: string | null;
+	location: string | null;
+	editable: boolean;
+	type: string | null;
+	description: string | null;
+	people: string | null;
+	time: {
+		start: {
+			raw: string;
+			formatted: string;
+		};
+		end: {
+			raw: string;
+			formatted: string;
+		};
+	};
+}
+
 dataRouter.route("/schedule").get(authenticateCheck, async (request, response) => {
+	if (!response.locals.authenticated || !response.locals.user.registered) {
+		response.json(await getScheduleForUser({
+			username: "",
+			registered: false
+		}));
+	}
+	else {
+		response.json(await getScheduleForUser({
+			username: response.locals.user.username,
+			registered: response.locals.user.registered
+		}));
+	}
+});
+
+export async function getScheduleForUser(user: { username: string; registered: boolean; }): Promise<ScheduleItem[]> {
+	const dbSession = common.driver.session();
 	try {
-		if (!response.locals.authenticated || !response.locals.user.registered) {
+		if (!user.registered) {
 			// Generalized schedule for unknown or unregistered users
-			let results: any[] = await common.cypherAsync({
-				query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
-			});
-			response.json(results.map(function (item) {
-				let startTime = item.start;
-				delete item.start;
-				let endTime = item.end;
-				delete item.end;
-				item.time = {
-					"start": {
-						"raw": startTime,
-						"formatted": moment(startTime).format(timeFormat)
-					},
-					"end": {
-						"raw": endTime,
-						"formatted": moment(endTime).format(timeFormat)
+			let results = await dbSession.run(`
+				MATCH (item:ScheduleItem) 
+				RETURN
+					item.title AS title,
+					item.start AS start,
+					item.end AS end,
+					item.location AS location,
+					item.editable AS editable
+				ORDER BY item.start
+			`);
+			return results.records.map(record => {
+				return {
+					title: record.get("title"),
+					slug: null,
+					location: record.get("location") || null,
+					editable: record.get("editable") || false,
+					type: null,
+					description: null,
+					people: null,
+					time: {
+						"start": {
+							"raw": record.get("start"),
+							"formatted": moment(record.get("start")).format(timeFormat)
+						},
+						"end": {
+							"raw": record.get("end"),
+							"formatted": moment(record.get("end")).format(timeFormat)
+						}
 					}
 				};
-				return item;
-			}));
+			});
 		}
 		else {
-			let sessions: any[] = await common.cypherAsync({
-				"query": "MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session) RETURN s.title AS title, s.slug AS slug, s.startTime AS start, s.endTime AS end, s.location AS location, s.type AS type, s.description AS description, true AS editable",
-				"params": {
-					username: response.locals.user.username
-				}
-			});
+			let sessions = (await dbSession.run(`
+				MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session)
+				RETURN
+					s.title AS title,
+					s.slug AS slug,
+					s.startTime AS start,
+					s.endTime AS end,
+					s.location AS location,
+					s.type AS type,
+					s.description AS description,
+					true AS editable
+			`, { username: user.username })).records;
 
-			let sessionsWithNames = await Promise.all(sessions.map(session => {
-				return common.cypherAsync({
-					"query": "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}}) RETURN user.name AS name, s.slug AS slug",
-						"params": {
-							slug: session.slug
+			let presenterNames: {
+				[slug: string]: string[]
+			} = {};
+			for (let session of sessions) {
+				let presenters = await dbSession.run(`
+					MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: {slug}})
+					RETURN user.name AS name
+				`, { slug: session.get("slug") });
+				presenterNames[session.get("slug")] = presenters.records.map(record => record.get("name"));
+			}
+
+			let items = (await dbSession.run(`
+				MATCH (item:ScheduleItem)
+				RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable
+			`)).records;
+
+			let scheduleItems: ScheduleItem[] = [];
+			for (let i = 0; i < items.length; i++) {
+				let scheduleItem: ScheduleItem = {
+					title: items[i].get("title"),
+					slug: null,
+					location: items[i].get("location") || null,
+					editable: items[i].get("editable") || false,
+					type: null,
+					description: null,
+					people: null,
+					time: {
+						"start": {
+							"raw": items[i].get("start"),
+							"formatted": moment(items[i].get("start")).format(timeFormat)
+						},
+						"end": {
+							"raw": items[i].get("end"),
+							"formatted": moment(items[i].get("end")).format(timeFormat)
 						}
-				});
-			}));
-			let items = await common.cypherAsync({
-				query: "MATCH (item:ScheduleItem) RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable"
-			});
-			function formatter (item: any) {
-				let startTime = item.start;
-				delete item.start;
-				let endTime = item.end;
-				delete item.end;
-				item.time = {
-					"start": {
-						"raw": startTime,
-						"formatted": moment(startTime).format(timeFormat)
-					},
-					"end": {
-						"raw": endTime,
-						"formatted": moment(endTime).format(timeFormat)
 					}
 				};
-				return item;
-			}
-			// Flatten array
-			sessionsWithNames = [].concat.apply([], sessionsWithNames);
-			for (let i = 0; i < items.length; i++) {
 				// Insert registration choices into schedule at editable periods
-				if (items[i].editable) {
-					let set = false;
+				if (items[i].get("editable")) {
+					let set: boolean = false;
 					for (let j = 0; j < sessions.length; j++) {
-						if (moment(sessions[j].start).isSame(moment(items[i].start))) {
-							items[i] = sessions[j];
+						if (moment(sessions[j].get("start")).isSame(moment(items[i].get("start")))) {
+							//items[i] = sessions[j];
+							scheduleItem.title = sessions[j].get("title");
+							scheduleItem.slug = sessions[j].get("slug");
+							scheduleItem.location = sessions[j].get("location") || null;
+							scheduleItem.editable = true;
+							scheduleItem.type = sessions[j].get("type");
+							scheduleItem.description = sessions[j].get("description") || null;
+
 							set = true;
-							let people = [];
-							for (let k = 0; k < sessionsWithNames.length; k++) {
-								if (sessionsWithNames[k].slug === sessions[j].slug) {
-									people.push(sessionsWithNames[k].name);
-								}
-							}
+							let people = presenterNames[sessions[j].get("slug")];
 							// Sort people by last name
 							people = people.sort(function (a, b) {
 								let aSplit = a.toLowerCase().split(" ");
 								let bSplit = b.toLowerCase().split(" ");
+								// Extract last names
 								a = aSplit[aSplit.length - 1];
 								b = bSplit[bSplit.length - 1];
+								// Sort based on last name
 								if (a < b) return -1;
 								if (a > b) return 1;
 								return 0;
 							});
-							items[i].people = people.join(", ");
+							scheduleItem.people = people.join(", ");
 							// Return type of form "Global" or "Science" instead of including "session" at the end
-							if (items[i].type)
-								items[i].type = items[i].type.split(" ")[0];
+							if (scheduleItem.type) {
+								scheduleItem.type = scheduleItem.type.split(" ")[0];
+							}
 							break;
 						}
 					}
 					if (!set) {
 						// Couldn't find registered session for this editable time so it must be a free
-						items[i].title = "Free";
+						scheduleItem.title = "Free";
 					}
 				}
+				scheduleItems.push(scheduleItem);
 			}
-			response.json(items.map(formatter));
+			return scheduleItems;
 		}
 	}
-	catch (err) {
-		common.handleError(response, err);
+	finally {
+		dbSession.close();
 	}
-});
+}
 dataRouter.route("/sessions").get(async (request, response) => {
 	try {
-		let results: any[] = await common.cypherAsync({
-			query: `MATCH (s:Session) RETURN
+		const dbSession = common.driver.session();
+
+		let results = await dbSession.run(`
+			MATCH (s:Session)
+			RETURN
 				s.title AS title,
 				s.slug AS slug,
 				s.description AS description,
@@ -129,49 +197,46 @@ dataRouter.route("/sessions").get(async (request, response) => {
 				s.attendees AS attendees,
 				s.startTime AS startTime,
 				s.endTime AS endTime
-				ORDER BY s.startTime, lower(s.title)`
-		});
-		let sessions = await Promise.all(results.map(async session => {
-			let sessionRelationships = await common.cypherAsync({
-				queries: [{
-					query: "MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name ORDER BY last(split(user.name, \" \"))",
-					params: {
-						slug: session.slug
-					}
-				}, {
-					query: "MATCH (user:User)-[r:MODERATES]->(s:Session {slug: { slug }}) RETURN user.username AS username, user.name AS name",
-					params: {
-						slug: session.slug
-					}
-				}]
-			});
+			ORDER BY s.startTime, lower(s.title)
+		`);
+		let sessions = await Promise.all(results.records.map(async session => {
+			let presenters = await dbSession.run(`
+				MATCH (user:User)-[r:PRESENTS]->(s:Session {slug: { slug }})
+				RETURN user.username AS username, user.name AS name
+				ORDER BY last(split(user.name, \" \"))
+			`, { slug: session.get("slug") });
+			let moderator = await dbSession.run(`
+				MATCH (user:User)-[r:MODERATES]->(s:Session {slug: { slug }})
+				RETURN user.username AS username, user.name AS name
+			`, { slug: session.get("slug") });
 			return {
 				"title": {
-					"formatted": session.title,
-					"slug": session.slug
+					"formatted": session.get("title"),
+					"slug": session.get("slug")
 				},
-				"description": session.description,
-				"type": session.type,
-				"location": session.location,
+				"description": session.get("description"),
+				"type": session.get("type"),
+				"location": session.get("location"),
 				"capacity": {
-					"total": session.capacity,
-					"filled": session.attendees
+					"total": session.get("capacity").toNumber(),
+					"filled": session.get("attendees").toNumber()
 				},
 				"time": {
 					"start": {
-						"raw": session.startTime,
-						"formatted": moment(session.startTime).format(timeFormat)
+						"raw": session.get("startTime"),
+						"formatted": moment(session.get("startTime")).format(timeFormat)
 					},
 					"end": {
-						"raw": session.endTime,
-						"formatted": moment(session.endTime).format(timeFormat)
+						"raw": session.get("endTime"),
+						"formatted": moment(session.get("endTime")).format(timeFormat)
 					},
-					"date": moment(session.startTime).format(dateFormat)
+					"date": moment(session.get("startTime")).format(dateFormat)
 				},
-				"presenters": sessionRelationships[0],
-				"moderator": (sessionRelationships[1].length !== 0) ? sessionRelationships[1][0] : null
+				"presenters": presenters.records.map(record => record.toObject()),
+				"moderator": (moderator.records.length !== 0) ? moderator.records[0].toObject() : null
 			};
 		}));
+		dbSession.close();
 		response.json(sessions);
 	}
 	catch (err) {
