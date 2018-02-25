@@ -1,24 +1,23 @@
 ﻿import * as crypto from "crypto";
 import * as common from "../common";
-import * as neo4j from "neo4j";
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as slugMaker from "slug";
-import * as Sendgrid from "sendgrid";
+import * as sendgrid from "@sendgrid/mail";
 
 let postParser = bodyParser.json();
 export let userRouter = express.Router();
 
-const sendgrid = Sendgrid(common.keys.sendgrid);
+sendgrid.setApiKey(common.keys.sendgrid);
 
-type User = common.User;
+type RawUser = common.RawUser;
 
-const timeFormat: string = "h:mm A";
+//const timeFormat: string = "h:mm A";
 const dateFormat: string = "MMMM Do, YYYY";
 
 userRouter.route("/").get(common.authenticateMiddleware, (request, response) => {
     if (response.locals.authenticated) {
-		let user: User = response.locals.user;
+		let user: RawUser = response.locals.user;
 		response.json({
 			"name": user.name,
 			"username": user.username,
@@ -55,28 +54,30 @@ userRouter.route("/signup")
 		}
 		let username = slugMaker(name, { "lower": true });
 		try {
-			await common.cypherAsync({
-				query: "CREATE (user:User {name: {name}, username: {username}, email: {email}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})",
-				params: {
-					name: name,
-					username: username,
-					email: email,
-					registered: false,
-					type: common.getUserType(type),
-					admin: false,
-					code: code
-				}
+			let session = common.driver.session();
+			await session.run("CREATE (user:User {name: {name}, username: {username}, email: {email}, registered: {registered}, type: {type}, admin: {admin}, code: {code}})", {
+				name,
+				username,
+				email,
+				registered: false,
+				type: common.getUserType(type),
+				admin: false,
+				code
 			});
+			session.close();
+
 			// Set authentication cookie
 			response.clearCookie("username");
 			response.cookie("username", username, common.cookieOptions);
 			// Get information on the event
 			let date = await common.getSymposiumDate();
 			// Send them an email with their login link
-			let emailToSend = new sendgrid.Email({
-				to: email,
-				from: "registration@wppsymposium.org",
-				fromname: "GFA World Perspectives Symposium",
+			let emailToSend = {
+				to: { name, email },
+				from: {
+					name: "GFA World Perspectives Symposium",
+					email: "registration@wppsymposium.org"
+				},
 				subject: "Thank you for signing up!",
 				text: 
 `Hi ${name},
@@ -90,21 +91,12 @@ Feel free to reply to this email if you're having any problems.
 Thanks,
 The GFA World Perspectives Team
 `
-			});
-			await new Promise<Object>((resolve, reject) => {
-				sendgrid.send(emailToSend, (err: Error | null, json: Object) => {
-					if (err) {
-						reject(err);
-					}
-					else {
-						resolve(json);
-					}
-				});
-			});
+			};
+			await sendgrid.send(emailToSend);
 			response.json({ "success": true, "message": "Account successfully created" });
 		}
 		catch (err) {
-			if (err instanceof neo4j.ClientError) {
+			if (err.code === "Neo.ClientError.Schema.ConstraintValidationFailed") {
 				response.json({ "success": false, "message": "A user with that name or email already exists" });
 				return;
 			}
@@ -116,18 +108,14 @@ userRouter.route("/login/:code").get(async (request, response) => {
 	let code = request.params.code.toString();
 	// Check if the provided code is valid
 	try {
-		let results = await common.cypherAsync({
-			query: "MATCH (user:User {code: {code}}) RETURN user",
-			params: {
-				code: code
-			}
-		});
-		if (results.length !== 1) {
+		let session = common.driver.session();
+		let result = await session.run("MATCH (user:User {code: {code}}) RETURN user", { code });
+		if (result.records.length !== 1) {
 			// Invalid code
 			response.send(await common.readFileAsync("pages/invalidcode.html"));
 			return;
 		}
-		let user: User = results[0].user.properties;
+		let user: RawUser = result.records[0].get("user").properties;
 		// Set a cookie to identify this user later
 		response.cookie("username", user.username, common.cookieOptions);
 		// Direct request by whether or not the user has already registered

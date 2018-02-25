@@ -1,9 +1,7 @@
-﻿import * as http from "http";
-import * as https from "https";
-import * as fs from "fs";
+﻿import * as fs from "fs";
 import * as express from "express";
 import * as moment from "moment";
-import * as neo4j from "neo4j";
+import { v1 as neo4j } from "neo4j-driver";
 import * as socket from "socket.io";
 
 export function readFileAsync (filename: string): Promise<string> {
@@ -46,24 +44,26 @@ export var getUserType = function (userTypeString: string): UserType {
 	}
 };
 
-export interface User {
-	"code": String;
-	"name": String;
-	"username": String;
-	"registered": Boolean;
-	"admin": Boolean;
-	"type": UserType;
+export interface RawUser {
+	code: string;
+	name: string;
+	username: string;
+	registered: boolean;
+	admin: boolean;
+	grade: neo4j.Integer;
+	type: neo4j.Integer;
 }
+
 export const keys: {
-	"production": boolean;
-	"neo4j": {
-		"username": string;
-		"password": string;
-		"server": string;
+	production: boolean;
+	neo4j: {
+		username: string;
+		password: string;
+		server: string;
 	};
-	"pushbullet": string;
-	"sendgrid": string;
-	"cookieSecret": string;
+	pushbullet: string;
+	sendgrid: string;
+	cookieSecret: string;
 } = JSON.parse(fs.readFileSync("keys.json").toString("utf8"));
 export const cookieOptions = {
 	"path": "/",
@@ -77,49 +77,42 @@ export function connectWS(server: any) {
 	io = socket.listen(server);
 }
 
-export let dbRaw = new neo4j.GraphDatabase(`http://${keys.neo4j.username}:${keys.neo4j.password}@${keys.neo4j.server}:7474`);
-export function cypherAsync (options: neo4j.CypherOptions): Promise<any> {
-	return new Promise<any>((resolve, reject) => {
-		dbRaw.cypher(options, (err, result) => {
-			if (err) {
-				reject(err);
-				return;
-			}
-			resolve(result);
-		});
-	});
-}
+export const driver = neo4j.driver(`bolt://${keys.neo4j.server}`, neo4j.auth.basic(
+	keys.neo4j.username,
+	keys.neo4j.password
+));
+
 export var authenticateMiddleware = function (request: express.Request, response: express.Response, next: express.NextFunction): void {
 	var username = request.signedCookies.username || "";
-	cypherAsync({
-		query: "MATCH (user:User {username: {username}}) RETURN user",
-		params: {
-			username: username
-		}
-	}).then(function (results) {
-		var user = null;
-		var loggedIn: boolean;
-		if (results.length < 1) {
-			// Username not found in database
-			loggedIn = false;
-		}
-		else {
-			user = results[0].user.properties;
-			user.admin = !!user.admin; // Could be true or null
-			loggedIn = true;
-		}
-		response.locals.authenticated = loggedIn;
-		response.locals.user = user;
-		next();
-	}).catch(handleError.bind(response));
+
+	const dbSession = driver.session();
+	dbSession
+		.run("MATCH (user:User {username: {username}}) RETURN user", { username })
+		.then(function (result) {
+			let user: RawUser | null = null;
+			let loggedIn: boolean;
+			if (result.records.length < 1) {
+				// Username not found in database
+				loggedIn = false;
+			}
+			else {
+				user = result.records[0].get("user").properties as RawUser;
+				user.admin = !!user.admin; // Could be true or null
+				loggedIn = true;
+			}
+			response.locals.authenticated = loggedIn;
+			response.locals.user = user;
+			dbSession.close();
+			next();
+		})
+		.catch(handleError.bind(response));
 };
 
-export var getSymposiumDate = function (): Promise<moment.Moment> {
-	return cypherAsync({
-		query: "MATCH (c:Constant) WHERE c.date IS NOT NULL RETURN c"
-	}).then(function (results) {
-		return moment(results[0].c.properties.date);
-	});
+export async function getSymposiumDate(): Promise<moment.Moment> {
+	const dbSession = driver.session();
+	let result = await dbSession.run("MATCH (c:Constant) WHERE c.date IS NOT NULL RETURN c");
+	dbSession.close();
+	return moment(result.records[0].get("c").properties.date);
 };
 
 
@@ -152,7 +145,7 @@ export var handleError = function (response: express.Response, err: any): void {
 	// Notify via PushBullet
 	var pushbulletPromises: any[] = [];
 	for (let deviceIden of pushbulletDevices) {
-		//pushbulletPromises.push(pusher.noteAsync(deviceIden, "WPP Error", `${new Date().toString()}\n\n${err.stack}`));
+		pushbulletPromises.push(pusher.noteAsync(deviceIden, "WPP Error", `${new Date().toString()}\n\n${err.stack}`));
 	}
 	Promise.all(pushbulletPromises).then(function () {
 		console.log("Error report sent via Pushbullet");
