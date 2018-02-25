@@ -739,6 +739,29 @@ adminRouter.route("/session")
 		finally {
 			dbSession.close();
 		}
+	})
+	.delete(async (request, response) => {
+		const dbSession = common.driver.session();
+		try {
+			let [, unregistered] = await Promise.all([
+				dbSession.run(`
+					MATCH (s:Session)
+					DETACH DELETE s
+				`),
+				dbSession.run(`
+					MATCH (u:User {registered: true})
+					SET u.registered = false
+					RETURN count(u) AS unregistered
+				`)
+			]);
+			response.json({ "success": true, "message": `All sessions deleted successfully. ${unregistered.records[0].get("unregistered")} users were marked unregistered.` });
+		}
+		catch (err) {
+			common.handleError(response, err);
+		}
+		finally {
+			dbSession.close();
+		}
 	});
 adminRouter.route("/session/:slug")
 	.get(async (request, response) => {
