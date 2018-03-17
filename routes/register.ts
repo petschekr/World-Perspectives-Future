@@ -115,8 +115,8 @@ registerRouter.route("/sessions/:time")
 					"type": session.get("type"),
 					"location": session.get("location"),
 					"capacity": {
-						"total": session.get("capacity").toNumber(),
-						"filled": session.get("attendees").toNumber()
+						"total": session.get("capacity"),
+						"filled": session.get("attendees")
 					},
 					"time": {
 						"start": {
@@ -201,7 +201,7 @@ registerRouter.route("/sessions/:time")
 					response.json({ "success": false, "message": "Session has mismatching start time" });
 					return;
 				}
-				if (session.get("attendees").toNumber() >= session.get("capacity").toNumber() && !isOwn) {
+				if (session.get("attendees") >= session.get("capacity") && !isOwn) {
 					response.json({ "success": false, "message": "There are too many people in that session. Please choose another." });
 					return;
 				}
@@ -231,7 +231,7 @@ registerRouter.route("/sessions/:time")
 			})).records.map(record => {
 				return {
 					slug: record.get("slug"),
-					attendees: record.get("attendees").toNumber()
+					attendees: record.get("attendees")
 				};
 			});
 
@@ -255,7 +255,7 @@ registerRouter.route("/sessions/:time")
 					// Notify via WebSocket of the intention to register
 					common.io.emit("availability", {
 						"slug": slug,
-						"attendees": intendedSession.get("attendees").toNumber() + 1
+						"attendees": intendedSession.get("attendees") + 1
 					});
 					await dbSession.run(`
 						MATCH (user:User {username: {username}})

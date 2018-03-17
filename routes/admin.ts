@@ -569,8 +569,8 @@ adminRouter.route("/session")
 					"type": session.get("type"),
 					"location": session.get("location"),
 					"capacity": {
-						"total": session.get("capacity").toNumber(),
-						"filled": session.get("attendees").toNumber()
+						"total": session.get("capacity"),
+						"filled": session.get("attendees")
 					},
 					"time": {
 						"start": {
@@ -861,10 +861,10 @@ adminRouter.route("/session/:slug/attendance/data").get(async (request, response
 			ORDER BY last(split(user.name, " "))
 		`, { slug });
 		let students = results.records.filter(user => {
-			return user.get("type").toNumber() === common.UserType.Student;
+			return user.get("type") === common.UserType.Student;
 		});
 		let faculty = results.records.filter(user => {
-			return user.get("type").toNumber() === common.UserType.Teacher;
+			return user.get("type") === common.UserType.Teacher;
 		});
 		response.json({
 			"faculty": faculty,
@@ -936,7 +936,7 @@ adminRouter.route("/free/:id/attendance/data").get(async (request, response) => 
 			ORDER BY last(split(user.name, " "))
 		`, { id });
 		let students = results.records.filter(user => {
-			return user.get("type").toNumber() === common.UserType.Student;
+			return user.get("type") === common.UserType.Student;
 		});
 		let faculty = results.records.filter(user => {
 			return user.get("type") === common.UserType.Teacher;
@@ -1495,13 +1495,13 @@ adminRouter.route("/registration/stats")
 			let registeredTeachers = 0;
 			let totalTeachers = 0;
 			results.records.forEach(result => {
-				if (result.get("type").toNumber() === common.UserType.Student) {
+				if (result.get("type") === common.UserType.Student) {
 					totalStudents++;
 					if (result.get("registered")) {
 						registeredStudents++;
 					}
 				}
-				if (result.get("type").toNumber() === common.UserType.Teacher) {
+				if (result.get("type") === common.UserType.Teacher) {
 					totalTeachers++;
 					if (result.get("registered")) {
 						registeredTeachers++;
@@ -1559,8 +1559,8 @@ adminRouter.route("/registration/auto").post(async (request, response) => {
 		let sessions = rawSessions.map(session => {
 			return {
 				...session.toObject(),
-				attendees: session.get("attendees").toNumber(),
-				capacity: session.get("capacity").toNumber()
+				attendees: session.get("attendees"),
+				capacity: session.get("capacity")
 			} as Session;
 		});
 

@@ -218,8 +218,8 @@ dataRouter.route("/sessions").get(async (request, response) => {
 				"type": session.get("type"),
 				"location": session.get("location"),
 				"capacity": {
-					"total": session.get("capacity").toNumber(),
-					"filled": session.get("attendees").toNumber()
+					"total": session.get("capacity"),
+					"filled": session.get("attendees")
 				},
 				"time": {
 					"start": {
