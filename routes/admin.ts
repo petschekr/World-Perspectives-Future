@@ -1226,7 +1226,7 @@ adminRouter.route("/schedule/date")
 				end.set("date", date.get("date"));
 				return {
 					start: start.format(),
-					end: start.format()
+					end: end.format()
 				};
 			}
 			let queries: { text: string; parameters: any; }[] = [{
