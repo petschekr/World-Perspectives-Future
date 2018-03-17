@@ -222,12 +222,13 @@ registerRouter.route("/sessions/:time")
 			// Now check if deregistration needs to happen and remove the relationship and decrement the number of attendees (the user selected a different session previously and has changed their mind)
 			let results = (await dbSession.run(`
 				MATCH (user:User {username: {username}})-[r:ATTENDS]->(s:Session {startTime: {time}})
-				SET s.attendees = s.attendees - 1
+				SET s.attendees = s.attendees - {subtractAmount}
 				DELETE r
 				RETURN s.slug AS slug, s.attendees AS attendees
 			`, {
 				username: response.locals.user.username,
-				time
+				time,
+				subtractAmount: isOwn ? 0 : 1 // Presenters or moderators don't affect their own sessions' attendee count
 			})).records.map(record => {
 				return {
 					slug: record.get("slug"),
@@ -255,7 +256,7 @@ registerRouter.route("/sessions/:time")
 					// Notify via WebSocket of the intention to register
 					common.io.emit("availability", {
 						"slug": slug,
-						"attendees": intendedSession.get("attendees") + 1
+						"attendees": intendedSession.get("attendees")
 					});
 					await dbSession.run(`
 						MATCH (user:User {username: {username}})

@@ -121,9 +121,13 @@ if (common.keys.production) {
 	server = https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", () => {
 		console.log("HTTPS server listening on port " + HTTPS_PORT);
 	});
+	// Set up the Socket.io server
+	common.connectWS(server);
 }
 server = http.createServer(app).listen(PORT, "0.0.0.0", () => {
 	console.log("HTTP server listening on port " + PORT);
 });
-// Set up the Socket.io server
-common.connectWS(server);
+if (!common.keys.production) {
+	// Set up the Socket.io server
+	common.connectWS(server);
+}
