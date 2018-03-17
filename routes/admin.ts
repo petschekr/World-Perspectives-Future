@@ -1585,17 +1585,20 @@ adminRouter.route("/registration/auto").post(async (request, response) => {
 			users = shuffle(users);
 			// Find non-full sessions that occur at this time
 			let availableSessions: Session[] = [];
-			function updateAvailableSessions() {
+			function updateAvailableSessions(): boolean {
 				availableSessions = sessions.filter(session => {
 					return session.attendees < session.capacity && moment(session.startTime).isSame(moment(period.get("startTime")));
 				});
 				if (availableSessions.length < 1) {
 					// Not enough sessions
-					console.warn(`Not enough capacity at ${moment(period.get("startTime")).format(timeFormat)} to autoregister`);
+					let message = `Not enough capacity at ${moment(period.get("startTime")).format(timeFormat)} to autoregister`;
+					response.json({ "success": false, message });
+					return false;
 				}
 				availableSessions = availableSessions.sort((a, b) => a.attendees - b.attendees);
+				return true;
 			}
-			updateAvailableSessions();
+			if (!updateAvailableSessions()) return;
 			// Find the unregistered users that have registered for this period already (partially completed registration) to filter them out of needing to be autoregistered
 			let attendingUsers = (await dbSession.run(`
 				MATCH (u:User {registered: false})-[r:ATTENDS]->(s:Session {startTime: {startTime}})
@@ -1611,7 +1614,7 @@ adminRouter.route("/registration/auto").post(async (request, response) => {
 				return attendingUsernames.indexOf(user.get("username")) === -1;
 			});
 			for (let user of remainingUsers) {
-				updateAvailableSessions();
+				if (!updateAvailableSessions()) return;
 				// Check if this user moderates or presents a session at this time period
 				let [presenting, moderating] = await Promise.all([
 					dbSession.run(`
