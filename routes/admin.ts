@@ -862,10 +862,10 @@ adminRouter.route("/session/:slug/attendance/data").get(async (request, response
 		`, { slug });
 		let students = results.records.filter(user => {
 			return user.get("type") === common.UserType.Student;
-		});
+		}).map(user => user.toObject());
 		let faculty = results.records.filter(user => {
 			return user.get("type") === common.UserType.Teacher;
-		});
+		}).map(user => user.toObject());
 		response.json({
 			"faculty": faculty,
 			"students": students
