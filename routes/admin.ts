@@ -430,7 +430,7 @@ adminRouter.route("/move/:name")
 				return {
 					"title": {
 						"formatted": !isFree ? item.get("title") : "Free",
-						"slug": item.get("slug") || null
+						"slug": item.has("slug") ? item.get("slug") : null
 					},
 					"time": {
 						"start": {
