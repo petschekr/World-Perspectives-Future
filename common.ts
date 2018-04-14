@@ -143,9 +143,18 @@ export var handleError = function (response: express.Response, err: any): void {
 		return;
 	}
 	// Notify via PushBullet
-	var pushbulletPromises: any[] = [];
+	var pushbulletPromises: Promise<void>[] = [];
 	for (let deviceIden of pushbulletDevices) {
-		pushbulletPromises.push(pusher.noteAsync(deviceIden, "WPP Error", `${new Date().toString()}\n\n${err.stack}`));
+		pushbulletPromises.push(new Promise<void>((resolve, reject) => {
+			pusher.note(deviceIden, "WPP Error", `${new Date().toString()}\n\n${err.stack}`, (err: Error) => {
+				if (err) {
+					reject(err);
+				}
+				else {
+					resolve();
+				}
+			});
+		}));
 	}
 	Promise.all(pushbulletPromises).then(function () {
 		console.log("Error report sent via Pushbullet");
