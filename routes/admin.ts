@@ -442,7 +442,7 @@ adminRouter.route("/move/:name")
 							"formatted": moment(item.get("endTime")).format(timeFormat)
 						}
 					},
-					"type": item.get("type") || null,
+					"type": item.has("type") ? item.get("type") : null,
 					"mandatory": mandatory
 				};
 			}
