@@ -50,7 +50,7 @@ export async function getScheduleForUser(user: { username: string; registered: b
 		if (!user.registered) {
 			// Generalized schedule for unknown or unregistered users
 			let results = await dbSession.run(`
-				MATCH (item:ScheduleItem) 
+				MATCH (item:ScheduleItem)
 				RETURN
 					item.title AS title,
 					item.start AS start,
@@ -109,6 +109,7 @@ export async function getScheduleForUser(user: { username: string; registered: b
 			let items = (await dbSession.run(`
 				MATCH (item:ScheduleItem)
 				RETURN item.title AS title, item.start AS start, item.end AS end, item.location AS location, item.editable AS editable
+				ORDER BY item.start
 			`)).records;
 
 			let scheduleItems: ScheduleItem[] = [];
